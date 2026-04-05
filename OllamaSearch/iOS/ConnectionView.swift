@@ -7,42 +7,90 @@ struct ConnectionView: View {
     @State private var bonjour = BonjourDiscovery()
     @State private var mode: Mode = .auto
     @State private var manualURL: String = UserDefaults.standard.string(forKey: "serverURL") ?? ""
+    @State private var showAbout = false
     let onConnect: (URL) -> Void
 
     enum Mode { case auto, manual }
 
+    private var isSearching: Bool { mode == .auto && bonjour.isSearching }
+
     var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 56))
-                .foregroundStyle(Color.accent)
+        ZStack(alignment: .topTrailing) {
+            Color.appBg.ignoresSafeArea()
 
-            Text("Connect to Mira")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(Color.textPrimary)
-
-            Picker("Mode", selection: $mode) {
-                Text("Auto (Bonjour)").tag(Mode.auto)
-                Text("Manual URL").tag(Mode.manual)
+            Button { showAbout = true } label: {
+                Image(systemName: "info.circle")
+                    .font(.title3)
+                    .foregroundStyle(Color.textSecondary)
             }
-            .pickerStyle(.segmented)
-            .frame(maxWidth: 300)
-
-            if mode == .auto {
-                autoBonjourSection
-            } else {
-                manualURLSection
+            .padding(.top, 56)
+            .padding(.trailing, 24)
+            .zIndex(1)
+            .sheet(isPresented: $showAbout) {
+                AboutView()
+                    .presentationDetents([.medium, .large])
             }
 
-            Text("For remote access outside your home network, install Tailscale on both your Mac and iPhone, then use the Manual URL with your Tailscale IP (e.g. http://100.x.x.x:8000).")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 340)
+            // Warm glow anchored near the top where the logo sits
+            RadialGradient(
+                colors: [Color.accent.opacity(0.10), .clear],
+                center: .init(x: 0.5, y: 0.22),
+                startRadius: 0,
+                endRadius: 260
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                MiraLogoView(size: 96, animated: isSearching)
+
+                Spacer().frame(height: 22)
+
+                Text("Mira")
+                    .font(.bookerly(size: 32, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+
+                Spacer().frame(height: 36)
+
+                Picker("Mode", selection: $mode) {
+                    Text("Auto (Bonjour)").tag(Mode.auto)
+                    Text("Manual URL").tag(Mode.manual)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 300)
+
+                Spacer().frame(height: 28)
+
+                Group {
+                    if mode == .auto {
+                        autoBonjourSection
+                    } else {
+                        manualURLSection
+                    }
+                }
+                .frame(minHeight: 72)
+
+                Spacer()
+
+                // Tailscale hint
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "network")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                        .padding(.top, 1)
+                    Text("For remote access outside your home network, install Tailscale on both devices and use Manual URL with your Tailscale IP (e.g. http://100.x.x.x:8000).")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                .padding(12)
+                .background(Color.sidebarBg)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 28)
+                .padding(.bottom, 36)
+            }
+            .padding(.horizontal, 32)
         }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.appBg)
         .onAppear {
             if mode == .auto { bonjour.start() }
         }
@@ -51,9 +99,7 @@ struct ConnectionView: View {
             if mode == .auto { bonjour.start() } else { bonjour.stop() }
         }
         .onChange(of: bonjour.discoveredURL) {
-            if let url = bonjour.discoveredURL {
-                saveAndConnect(url)
-            }
+            if let url = bonjour.discoveredURL { saveAndConnect(url) }
         }
     }
 
@@ -61,20 +107,25 @@ struct ConnectionView: View {
         VStack(spacing: 12) {
             if bonjour.isSearching {
                 HStack(spacing: 8) {
-                    ProgressView()
+                    ProgressView().tint(Color.accent)
                     Text("Searching on local network…")
-                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textSecondary)
                 }
             } else if let url = bonjour.discoveredURL {
                 Label(url.absoluteString, systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.accent)
             } else {
-                Text("No server found. Make sure the Mac is on the same WiFi and the server is running.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                Button("Retry") { bonjour.stop(); bonjour.start() }
-                    .buttonStyle(.bordered)
+                VStack(spacing: 10) {
+                    Text("No server found. Make sure your Mac is on the same WiFi and Mira is running.")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                        .multilineTextAlignment(.center)
+                    Button("Retry") { bonjour.stop(); bonjour.start() }
+                        .buttonStyle(.bordered)
+                        .tint(Color.accent)
+                }
             }
         }
     }
@@ -87,13 +138,13 @@ struct ConnectionView: View {
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .frame(maxWidth: 320)
-
             Button("Connect") {
                 guard let url = URL(string: manualURL),
                       url.scheme == "http" || url.scheme == "https" else { return }
                 saveAndConnect(url)
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.accent)
             .disabled(manualURL.isEmpty)
         }
     }

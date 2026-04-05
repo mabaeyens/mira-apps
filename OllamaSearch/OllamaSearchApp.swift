@@ -9,11 +9,13 @@ struct OllamaSearchApp: App {
     @State private var chatVM = ChatViewModel()
     private let serverManager = ServerManager.shared
     @State private var showPathPicker = false
+    /// Ensures the splash is visible for at least 1 second even on fast starts.
+    @State private var splashMinimumElapsed = false
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if case .ready = serverManager.state {
+                if case .ready = serverManager.state, splashMinimumElapsed {
                     NavigationSplitView {
                         ConversationListView(vm: chatVM)
                             .frame(minWidth: 200)
@@ -48,16 +50,29 @@ struct OllamaSearchApp: App {
             }
             .preferredColorScheme(.dark)
             .frame(minWidth: 700, minHeight: 500)
+            .task {
+                try? await Task.sleep(for: .milliseconds(1_000))
+                splashMinimumElapsed = true
+            }
         }
         .defaultSize(width: 960, height: 680)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                AboutCommand()
+            }
             CommandGroup(after: .newItem) {
                 Button("New Chat") { chatVM.newConversation() }
                     .keyboardShortcut("n", modifiers: [.command])
             }
         }
 
-        MenuBarExtra("OllamaSearch", systemImage: "brain.head.profile") {
+        Window("About Mira", id: "about") {
+            AboutView()
+                .frame(width: 480, height: 400)
+        }
+        .windowResizability(.contentSize)
+
+        MenuBarExtra("Mira", systemImage: "eye") {
             MenuBarContent(chatVM: chatVM, serverManager: serverManager)
         }
         .menuBarExtraStyle(.menu)
@@ -95,6 +110,17 @@ struct OllamaSearchApp: App {
     }
     #endif
 }
+
+// ── About command (macOS) ─────────────────────────────────────────────────────
+#if os(macOS)
+/// Placed inside CommandGroup so it can access @Environment(\.openWindow).
+private struct AboutCommand: View {
+    @Environment(\.openWindow) private var openWindow
+    var body: some View {
+        Button("About Mira") { openWindow(id: "about") }
+    }
+}
+#endif
 
 // ── macOS helpers ─────────────────────────────────────────────────────────────
 #if os(macOS)
@@ -146,6 +172,7 @@ struct iOSConnectedView: View {
     let onDisconnect: () -> Void
 
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var showAbout = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -157,11 +184,20 @@ struct iOSConnectedView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showAbout = true } label: {
+                        Image(systemName: "info.circle")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button { onDisconnect() } label: {
                         Image(systemName: "wifi.slash")
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showAbout) {
+            AboutView()
+                .presentationDetents([.medium, .large])
         }
         .task {
             APIClient.shared.baseURL = serverURL
