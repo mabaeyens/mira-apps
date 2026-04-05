@@ -2,12 +2,14 @@ import SwiftUI
 
 @main
 struct OllamaSearchApp: App {
+
+    // ── macOS ─────────────────────────────────────────────────────────────────
+    #if os(macOS)
     @State private var chatVM = ChatViewModel()
     private let serverManager = ServerManager.shared
     @State private var showPathPicker = false
 
     var body: some Scene {
-        // ── Main window ───────────────────────────────────────────────────────
         WindowGroup {
             Group {
                 if case .ready = serverManager.state {
@@ -22,8 +24,8 @@ struct OllamaSearchApp: App {
                     }
                     .task {
                         await chatVM.loadConversations()
-                        // Set initial conversation from server state
-                        if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
+                        if chatVM.currentConvId.isEmpty,
+                           let first = chatVM.conversations.first {
                             chatVM.selectConversation(first.id)
                         }
                     }
@@ -54,7 +56,6 @@ struct OllamaSearchApp: App {
             }
         }
 
-        // ── Menu bar extra ────────────────────────────────────────────────────
         MenuBarExtra("OllamaSearch", systemImage: "brain.head.profile") {
             MenuBarContent(chatVM: chatVM, serverManager: serverManager)
         }
@@ -64,31 +65,50 @@ struct OllamaSearchApp: App {
     init() {
         ServerManager.shared.start()
     }
+    #endif
+
+    // ── iOS ───────────────────────────────────────────────────────────────────
+    #if os(iOS)
+    @State private var chatVM = ChatViewModel()
+    @State private var serverURL: URL? = {
+        UserDefaults.standard.string(forKey: "serverURL").flatMap(URL.init(string:))
+    }()
+
+    var body: some Scene {
+        WindowGroup {
+            Group {
+                if let url = serverURL {
+                    iOSConnectedView(chatVM: chatVM, serverURL: url) {
+                        UserDefaults.standard.removeObject(forKey: "serverURL")
+                        serverURL = nil
+                    }
+                } else {
+                    ConnectionView { url in
+                        serverURL = url
+                        APIClient.shared.baseURL = url
+                    }
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
+    }
+    #endif
 }
 
-// ── Menu bar content ──────────────────────────────────────────────────────────
-
+// ── macOS helpers ─────────────────────────────────────────────────────────────
+#if os(macOS)
 struct MenuBarContent: View {
     let chatVM: ChatViewModel
     let serverManager: ServerManager
 
     var body: some View {
-        VStack {
-            // Server status indicator
-            Label(statusLabel, systemImage: statusIcon)
-                .foregroundStyle(statusColor)
-
-            Divider()
-
-            Button("New Chat") { chatVM.newConversation() }
-            Button("Show Window") {
-                NSApplication.shared.activate(ignoringOtherApps: true)
-            }
-
-            Divider()
-
-            Button("Quit") { NSApplication.shared.terminate(nil) }
-        }
+        Label(statusLabel, systemImage: statusIcon)
+            .foregroundStyle(statusColor)
+        Divider()
+        Button("New Chat") { chatVM.newConversation() }
+        Button("Show Window") { NSApplication.shared.activate(ignoringOtherApps: true) }
+        Divider()
+        Button("Quit") { NSApplication.shared.terminate(nil) }
     }
 
     private var statusLabel: String {
@@ -100,7 +120,6 @@ struct MenuBarContent: View {
         case .failed:          return "Server error"
         }
     }
-
     private var statusIcon: String {
         switch serverManager.state {
         case .ready:  return "circle.fill"
@@ -108,7 +127,6 @@ struct MenuBarContent: View {
         default:      return "circle.dotted"
         }
     }
-
     private var statusColor: Color {
         switch serverManager.state {
         case .ready:  return .green
@@ -117,3 +135,38 @@ struct MenuBarContent: View {
         }
     }
 }
+#endif
+
+// ── iOS helpers ───────────────────────────────────────────────────────────────
+#if os(iOS)
+struct iOSConnectedView: View {
+    let chatVM: ChatViewModel
+    let serverURL: URL
+    let onDisconnect: () -> Void
+
+    var body: some View {
+        NavigationSplitView {
+            ConversationListView(vm: chatVM)
+        } detail: {
+            ChatView(
+                vm: chatVM,
+                attachPicker: AnyView(iOSAttachButton(vm: chatVM))
+            )
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { onDisconnect() } label: {
+                        Image(systemName: "wifi.slash")
+                    }
+                }
+            }
+        }
+        .task {
+            APIClient.shared.baseURL = serverURL
+            await chatVM.loadConversations()
+            if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
+                chatVM.selectConversation(first.id)
+            }
+        }
+    }
+}
+#endif

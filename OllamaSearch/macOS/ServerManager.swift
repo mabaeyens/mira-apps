@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 /// Manages the Python FastAPI server subprocess lifecycle.
@@ -119,3 +120,5 @@ final class ServerManager {
         }
     }
 }
+
+#endif

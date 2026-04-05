@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -41,3 +42,5 @@ struct iOSAttachButton: View {
         }
     }
 }
+
+#endif

@@ -1,3 +1,4 @@
+#if os(iOS)
 import Foundation
 import Network
 
@@ -78,3 +79,5 @@ final class BonjourDiscovery {
         conn.start(queue: .main)
     }
 }
+
+#endif

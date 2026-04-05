@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -43,3 +44,5 @@ struct MacAttachButton: View {
         }
     }
 }
+
+#endif

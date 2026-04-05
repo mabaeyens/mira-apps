@@ -1,3 +1,4 @@
+#if os(macOS)
 import SwiftUI
 
 /// Startup splash shown while the Python server is coming up.
@@ -57,3 +58,5 @@ struct SplashView: View {
 #Preview {
     SplashView(state: .waitingForModel, onSetPath: {})
 }
+
+#endif

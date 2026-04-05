@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 
 /// Connection setup screen — shown when no server URL is configured.
@@ -99,3 +100,5 @@ struct ConnectionView: View {
         onConnect(url)
     }
 }
+
+#endif
