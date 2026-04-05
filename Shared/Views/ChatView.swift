@@ -1,0 +1,59 @@
+import SwiftUI
+
+/// Main chat content view — message list + input bar.
+/// Platform-specific: `attachPicker` is injected by macOS/iOS app entry points.
+struct ChatView: View {
+    @Bindable var vm: ChatViewModel
+    let attachPicker: AnyView
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // ── Status bar ────────────────────────────────────────────────
+            if vm.inputTokens > 0 || vm.outputTokens > 0 {
+                HStack {
+                    Spacer()
+                    StatusBarView(
+                        inputTokens: vm.inputTokens,
+                        outputTokens: vm.outputTokens,
+                        contextPct: vm.contextPct
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                }
+                Divider()
+            }
+
+            // ── Messages ──────────────────────────────────────────────────
+            MessageListView(
+                messages: vm.messages,
+                isStreaming: vm.isStreaming,
+                currentSearchQuery: vm.currentSearchQuery,
+                isFetching: vm.isFetching
+            )
+
+            Divider()
+
+            // ── Input bar ─────────────────────────────────────────────────
+            InputBar(
+                text: $vm.inputText,
+                stagedNames: vm.stagedAttachmentNames,
+                isStreaming: vm.isStreaming,
+                onSend: { vm.send() },
+                onStop: { vm.stopStreaming() },
+                onRemoveAttachment: { idx in
+                    vm.pendingAttachments.remove(at: idx)
+                    vm.stagedAttachmentNames.remove(at: idx)
+                },
+                attachPicker: attachPicker
+            )
+        }
+        .alert("Error", isPresented: Binding(
+            get: { vm.errorMessage != nil },
+            set: { if !$0 { vm.errorMessage = nil } }
+        )) {
+            Button("OK") { vm.errorMessage = nil }
+        } message: {
+            Text(vm.errorMessage ?? "")
+        }
+    }
+}

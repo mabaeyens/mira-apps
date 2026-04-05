@@ -1,0 +1,21 @@
+import Foundation
+
+/// A single chat bubble displayed in the UI.
+struct Message: Identifiable {
+    enum Role { case user, assistant }
+
+    let id = UUID()
+    let role: Role
+    var content: String              // grows as tokens stream in
+    var fetchContext: [FetchInfo]    // web pages read this turn
+    var ragContext: [RAGChunk]       // document chunks used this turn
+    var isStreaming: Bool             // true while tokens are still arriving
+
+    init(role: Role, content: String = "") {
+        self.role = role
+        self.content = content
+        self.fetchContext = []
+        self.ragContext = []
+        self.isStreaming = role == .assistant && content.isEmpty
+    }
+}
