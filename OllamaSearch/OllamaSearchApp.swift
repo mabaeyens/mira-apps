@@ -35,8 +35,12 @@ struct OllamaSearchApp: App {
         }
         .windowResizability(.contentSize)
 
-        MenuBarExtra("Mira", systemImage: "eye") {
+        MenuBarExtra {
             MenuBarContent(chatVM: chatVM, serverManager: ServerManager.shared)
+        } label: {
+            Image(systemName: "sparkle")
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(Color.accent)
         }
         .menuBarExtraStyle(.menu)
     }
