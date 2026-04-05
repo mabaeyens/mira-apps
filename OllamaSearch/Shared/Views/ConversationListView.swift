@@ -58,16 +58,9 @@ struct ConversationListView: View {
         }
     }
 
-    /// ISO 8601 timestamp → human-readable relative string.
-    private func relativeDate(_ iso: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let date = formatter.date(from: iso) else {
-            // Try without fractional seconds
-            formatter.formatOptions = [.withInternetDateTime]
-            guard let d2 = formatter.date(from: iso) else { return iso }
-            return RelativeDateTimeFormatter().localizedString(for: d2, relativeTo: Date())
-        }
+    /// Unix timestamp (Int) → human-readable relative string.
+    private func relativeDate(_ timestamp: Int) -> String {
+        let date = Date(timeIntervalSince1970: Double(timestamp))
         return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
     }
 }

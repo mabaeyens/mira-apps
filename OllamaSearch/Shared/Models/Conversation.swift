@@ -3,8 +3,8 @@ import Foundation
 struct Conversation: Decodable, Identifiable {
     let id: String
     let title: String
-    let createdAt: String
-    let updatedAt: String
+    let createdAt: Int      // Unix timestamp (SQLite stores INTEGER)
+    let updatedAt: Int
     let modelName: String
 
     enum CodingKeys: String, CodingKey {
