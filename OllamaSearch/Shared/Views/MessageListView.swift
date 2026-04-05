@@ -22,16 +22,18 @@ struct MessageListView: View {
     // ── Welcome empty state ───────────────────────────────────────────────────
 
     private var welcomeView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 52))
-                .foregroundStyle(Color.accent)
+        VStack(spacing: 0) {
+            Spacer()
+            MiraLogoView(size: 88)
+            Spacer().frame(height: 22)
             Text("Mira")
-                .font(.system(size: 28, weight: .semibold))
+                .font(.bookerly(size: 28, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
+            Spacer().frame(height: 8)
             Text("How can I help?")
-                .font(.title3)
+                .font(.bookerly(size: 20))
                 .foregroundStyle(Color.textSecondary)
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBg)
