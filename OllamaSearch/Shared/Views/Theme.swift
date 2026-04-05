@@ -63,7 +63,7 @@ extension MarkdownUI.Theme {
             ForegroundColor(Color.accent)
         }
         .code {
-            FontFamily(.monospaced())
+            FontFamily(.custom("Menlo"))
             FontSize(.em(0.875))
             BackgroundColor(Color.userBubbleBg)
             ForegroundColor(Color.textPrimary)
