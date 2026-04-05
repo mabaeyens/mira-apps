@@ -1,4 +1,5 @@
 import SwiftUI
+import MarkdownUI
 
 // ── Claude-inspired warm brown palette (Tailwind stone scale) ─────────────────
 //
@@ -27,4 +28,44 @@ extension Color {
             blue:  Double( hex        & 0xFF) / 255
         )
     }
+}
+
+// ── App font ──────────────────────────────────────────────────────────────────
+//
+// Uses Bookerly if it is installed on the system (download the .ttf files and
+// install via macOS Font Book — double-click the file). Falls back to the
+// system default if the font is not found.
+//
+// Font family names registered by Font Book:
+//   "Bookerly"          regular / bold
+//   "Bookerly Display"  for large headings (optional)
+
+extension Font {
+    static func bookerly(size: CGFloat, weight: Weight = .regular) -> Font {
+        .custom("Bookerly", size: size).weight(weight)
+    }
+
+    /// 16 pt Bookerly — default body size used in chat bubbles and streaming text.
+    static let chatBody = Font.bookerly(size: 16)
+}
+
+// ── Markdown theme ────────────────────────────────────────────────────────────
+
+extension MarkdownUI.Theme {
+    /// App-wide Markdown theme: Bookerly body, warm palette.
+    static let app: Self = .gitHub
+        .text {
+            FontFamily(.custom("Bookerly"))
+            FontSize(16)
+            ForegroundColor(Color.textPrimary)
+        }
+        .link {
+            ForegroundColor(Color.accent)
+        }
+        .code {
+            FontFamily(.monospaced())
+            FontSize(.em(0.875))
+            BackgroundColor(Color.userBubbleBg)
+            ForegroundColor(Color.textPrimary)
+        }
 }

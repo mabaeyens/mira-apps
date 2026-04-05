@@ -57,7 +57,7 @@ struct ConversationListView: View {
                 Text("·")
                 Text(relativeDate(conv.updatedAt))
             }
-            .font(.caption2)
+            .font(.caption)
             .foregroundStyle(Color.textSecondary)
         }
         .padding(.vertical, 6)

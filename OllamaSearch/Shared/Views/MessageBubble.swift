@@ -22,6 +22,7 @@ struct MessageBubble: View {
         HStack {
             Spacer(minLength: 72)
             Text(message.content)
+                .font(.chatBody)
                 .textSelection(.enabled)
                 .foregroundStyle(Color.textPrimary)
                 .padding(.horizontal, 14)
@@ -45,12 +46,13 @@ struct MessageBubble: View {
                 (Text(message.content) +
                  Text(cursorOn ? "_" : " ")
                     .foregroundStyle(Color.accent))
+                    .font(.chatBody)
                     .foregroundStyle(Color.textPrimary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 Markdown(message.content)
-                    .markdownTheme(.gitHub)
+                    .markdownTheme(.app)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
