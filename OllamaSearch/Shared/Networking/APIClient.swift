@@ -12,11 +12,18 @@ final class APIClient {
 
     // ── Health ────────────────────────────────────────────────────────────────
 
-    /// Returns true when the server is up and ready.
+    /// Returns true when the server at `baseURL` is up and ready.
     func isHealthy() async -> Bool {
-        guard let url = URL(string: "/health", relativeTo: baseURL) else { return false }
+        await isHealthy(at: baseURL)
+    }
+
+    /// Returns true when the server at the given URL responds within `timeout` seconds.
+    func isHealthy(at url: URL, timeout: TimeInterval = 1.5) async -> Bool {
+        guard let healthURL = URL(string: "/health", relativeTo: url) else { return false }
+        var req = URLRequest(url: healthURL)
+        req.timeoutInterval = timeout
         do {
-            let (_, response) = try await URLSession.shared.data(from: url)
+            let (_, response) = try await URLSession.shared.data(for: req)
             return (response as? HTTPURLResponse)?.statusCode == 200
         } catch {
             return false

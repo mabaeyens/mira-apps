@@ -6,7 +6,7 @@ import SwiftUI
 struct ConnectionView: View {
     @State private var bonjour = BonjourDiscovery()
     @State private var mode: Mode = .auto
-    @State private var manualURL: String = UserDefaults.standard.string(forKey: "serverURL") ?? ""
+    @State private var manualURL: String = UserDefaults.standard.string(forKey: "remoteURL") ?? ""
     @State private var showAbout = false
     let onConnect: (URL) -> Void
 
@@ -55,7 +55,7 @@ struct ConnectionView: View {
 
                 Picker("Mode", selection: $mode) {
                     Text("Auto (Bonjour)").tag(Mode.auto)
-                    Text("Manual URL").tag(Mode.manual)
+                    Text("Remote / Tailscale").tag(Mode.manual)
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: 300)
@@ -72,22 +72,6 @@ struct ConnectionView: View {
                 .frame(minHeight: 72)
 
                 Spacer()
-
-                // Tailscale hint
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "network")
-                        .font(.caption)
-                        .foregroundStyle(Color.textSecondary)
-                        .padding(.top, 1)
-                    Text("For remote access outside your home network, install Tailscale on both devices and use Manual URL with your Tailscale IP (e.g. http://100.x.x.x:8000).")
-                        .font(.caption)
-                        .foregroundStyle(Color.textSecondary)
-                }
-                .padding(12)
-                .background(Color.sidebarBg)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 28)
-                .padding(.bottom, 36)
             }
             .padding(.horizontal, 32)
         }
@@ -99,7 +83,7 @@ struct ConnectionView: View {
             if mode == .auto { bonjour.start() } else { bonjour.stop() }
         }
         .onChange(of: bonjour.discoveredURL) {
-            if let url = bonjour.discoveredURL { saveAndConnect(url) }
+            if let url = bonjour.discoveredURL { connectLocal(url) }
         }
     }
 
@@ -141,7 +125,7 @@ struct ConnectionView: View {
             Button("Connect") {
                 guard let url = URL(string: manualURL),
                       url.scheme == "http" || url.scheme == "https" else { return }
-                saveAndConnect(url)
+                connectRemote(url)
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.accent)
@@ -149,8 +133,15 @@ struct ConnectionView: View {
         }
     }
 
-    private func saveAndConnect(_ url: URL) {
-        UserDefaults.standard.set(url.absoluteString, forKey: "serverURL")
+    /// Bonjour-discovered URL — saved as the local (LAN) address.
+    private func connectLocal(_ url: URL) {
+        UserDefaults.standard.set(url.absoluteString, forKey: "localURL")
+        onConnect(url)
+    }
+
+    /// Manually entered URL (Tailscale / remote) — saved separately so auto-connect can try both.
+    private func connectRemote(_ url: URL) {
+        UserDefaults.standard.set(url.absoluteString, forKey: "remoteURL")
         onConnect(url)
     }
 }
