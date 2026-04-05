@@ -72,14 +72,15 @@ final class APIClient {
         return obj.conversations
     }
 
-    func createConversation() async throws -> Conversation {
+    func createConversation() async throws -> String {
         guard let url = URL(string: "/conversations", relativeTo: baseURL) else {
             throw APIError.invalidURL
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         let (data, _) = try await URLSession.shared.data(for: req)
-        return try JSONDecoder().decode(Conversation.self, from: data)
+        let obj = try JSONDecoder().decode(NewConversationResponse.self, from: data)
+        return obj.id
     }
 
     func deleteConversation(id: String) async throws {
@@ -151,6 +152,11 @@ enum AttachmentPayload {
 enum APIError: LocalizedError {
     case invalidURL
     var errorDescription: String? { "Invalid server URL" }
+}
+
+private struct NewConversationResponse: Decodable {
+    let id: String
+    let title: String
 }
 
 private struct ResetResponse: Decodable {

@@ -16,9 +16,15 @@ struct MessageBubble: View {
                     if message.role == .user {
                         Text(message.content)
                             .textSelection(.enabled)
+                    } else if message.isStreaming {
+                        // Plain text during streaming — Markdown() re-parses on every
+                        // token flush which causes visible stutter at 10 updates/second.
+                        Text(message.content)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         Markdown(message.content)
-                            .markdownTheme(.gitHub)   // closest to web UI styling
+                            .markdownTheme(.gitHub)
                             .textSelection(.enabled)
                     }
                 }

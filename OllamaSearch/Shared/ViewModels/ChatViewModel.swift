@@ -108,8 +108,8 @@ final class ChatViewModel {
         streamTask?.cancel()
         Task {
             do {
-                let conv = try await api.createConversation()
-                currentConvId = conv.id
+                let convId = try await api.createConversation()
+                currentConvId = convId
                 messages = []
                 inputTokens = 0; outputTokens = 0; contextPct = 0
                 await loadConversations()
@@ -157,9 +157,11 @@ final class ChatViewModel {
 
     func loadConversations() async {
         do {
-            conversations = try await api.listConversations()
+            let list = try await api.listConversations()
+            conversations = list
+            print("[sidebar] loaded \(list.count) conversation(s)")
         } catch {
-            // Non-fatal — sidebar just won't update
+            print("[sidebar] loadConversations failed: \(error)")
         }
     }
 
