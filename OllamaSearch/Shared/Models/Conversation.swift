@@ -15,16 +15,8 @@ struct Conversation: Decodable, Identifiable {
     }
 }
 
-struct ConversationMessage: Decodable, Identifiable {
-    let id: String
-    let conversationId: String
+struct ConversationMessage: Decodable {
     let role: String          // "user" | "assistant"
     let content: String
-    let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, role, content
-        case conversationId = "conversation_id"
-        case createdAt = "created_at"
-    }
+    // Server only returns {role, content} — no id/timestamps
 }
