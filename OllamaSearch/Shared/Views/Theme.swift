@@ -77,17 +77,16 @@ extension Font {
         .custom("Bookerly", size: size).weight(weight)
     }
 
-    /// 16 pt Bookerly — body size used in chat bubbles and streaming text.
-    static let chatBody = Font.bookerly(size: 16)
+    /// Body size used in chat bubbles and streaming text.
+    static let chatBody: Font = .system(size: 16)
 }
 
 // ── Markdown theme ────────────────────────────────────────────────────────────
 
 extension MarkdownUI.Theme {
-    /// App-wide Markdown theme: Bookerly body, adaptive warm palette.
+    /// App-wide Markdown theme: system body font, adaptive warm palette.
     static let app: Self = .gitHub
         .text {
-            FontFamily(.custom("Bookerly"))
             FontSize(16)
             ForegroundColor(Color.textPrimary)
         }
