@@ -43,10 +43,12 @@ For the **macOS target**:
 For the **iOS target**:
 - Add capability: **Local Network** (required for Bonjour)
 - In `Info.plist` add key `NSLocalNetworkUsageDescription` with value:
-  `"OllamaSearch needs local network access to discover the Mac server."`
+  `"MAI uses the local network to find your Mac server."`
 - Add key `NSBonjourServices` → Array → Item 0: `_ollamasearch._tcp`
 - Add key `NSAppTransportSecurity` → Dictionary → `NSAllowsLocalNetworking` → `YES`
   (allows plain HTTP to local IPs and `.local` hostnames without opening the whole app to arbitrary HTTP)
+- Add key `CFBundleDisplayName` with value `MAI`
+  (both iOS and macOS share `Info.plist`, so this applies to both)
 
 ## 4. Add SPM dependencies
 
@@ -76,5 +78,8 @@ Xcode handles this automatically if you uncheck the other target in the file ins
 3. The app launches the Python server and polls `/health`
 4. Once ready, the splash dismisses and the chat window appears
 
-For iOS: select an iPhone simulator or physical device → **⌘R**
-The connection screen appears — tap Auto (Bonjour) if on the same WiFi as the Mac.
+For iOS: select an iPhone (physical device) → **⌘R**
+The connection screen appears — tap **Auto (Bonjour)** if on the same WiFi as the Mac.
+USB is only needed for the initial install. After that:
+- Disconnect USB — the app connects over WiFi
+- Close Xcode — the macOS server app keeps running independently (do not press Stop first)
