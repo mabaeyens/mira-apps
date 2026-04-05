@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- Background: very dark warm stone, slightly lighter at center -->
+    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%"   stop-color="#272220"/>
+      <stop offset="100%" stop-color="#1C1917"/>
+    </radialGradient>
+
+    <!-- Ambient glow around the eye mark -->
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#D09268" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#D09268" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Soft-glow filter: blurs a copy and composites it under the original -->
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ── Background ─────────────────────────────────────────────────────── -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- ── Ambient halo ───────────────────────────────────────────────────── -->
+  <!-- Ellipse echoes the eye proportions: ~3:1 width-to-height -->
+  <ellipse cx="512" cy="512" rx="310" ry="155" fill="url(#halo)"/>
+
+  <!-- ── Eye outline ────────────────────────────────────────────────────── -->
+  <!--
+    Two quadratic Bézier arcs meeting at the left and right tips, just
+    like MiraEyeShape in SwiftUI. Tips sit at x=192 and x=832 (640 px span).
+    Vertical poles at y=362 (top) and y=662 (bottom), giving 150 px half-height.
+  -->
+  <path
+    d="M 192 512 Q 512 362 832 512 Q 512 662 192 512 Z"
+    fill="none"
+    stroke="#D09268"
+    stroke-width="22"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#glow)"
+  />
+
+  <!-- ── Four-pointed star (pupil) ─────────────────────────────────────── -->
+  <!--
+    Outer radius 72 px, inner radius 26 px, centred at 512 512.
+    Cardinal points: top(512,440) right(584,512) bottom(512,584) left(440,512)
+    Diagonal inners at 45°, r=26: (530,494) (530,530) (494,530) (494,494)
+  -->
+  <path
+    d="M 512 440
+       L 530 494  L 584 512
+       L 530 530  L 512 584
+       L 494 530  L 440 512
+       L 494 494  Z"
+    fill="#D09268"
+    filter="url(#glow)"
+  />
+
+  <!-- ── Corner accent dots ─────────────────────────────────────────────── -->
+  <circle cx="192" cy="512" r="8" fill="#D09268" opacity="0.45"/>
+  <circle cx="832" cy="512" r="8" fill="#D09268" opacity="0.45"/>
+</svg>
