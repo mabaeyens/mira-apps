@@ -39,13 +39,19 @@ final class ServerManager {
         guard state != .ready && state != .starting else { return }
 
         state = .starting
+
+        // Kill any orphaned server.py process from a previous app run.
+        // Xcode stop / force-quit does not kill child processes, so without
+        // this the old code keeps running and we'd get stale API behaviour.
+        let killer = Process()
+        killer.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        killer.arguments = ["-f", "server.py"]
+        try? killer.run()
+        killer.waitUntilExit()   // synchronous — completes in <100 ms
+
         Task {
-            // If something is already listening on port 8000, adopt it rather
-            // than launching a duplicate (e.g. user ran `python server.py` manually).
-            if await APIClient.shared.isHealthy() {
-                self.state = .ready
-                return
-            }
+            // Brief pause so the OS reclaims the port before we bind again
+            try? await Task.sleep(for: .milliseconds(300))
             self.launchProcess()
             self.startHealthPoll()
         }
