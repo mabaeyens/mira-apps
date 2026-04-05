@@ -15,10 +15,11 @@ struct ConnectionView: View {
         VStack(spacing: 24) {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 56))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.accent)
 
-            Text("Connect to OllamaSearch")
+            Text("Connect to MAI")
                 .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.textPrimary)
 
             Picker("Mode", selection: $mode) {
                 Text("Auto (Bonjour)").tag(Mode.auto)
@@ -40,6 +41,8 @@ struct ConnectionView: View {
                 .frame(maxWidth: 340)
         }
         .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBg)
         .onAppear {
             if mode == .auto { bonjour.start() }
         }
