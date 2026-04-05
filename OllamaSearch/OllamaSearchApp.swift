@@ -55,6 +55,7 @@ struct OllamaSearchApp: App {
     @State private var chatVM = ChatViewModel()
     @State private var activeURL: URL? = nil
     @State private var splashDone = false
+    @State private var showingConnectionSettings = false
 
     var body: some Scene {
         WindowGroup {
@@ -63,7 +64,14 @@ struct OllamaSearchApp: App {
                     iOSSplashView()
                 } else if let url = activeURL {
                     iOSConnectedView(chatVM: chatVM, serverURL: url) {
-                        activeURL = nil   // return to ConnectionView; saved URLs are kept
+                        showingConnectionSettings = true
+                    }
+                    .sheet(isPresented: $showingConnectionSettings) {
+                        ConnectionView(autoConnect: false) { newURL in
+                            APIClient.shared.baseURL = newURL
+                            activeURL = newURL
+                            showingConnectionSettings = false
+                        }
                     }
                 } else {
                     ConnectionView { url in
@@ -238,7 +246,7 @@ struct iOSSplashView: View {
 struct iOSConnectedView: View {
     let chatVM: ChatViewModel
     let serverURL: URL
-    let onDisconnect: () -> Void
+    let onSettings: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
@@ -267,8 +275,8 @@ struct iOSConnectedView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { onDisconnect() } label: {
-                        Label(connectionLabel, systemImage: connectionIcon)
+                    Button { onSettings() } label: {
+                        Label(connectionLabel, systemImage: "gear")
                             .labelStyle(.titleAndIcon)
                             .font(.caption)
                     }
