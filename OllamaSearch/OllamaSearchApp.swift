@@ -145,8 +145,10 @@ struct iOSConnectedView: View {
     let serverURL: URL
     let onDisconnect: () -> Void
 
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             ConversationListView(vm: chatVM)
         } detail: {
             ChatView(
@@ -166,6 +168,11 @@ struct iOSConnectedView: View {
             await chatVM.loadConversations()
             if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
                 chatVM.selectConversation(first.id)
+            }
+        }
+        .onChange(of: chatVM.currentConvId) { _, newId in
+            if !newId.isEmpty {
+                columnVisibility = .detailOnly
             }
         }
     }
