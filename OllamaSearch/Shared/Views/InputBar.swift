@@ -28,7 +28,7 @@ struct InputBar: View {
             }
 
             // ── Input row inside a rounded bordered container ─────────────
-            HStack(alignment: .bottom, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 attachPicker
 
                 TextField("Message…", text: $text, axis: .vertical)
