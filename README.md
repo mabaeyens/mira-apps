@@ -12,6 +12,9 @@ Mira runs entirely on your own hardware — no cloud, no subscription, no data l
 - **Conversation history** — persistent, named conversations with a sidebar
 - **Markdown rendering** — code blocks, tables, and inline formatting via MarkdownUI
 - **iOS companion** — iPhone app connects to the Mac server over WiFi (Bonjour) or remotely (Tailscale)
+- **Splash screens** — animated Mira logo while the server and model load (macOS and iOS)
+- **About screen** — accessible from the macOS app menu and iOS info button
+- **Adaptive app icon** — light, dark, and tinted variants for iOS 18 home screen modes
 - **Dark & light modes** — warm stone palette that adapts to system appearance
 
 ## Requirements
@@ -30,12 +33,12 @@ Mira runs entirely on your own hardware — no cloud, no subscription, no data l
 ```
 OllamaSearch/
 ├── Shared/          # Views, ViewModels, Models, Networking — runs on both platforms
-│   ├── Views/
+│   ├── Views/       # ChatView, MiraLogo, AboutView, SplashView helpers, …
 │   ├── ViewModels/
 │   ├── Models/
 │   └── Networking/
-├── macOS/           # macOS-only: ServerManager, splash, file picker
-├── iOS/             # iOS-only: Bonjour discovery, connection screen, file picker
+├── macOS/           # ServerManager, MacRootView, SplashView, file picker
+├── iOS/             # Bonjour discovery, ConnectionView, file picker
 └── Assets.xcassets/ # App icon (light / dark / tinted), accent colour
 Design/
 └── AppIcon.svg      # Source SVG for the app icon (eye + star mark)
@@ -51,6 +54,14 @@ iPhone (Mira iOS)
 ```
 
 The macOS app spawns and supervises the Python server as a subprocess. The iOS app discovers it via Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale IP.
+
+**The app requires the Mac server to run.** There is no standalone offline mode — inference happens on the Mac. For access outside your home network, install [Tailscale](https://tailscale.com) on both devices and use the **Manual URL** option with your Tailscale IP.
+
+## iOS icon appearance
+
+iOS 18 manages icon appearance (light/dark/tinted) separately from system dark mode. To see the dark icon variant:
+
+> Home screen → long-press → **Customize** → select **Dark** or **Automatic**
 
 ## Building
 
