@@ -6,12 +6,14 @@ struct Conversation: Decodable, Identifiable {
     let createdAt: Int      // Unix timestamp (SQLite stores INTEGER)
     let updatedAt: Int
     let modelName: String
+    let messageCount: Int   // total messages stored (user + assistant)
 
     enum CodingKeys: String, CodingKey {
         case id, title
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
-        case modelName = "model_name"
+        case createdAt    = "created_at"
+        case updatedAt    = "updated_at"
+        case modelName    = "model_name"
+        case messageCount = "message_count"
     }
 }
 

@@ -1,66 +1,81 @@
 import SwiftUI
-import MarkdownUI    // from swift-markdown-ui
+import MarkdownUI
 
-/// A single chat bubble — user (right, blue) or assistant (left, dark).
-/// Markdown is rendered via swift-markdown-ui. Panels appear beneath the text.
+/// A single chat turn. User messages are right-aligned warm bubbles.
+/// Assistant messages are full-width with no bubble — text sits directly on the
+/// page background. During streaming a blinking DOS-style `_` cursor is shown.
 struct MessageBubble: View {
     let message: Message
+    @State private var cursorOn = true
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            if message.role == .user { Spacer(minLength: 60) }
+        if message.role == .user {
+            userBubble
+        } else {
+            assistantBubble
+        }
+    }
 
-            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
-                // ── Bubble content ────────────────────────────────────────
-                Group {
-                    if message.role == .user {
-                        Text(message.content)
-                            .textSelection(.enabled)
-                    } else if message.isStreaming {
-                        // Plain text during streaming — Markdown() re-parses on every
-                        // token flush which causes visible stutter at 10 updates/second.
-                        Text(message.content)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Markdown(message.content)
-                            .markdownTheme(.gitHub)
-                            .textSelection(.enabled)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+    // ── User bubble ───────────────────────────────────────────────────────────
+
+    private var userBubble: some View {
+        HStack {
+            Spacer(minLength: 72)
+            Text(message.content)
+                .textSelection(.enabled)
+                .foregroundStyle(Color.textPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(message.role == .user
-                              ? Color.blue
-                              : Color(white: 0.15))
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(Color.userBubbleBg)
                 )
-                .foregroundStyle(Color.white)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 4)
+    }
 
-                // ── Streaming cursor ──────────────────────────────────────
-                if message.isStreaming {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .padding(.leading, 4)
-                }
+    // ── Assistant bubble ──────────────────────────────────────────────────────
 
-                // ── Sources panel ─────────────────────────────────────────
-                if !message.fetchContext.isEmpty {
-                    SourcesPanel(fetches: message.fetchContext)
-                        .frame(maxWidth: 420, alignment: .leading)
-                }
-
-                // ── RAG panel ─────────────────────────────────────────────
-                if !message.ragContext.isEmpty {
-                    RAGPanel(chunks: message.ragContext)
-                        .frame(maxWidth: 420, alignment: .leading)
-                }
+    private var assistantBubble: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Content — plain Text while streaming (fast, no re-parse),
+            // full Markdown once done.
+            if message.isStreaming {
+                (Text(message.content) +
+                 Text(cursorOn ? "_" : " ")
+                    .foregroundStyle(Color.accent))
+                    .foregroundStyle(Color.textPrimary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Markdown(message.content)
+                    .markdownTheme(.gitHub)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            if message.role == .assistant { Spacer(minLength: 60) }
+            // Sources and RAG panels (appear below the answer)
+            if !message.fetchContext.isEmpty {
+                SourcesPanel(fetches: message.fetchContext)
+            }
+            if !message.ragContext.isEmpty {
+                RAGPanel(chunks: message.ragContext)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        // Cursor blink: task re-fires whenever isStreaming toggles.
+        // When streaming ends the task is cancelled, cursorOn is reset to false.
+        .task(id: message.isStreaming) {
+            guard message.isStreaming else { cursorOn = false; return }
+            cursorOn = true
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(530))
+                guard !Task.isCancelled else { break }
+                cursorOn.toggle()
+            }
+            cursorOn = false
+        }
     }
 }

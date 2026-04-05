@@ -11,10 +11,10 @@ struct InputBar: View {
     let onSend: () -> Void
     let onStop: () -> Void
     let onRemoveAttachment: (Int) -> Void
-    let attachPicker: AnyView   // platform-specific picker injected from parent
+    let attachPicker: AnyView
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             // ── Staged attachment chips ───────────────────────────────────
             if !stagedNames.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -23,75 +23,92 @@ struct InputBar: View {
                             attachmentChip(name: name, index: idx)
                         }
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 16)
                 }
             }
 
-            // ── Input row ─────────────────────────────────────────────────
-            HStack(alignment: .bottom, spacing: 8) {
+            // ── Input row inside a rounded bordered container ─────────────
+            HStack(alignment: .bottom, spacing: 10) {
                 attachPicker
 
                 TextField("Message…", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .textFieldStyle(.plain)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 4)
+                    .foregroundStyle(Color.textPrimary)
+                    .padding(.vertical, 2)
                     .onSubmit {
                         guard !isStreaming else { return }
                         onSend()
                     }
-                    // Cmd+Enter sends on macOS
                     .keyboardShortcut(.return, modifiers: .command)
 
-                if isStreaming {
-                    Button(action: onStop) {
-                        Image(systemName: "stop.fill")
-                            .foregroundStyle(.white)
-                            .frame(width: 32, height: 32)
-                            .background(Circle().fill(Color.red))
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    Button(action: onSend) {
-                        Image(systemName: "arrow.up")
-                            .foregroundStyle(.white)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                Circle().fill(
-                                    text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                        ? Color.gray
-                                        : Color.blue
-                                )
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
+                actionButton
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.surfaceBg)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(Color.borderSubtle.opacity(0.6), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
         }
-        .background(.regularMaterial)
+        .background(Color.appBg)
     }
+
+    // ── Send / Stop button ────────────────────────────────────────────────────
+
+    @ViewBuilder
+    private var actionButton: some View {
+        if isStreaming {
+            Button(action: onStop) {
+                Image(systemName: "stop.fill")
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.red.opacity(0.85)))
+            }
+            .buttonStyle(.plain)
+        } else {
+            let canSend = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            Button(action: onSend) {
+                Image(systemName: "arrow.up")
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(canSend ? Color.accent : Color.borderSubtle))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSend)
+        }
+    }
+
+    // ── Attachment chip ───────────────────────────────────────────────────────
 
     private func attachmentChip(name: String, index: Int) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "doc.fill")
                 .font(.caption2)
+                .foregroundStyle(Color.accent)
             Text(name)
                 .font(.caption)
                 .lineLimit(1)
+                .foregroundStyle(Color.textPrimary)
             Button {
                 onRemoveAttachment(index)
             } label: {
                 Image(systemName: "xmark")
                     .font(.caption2)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
-            Capsule().fill(Color.secondary.opacity(0.15))
+            Capsule().fill(Color.surfaceBg)
+                .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
         )
     }
 }

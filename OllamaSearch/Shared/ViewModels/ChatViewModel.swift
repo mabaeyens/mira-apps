@@ -214,7 +214,8 @@ final class ChatViewModel {
                 conversations[idx] = Conversation(
                     id: old.id, title: title,
                     createdAt: old.createdAt, updatedAt: old.updatedAt,
-                    modelName: old.modelName
+                    modelName: old.modelName,
+                    messageCount: old.messageCount
                 )
             } else {
                 Task { await loadConversations() }

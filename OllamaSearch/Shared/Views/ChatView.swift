@@ -20,7 +20,8 @@ struct ChatView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
                 }
-                Divider()
+                .background(Color.appBg)
+                Color.borderSubtle.frame(height: 1)
             }
 
             // ── Messages ──────────────────────────────────────────────────
@@ -31,7 +32,7 @@ struct ChatView: View {
                 isFetching: vm.isFetching
             )
 
-            Divider()
+            Color.borderSubtle.frame(height: 1)
 
             // ── Input bar ─────────────────────────────────────────────────
             InputBar(
@@ -47,6 +48,7 @@ struct ChatView: View {
                 attachPicker: attachPicker
             )
         }
+        .background(Color.appBg)
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.errorMessage = nil } }

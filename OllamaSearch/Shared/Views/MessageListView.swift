@@ -1,11 +1,7 @@
 import SwiftUI
 
 /// Scrollable list of chat bubbles with pin-to-bottom auto-scroll.
-///
-/// Scroll behaviour mirrors the web UI:
-/// - Auto-scrolls to bottom as tokens arrive.
-/// - User scrolling up unpins auto-scroll.
-/// - Reaching within 80pt of bottom re-pins.
+/// Shows a welcome screen when the conversation is empty.
 struct MessageListView: View {
     let messages: [Message]
     let isStreaming: Bool
@@ -16,6 +12,34 @@ struct MessageListView: View {
     private let bottomAnchor = "bottom"
 
     var body: some View {
+        if messages.isEmpty && !isStreaming {
+            welcomeView
+        } else {
+            scrollingMessages
+        }
+    }
+
+    // ── Welcome empty state ───────────────────────────────────────────────────
+
+    private var welcomeView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 52))
+                .foregroundStyle(Color.accent)
+            Text("OllamaSearch")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+            Text("How can I help?")
+                .font(.title3)
+                .foregroundStyle(Color.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBg)
+    }
+
+    // ── Message list ──────────────────────────────────────────────────────────
+
+    private var scrollingMessages: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
@@ -31,7 +55,6 @@ struct MessageListView: View {
                         activityRow(icon: "arrow.down.circle", text: "Fetching page…")
                     }
 
-                    // Invisible anchor for scroll-to-bottom
                     Color.clear.frame(height: 1).id(bottomAnchor)
                 }
             }
@@ -47,7 +70,6 @@ struct MessageListView: View {
                     .onChanged { _ in scrollPinned = false }
             )
             .overlay(alignment: .bottom) {
-                // Re-pin button — appears when user has scrolled up
                 if !scrollPinned && !messages.isEmpty {
                     Button {
                         scrollPinned = true
@@ -57,10 +79,12 @@ struct MessageListView: View {
                             .font(.caption)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(Color.accent)
                     .padding(.bottom, 8)
                 }
             }
         }
+        .background(Color.appBg)
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy) {
@@ -77,8 +101,8 @@ struct MessageListView: View {
             ProgressView().scaleEffect(0.7)
         }
         .font(.caption)
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 16)
+        .foregroundStyle(Color.textSecondary)
+        .padding(.horizontal, 20)
         .padding(.vertical, 4)
     }
 }

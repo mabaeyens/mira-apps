@@ -1,47 +1,67 @@
 import SwiftUI
 
 /// Sidebar list of past conversations.
-/// Mirrors the web UI sidebar: title (ellipsis overflow) + relative timestamp + delete on hover.
 struct ConversationListView: View {
     @Bindable var vm: ChatViewModel
 
     var body: some View {
-        List(selection: Binding(
-            get: { vm.currentConvId },
-            set: { id in if let id { vm.selectConversation(id) } }
+        List(selection: Binding<String?>(
+            get: { vm.currentConvId.isEmpty ? nil : vm.currentConvId },
+            set: { if let id = $0 { vm.selectConversation(id) } }
         )) {
             ForEach(vm.conversations) { conv in
                 conversationRow(conv)
                     .tag(conv.id)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
             }
         }
         .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .background(Color.sidebarBg)
         .safeAreaInset(edge: .top) {
-            Button(action: { vm.newConversation() }) {
-                Label("New Chat", systemImage: "square.and.pencil")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.borderless)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            newChatButton
         }
     }
 
-    private func conversationRow(_ conv: Conversation) -> some View {
-        HStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(conv.title)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                Text(relativeDate(conv.updatedAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+    // ── New Chat button ───────────────────────────────────────────────────────
+
+    private var newChatButton: some View {
+        Button(action: { vm.newConversation() }) {
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.pencil")
+                    .foregroundStyle(Color.accent)
+                Text("New Chat")
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
             }
-            Spacer()
-            // Delete button (visible on hover via .swipeActions on iOS,
-            // shown as ✕ button on macOS via contextMenu or hover)
+            .font(.subheadline.weight(.medium))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
+        .buttonStyle(.plain)
+        .background(Color.sidebarBg)
+    }
+
+    // ── Conversation row ──────────────────────────────────────────────────────
+
+    private func conversationRow(_ conv: Conversation) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(conv.title)
+                .font(.subheadline)
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            HStack(spacing: 4) {
+                Text("\(conv.messageCount) msg")
+                Text("·")
+                Text(relativeDate(conv.updatedAt))
+            }
+            .font(.caption2)
+            .foregroundStyle(Color.textSecondary)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 4)
         .contextMenu {
             Button(role: .destructive) {
                 vm.deleteConversation(conv.id)
@@ -58,7 +78,8 @@ struct ConversationListView: View {
         }
     }
 
-    /// Unix timestamp (Int) → human-readable relative string.
+    // ── Date helper ───────────────────────────────────────────────────────────
+
     private func relativeDate(_ timestamp: Int) -> String {
         let date = Date(timeIntervalSince1970: Double(timestamp))
         return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
