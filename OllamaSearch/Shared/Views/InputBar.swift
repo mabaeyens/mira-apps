@@ -34,6 +34,7 @@ struct InputBar: View {
                 TextField("Message…", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .textFieldStyle(.plain)
+                    .font(.chatBody)
                     .foregroundStyle(Color.textPrimary)
                     .padding(.vertical, 2)
                     .onSubmit {
@@ -55,6 +56,7 @@ struct InputBar: View {
                     )
             )
             .padding(.horizontal, 16)
+            .padding(.top, 10)
             .padding(.bottom, 12)
         }
         .background(Color.appBg)
