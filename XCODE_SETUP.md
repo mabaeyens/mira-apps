@@ -1,6 +1,6 @@
 # Xcode Project Setup
 
-Follow these steps once Xcode is installed.
+Follow these steps once Xcode is installed and you have cloned the repo.
 
 ## 1. Create the Xcode project
 
@@ -22,64 +22,54 @@ Xcode will create placeholder `ContentView.swift` and `OllamaSearchApp.swift` fi
 3. Select all folders (`Shared/`, `macOS/`, `iOS/`) — check "Create groups"
 4. Click **Add**
 
-## 3. Configure targets
+If any file shows a **?** badge after adding, right-click it → **Integrate > Add** to register it with the target.
 
-The Xcode project has two targets: the macOS app and the iOS app.
+## 3. Configure the target
 
-For **each target**:
+This is a **single multiplatform target** (not separate macOS/iOS targets).
+
 1. Select the target in Project Settings
 2. **General > Deployment Info**: set iOS 26.0 / macOS 26.0
 3. **Build Settings > Swift Language Version**: Swift 6
+4. **Signing & Capabilities**: sign with your Apple ID (personal team)
+5. Add capability: **Network** (macOS — for HTTP calls to localhost)
+6. Add capability: **Local Network** (iOS — required for Bonjour)
 
-Assign files to the right targets:
-- `Shared/**` → both targets
-- `macOS/**` → macOS target only
-- `iOS/**` → iOS target only
+### Info.plist keys (iOS)
 
-For the **macOS target**:
-- **Signing & Capabilities**: sign with your Apple ID (personal team)
-- Add capability: **Network** (for HTTP calls to localhost)
-
-For the **iOS target**:
-- Add capability: **Local Network** (required for Bonjour)
-- In `Info.plist` add key `NSLocalNetworkUsageDescription` with value:
-  `"MAI uses the local network to find your Mac server."`
-- Add key `NSBonjourServices` → Array → Item 0: `_ollamasearch._tcp`
-- Add key `NSAppTransportSecurity` → Dictionary → `NSAllowsLocalNetworking` → `YES`
-  (allows plain HTTP to local IPs and `.local` hostnames without opening the whole app to arbitrary HTTP)
-- Add key `CFBundleDisplayName` with value `MAI`
-  (both iOS and macOS share `Info.plist`, so this applies to both)
+| Key | Value |
+|-----|-------|
+| `NSLocalNetworkUsageDescription` | `Mira uses the local network to find your Mac server.` |
+| `NSBonjourServices` | Array → Item 0: `_ollamasearch._tcp` |
+| `NSAppTransportSecurity` → `NSAllowsLocalNetworking` | `YES` |
+| `CFBundleDisplayName` | `Mira` |
 
 ## 4. Add SPM dependencies
 
 1. **File > Add Package Dependencies…**
 2. Add: `https://github.com/gonzalezreal/swift-markdown-ui` (from: 2.4.0)
 3. Add: `https://github.com/raspu/Highlightr` (from: 2.2.0)
-4. When prompted, add `MarkdownUI` to both targets; add `Highlightr` to both targets
+4. When prompted, add both packages to the target
 
-## 5. Set the macOS app entry point
+## 5. Build and run
 
-The macOS target must use `macOS/OllamaSearchApp.swift` as its `@main` struct.
-The iOS target must use `iOS/OllamaSearchApp.swift`.
+### macOS
 
-Because both files declare `@main`, you need to:
-- In Build Settings for each target, set **Swift Active Compilation Conditions**:
-  - macOS target: `MACOS`
-  - iOS target: `IOS`
-- Wrap `@main` in each file with `#if MACOS` / `#if IOS`
-
-OR (simpler): rename `OllamaSearchApp.swift` to use different target membership.
-Xcode handles this automatically if you uncheck the other target in the file inspector.
-
-## 6. Build and run
-
-1. Select the macOS scheme → **⌘R**
-2. First run: a file picker opens asking for the `ollama-web-search` project folder
-3. The app launches the Python server and polls `/health`
+1. Select the **My Mac** destination → **⌘R**
+2. First run: a file picker opens — choose the Python server project folder
+3. The app launches the server subprocess and polls `/health`
 4. Once ready, the splash dismisses and the chat window appears
 
-For iOS: select an iPhone (physical device) → **⌘R**
-The connection screen appears — tap **Auto (Bonjour)** if on the same WiFi as the Mac.
-USB is only needed for the initial install. After that:
+### iOS
+
+1. Connect your iPhone via USB
+2. Select it as the destination → **⌘R**
+3. On first launch, trust the developer certificate:
+   **Settings → General → VPN & Device Management → [your Apple ID] → Trust**
+4. The connection screen appears — tap **Auto (Bonjour)** if on the same WiFi as the Mac
+
+After the initial install, USB is no longer needed:
 - Disconnect USB — the app connects over WiFi
-- Close Xcode — the macOS server app keeps running independently (do not press Stop first)
+- Close Xcode — the macOS app keeps the server running independently
+
+For remote access (outside home network), install [Tailscale](https://tailscale.com) on both devices and use **Manual URL** with your Tailscale IP (e.g. `http://100.x.x.x:8000`).
