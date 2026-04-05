@@ -53,9 +53,7 @@ struct OllamaSearchApp: App {
     // ── iOS ───────────────────────────────────────────────────────────────────
     #if os(iOS)
     @State private var chatVM = ChatViewModel()
-    @State private var serverURL: URL? = {
-        UserDefaults.standard.string(forKey: "serverURL").flatMap(URL.init(string:))
-    }()
+    @State private var activeURL: URL? = nil
     @State private var splashDone = false
 
     var body: some Scene {
@@ -63,24 +61,42 @@ struct OllamaSearchApp: App {
             Group {
                 if !splashDone {
                     iOSSplashView()
-                } else if let url = serverURL {
+                } else if let url = activeURL {
                     iOSConnectedView(chatVM: chatVM, serverURL: url) {
-                        UserDefaults.standard.removeObject(forKey: "serverURL")
-                        serverURL = nil
+                        activeURL = nil   // return to ConnectionView; saved URLs are kept
                     }
                 } else {
                     ConnectionView { url in
-                        serverURL = url
                         APIClient.shared.baseURL = url
+                        activeURL = url
                     }
                 }
             }
             .preferredColorScheme(.dark)
             .task {
-                try? await Task.sleep(for: .milliseconds(1_400))
-                withAnimation(.easeOut(duration: 0.4)) { splashDone = true }
+                // Splash minimum and auto-connect run in parallel.
+                async let splashWait: Void = Task.sleep(for: .milliseconds(1_400))
+                async let found = autoConnect()
+                let (_, url) = await (try? splashWait, found)
+                withAnimation(.easeOut(duration: 0.4)) {
+                    if let url {
+                        APIClient.shared.baseURL = url
+                        activeURL = url
+                    }
+                    splashDone = true
+                }
             }
         }
+    }
+
+    /// Tries the saved local URL first (1.5 s timeout), then the saved remote URL.
+    /// Returns the first one that responds, or nil if neither is reachable.
+    private func autoConnect() async -> URL? {
+        let localURL  = UserDefaults.standard.string(forKey: "localURL").flatMap(URL.init(string:))
+        let remoteURL = UserDefaults.standard.string(forKey: "remoteURL").flatMap(URL.init(string:))
+        if let local = localURL, await APIClient.shared.isHealthy(at: local) { return local }
+        if let remote = remoteURL, await APIClient.shared.isHealthy(at: remote) { return remote }
+        return nil
     }
     #endif
 }
@@ -228,6 +244,14 @@ struct iOSConnectedView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @State private var showAbout = false
 
+    /// "Tailscale" for 100.x addresses, "Local" otherwise.
+    private var connectionLabel: String {
+        serverURL.host.map { $0.hasPrefix("100.") ? "Tailscale" : "Local" } ?? "Server"
+    }
+    private var connectionIcon: String {
+        connectionLabel == "Tailscale" ? "network" : "wifi"
+    }
+
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ConversationListView(vm: chatVM)
@@ -244,7 +268,9 @@ struct iOSConnectedView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { onDisconnect() } label: {
-                        Image(systemName: "wifi.slash")
+                        Label(connectionLabel, systemImage: connectionIcon)
+                            .labelStyle(.titleAndIcon)
+                            .font(.caption)
                     }
                 }
             }
