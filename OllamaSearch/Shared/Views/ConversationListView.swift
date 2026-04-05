@@ -35,7 +35,7 @@ struct ConversationListView: View {
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
             }
-            .font(.subheadline.weight(.medium))
+            .font(.bookerly(size: 14, weight: .medium))
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
         }
@@ -48,7 +48,7 @@ struct ConversationListView: View {
     private func conversationRow(_ conv: Conversation) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(conv.title)
-                .font(.subheadline)
+                .font(.bookerly(size: 14))
                 .foregroundStyle(Color.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -57,7 +57,7 @@ struct ConversationListView: View {
                 Text("·")
                 Text(relativeDate(conv.updatedAt))
             }
-            .font(.caption)
+            .font(.bookerly(size: 12))
             .foregroundStyle(Color.textSecondary)
         }
         .padding(.vertical, 6)
