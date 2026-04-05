@@ -14,7 +14,9 @@ final class BonjourDiscovery {
     var discoveredURL: URL?
     var isSearching = false
 
-    private var browser: NWBrowser?
+    // nonisolated(unsafe): only ever mutated on MainActor; needs to be
+    // accessible from nonisolated deinit to cancel the browser on dealloc.
+    nonisolated(unsafe) private var browser: NWBrowser?
 
     deinit {
         browser?.cancel()
@@ -43,8 +45,7 @@ final class BonjourDiscovery {
                 guard let self else { return }
                 // Take the first result — for personal use there's only one server
                 if let result = results.first,
-                   case .service(let name, _, _, _) = result.endpoint {
-                    // Resolve host + port
+                   case .service = result.endpoint {
                     self.resolveEndpoint(result.endpoint)
                 }
             }
