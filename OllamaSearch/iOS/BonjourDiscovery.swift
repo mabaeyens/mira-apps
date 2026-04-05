@@ -14,13 +14,8 @@ final class BonjourDiscovery {
     var discoveredURL: URL?
     var isSearching = false
 
-    // nonisolated(unsafe): only ever mutated on MainActor; needs to be
-    // accessible from nonisolated deinit to cancel the browser on dealloc.
-    nonisolated(unsafe) private var browser: NWBrowser?
-
-    deinit {
-        browser?.cancel()
-    }
+    private var browser: NWBrowser?
+    // Cancellation happens in stop(), called from the view's onDisappear.
 
     func start() {
         guard browser == nil else { return }
