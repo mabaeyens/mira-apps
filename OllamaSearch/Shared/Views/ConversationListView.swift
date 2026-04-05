@@ -19,6 +19,7 @@ struct ConversationListView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .background(Color.sidebarBg)
+        .navigationTitle("Mira")
         .safeAreaInset(edge: .top) {
             newChatButton
         }

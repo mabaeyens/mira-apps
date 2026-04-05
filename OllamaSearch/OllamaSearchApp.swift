@@ -7,53 +7,16 @@ struct OllamaSearchApp: App {
     // ── macOS ─────────────────────────────────────────────────────────────────
     #if os(macOS)
     @State private var chatVM = ChatViewModel()
-    private let serverManager = ServerManager.shared
     @State private var showPathPicker = false
-    /// Ensures the splash is visible for at least 1 second even on fast starts.
-    @State private var splashMinimumElapsed = false
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if case .ready = serverManager.state, splashMinimumElapsed {
-                    NavigationSplitView {
-                        ConversationListView(vm: chatVM)
-                            .frame(minWidth: 200)
-                    } detail: {
-                        ChatView(
-                            vm: chatVM,
-                            attachPicker: AnyView(MacAttachButton(vm: chatVM))
-                        )
-                    }
-                    .task {
-                        await chatVM.loadConversations()
-                        if chatVM.currentConvId.isEmpty,
-                           let first = chatVM.conversations.first {
-                            chatVM.selectConversation(first.id)
-                        }
-                    }
-                } else {
-                    SplashView(state: serverManager.state) {
-                        showPathPicker = true
-                    }
-                    .fileImporter(
-                        isPresented: $showPathPicker,
-                        allowedContentTypes: [.folder]
-                    ) { result in
-                        if case .success(let url) = result {
-                            serverManager.projectPath = url.path
-                            UserDefaults.standard.set(url.path, forKey: "projectPath")
-                            serverManager.start()
-                        }
-                    }
-                }
-            }
+            MacRootView(
+                chatVM: chatVM,
+                showPathPicker: $showPathPicker
+            )
             .preferredColorScheme(.dark)
             .frame(minWidth: 700, minHeight: 500)
-            .task {
-                try? await Task.sleep(for: .milliseconds(1_000))
-                splashMinimumElapsed = true
-            }
         }
         .defaultSize(width: 960, height: 680)
         .commands {
@@ -73,7 +36,7 @@ struct OllamaSearchApp: App {
         .windowResizability(.contentSize)
 
         MenuBarExtra("Mira", systemImage: "eye") {
-            MenuBarContent(chatVM: chatVM, serverManager: serverManager)
+            MenuBarContent(chatVM: chatVM, serverManager: ServerManager.shared)
         }
         .menuBarExtraStyle(.menu)
     }
@@ -89,11 +52,14 @@ struct OllamaSearchApp: App {
     @State private var serverURL: URL? = {
         UserDefaults.standard.string(forKey: "serverURL").flatMap(URL.init(string:))
     }()
+    @State private var splashDone = false
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if let url = serverURL {
+                if !splashDone {
+                    iOSSplashView()
+                } else if let url = serverURL {
                     iOSConnectedView(chatVM: chatVM, serverURL: url) {
                         UserDefaults.standard.removeObject(forKey: "serverURL")
                         serverURL = nil
@@ -106,6 +72,10 @@ struct OllamaSearchApp: App {
                 }
             }
             .preferredColorScheme(.dark)
+            .task {
+                try? await Task.sleep(for: .milliseconds(1_400))
+                withAnimation(.easeOut(duration: 0.4)) { splashDone = true }
+            }
         }
     }
     #endif
@@ -124,6 +94,59 @@ private struct AboutCommand: View {
 
 // ── macOS helpers ─────────────────────────────────────────────────────────────
 #if os(macOS)
+
+/// Root macOS view. Lives as a proper View (not inline in App.body) so that
+/// @Observable property access on ServerManager is correctly tracked and
+/// triggers re-renders when state changes.
+struct MacRootView: View {
+    var chatVM: ChatViewModel
+    @Binding var showPathPicker: Bool
+
+    private let serverManager = ServerManager.shared
+    @State private var splashMinimumElapsed = false
+
+    var body: some View {
+        Group {
+            if case .ready = serverManager.state, splashMinimumElapsed {
+                NavigationSplitView {
+                    ConversationListView(vm: chatVM)
+                        .frame(minWidth: 200)
+                } detail: {
+                    ChatView(
+                        vm: chatVM,
+                        attachPicker: AnyView(MacAttachButton(vm: chatVM))
+                    )
+                }
+                .task {
+                    await chatVM.loadConversations()
+                    if chatVM.currentConvId.isEmpty,
+                       let first = chatVM.conversations.first {
+                        chatVM.selectConversation(first.id)
+                    }
+                }
+            } else {
+                SplashView(state: serverManager.state) {
+                    showPathPicker = true
+                }
+                .fileImporter(
+                    isPresented: $showPathPicker,
+                    allowedContentTypes: [.folder]
+                ) { result in
+                    if case .success(let url) = result {
+                        serverManager.projectPath = url.path
+                        UserDefaults.standard.set(url.path, forKey: "projectPath")
+                        serverManager.start()
+                    }
+                }
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .milliseconds(1_000))
+            splashMinimumElapsed = true
+        }
+    }
+}
+
 struct MenuBarContent: View {
     let chatVM: ChatViewModel
     let serverManager: ServerManager
@@ -166,11 +189,38 @@ struct MenuBarContent: View {
 
 // ── iOS helpers ───────────────────────────────────────────────────────────────
 #if os(iOS)
+struct iOSSplashView: View {
+    var body: some View {
+        ZStack {
+            Color.appBg.ignoresSafeArea()
+            RadialGradient(
+                colors: [Color.accent.opacity(0.10), .clear],
+                center: .center,
+                startRadius: 0,
+                endRadius: 260
+            )
+            .ignoresSafeArea()
+            VStack(spacing: 0) {
+                Spacer()
+                MiraLogoView(size: 100, animated: true)
+                Spacer().frame(height: 24)
+                Text("Mira")
+                    .font(.bookerly(size: 34, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+            }
+        }
+    }
+}
+#endif
+
+#if os(iOS)
 struct iOSConnectedView: View {
     let chatVM: ChatViewModel
     let serverURL: URL
     let onDisconnect: () -> Void
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @State private var showAbout = false
 
@@ -207,7 +257,7 @@ struct iOSConnectedView: View {
             }
         }
         .onChange(of: chatVM.currentConvId) { _, newId in
-            if !newId.isEmpty {
+            if !newId.isEmpty, horizontalSizeClass != .compact {
                 columnVisibility = .detailOnly
             }
         }
