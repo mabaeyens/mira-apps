@@ -8,11 +8,11 @@
 
     <!-- Ambient glow around the eye mark -->
     <radialGradient id="halo" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"   stop-color="#D09268" stop-opacity="0.32"/>
+      <stop offset="0%"   stop-color="#D09268" stop-opacity="0.40"/>
       <stop offset="100%" stop-color="#D09268" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Soft-glow filter: blurs a copy and composites it under the original -->
+    <!-- Soft-glow filter -->
     <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="blur"/>
       <feMerge>
@@ -22,46 +22,45 @@
     </filter>
   </defs>
 
-  <!-- ── Background ─────────────────────────────────────────────────────── -->
+  <!-- Background -->
   <rect width="1024" height="1024" fill="url(#bg)"/>
 
-  <!-- ── Ambient halo ───────────────────────────────────────────────────── -->
-  <!-- Ellipse echoes the eye proportions: ~3:1 width-to-height -->
-  <ellipse cx="512" cy="512" rx="310" ry="155" fill="url(#halo)"/>
+  <!-- Ambient halo -->
+  <ellipse cx="512" cy="512" rx="340" ry="200" fill="url(#halo)"/>
 
-  <!-- ── Eye outline ────────────────────────────────────────────────────── -->
+  <!-- Eye shape: filled + stroked for visibility at small sizes -->
   <!--
-    Two quadratic Bézier arcs meeting at the left and right tips, just
-    like MiraEyeShape in SwiftUI. Tips sit at x=192 and x=832 (640 px span).
-    Vertical poles at y=362 (top) and y=662 (bottom), giving 150 px half-height.
+    Tips at x=192 / x=832 (640 px span).
+    Control points at y=330 (top) and y=694 (bottom) — 182 px half-height.
   -->
   <path
-    d="M 192 512 Q 512 362 832 512 Q 512 662 192 512 Z"
-    fill="none"
+    d="M 192 512 Q 512 330 832 512 Q 512 694 192 512 Z"
+    fill="#D09268"
+    fill-opacity="0.22"
     stroke="#D09268"
-    stroke-width="22"
+    stroke-width="26"
     stroke-linecap="round"
     stroke-linejoin="round"
     filter="url(#glow)"
   />
 
-  <!-- ── Four-pointed star (pupil) ─────────────────────────────────────── -->
+  <!-- Four-pointed star (pupil) — outer radius 90 px -->
   <!--
-    Outer radius 72 px, inner radius 26 px, centred at 512 512.
-    Cardinal points: top(512,440) right(584,512) bottom(512,584) left(440,512)
-    Diagonal inners at 45°, r=26: (530,494) (530,530) (494,530) (494,494)
+    Top(512,422) Right(602,512) Bottom(512,602) Left(422,512)
+    Inner diagonals at ~r=46 from center (45°): offset ±33 per axis
+    (533,479) (533,545) (479,545) (479,479)
   -->
   <path
-    d="M 512 440
-       L 530 494  L 584 512
-       L 530 530  L 512 584
-       L 494 530  L 440 512
-       L 494 494  Z"
+    d="M 512 422
+       L 533 479  L 602 512
+       L 533 545  L 512 602
+       L 479 545  L 422 512
+       L 479 479  Z"
     fill="#D09268"
     filter="url(#glow)"
   />
 
-  <!-- ── Corner accent dots ─────────────────────────────────────────────── -->
-  <circle cx="192" cy="512" r="8" fill="#D09268" opacity="0.45"/>
-  <circle cx="832" cy="512" r="8" fill="#D09268" opacity="0.45"/>
+  <!-- Tip accent dots -->
+  <circle cx="192" cy="512" r="10" fill="#D09268" opacity="0.55"/>
+  <circle cx="832" cy="512" r="10" fill="#D09268" opacity="0.55"/>
 </svg>
