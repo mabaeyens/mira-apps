@@ -10,7 +10,7 @@ struct SplashView: View {
         VStack(spacing: 20) {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 64))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.accent)
 
             switch state {
             case .idle:
