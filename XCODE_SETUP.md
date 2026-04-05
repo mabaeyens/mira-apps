@@ -57,8 +57,8 @@ This is a **single multiplatform target** (not separate macOS/iOS targets).
 
 1. Select the **My Mac** destination → **⌘R**
 2. First run: a file picker opens — choose the Python server project folder
-3. The app launches the server subprocess and polls `/health`
-4. Once ready, the splash dismisses and the chat window appears
+3. The Mira splash screen appears while the server subprocess starts and the model loads
+4. Once ready (up to 60 s on first launch), the splash dismisses and the chat window appears
 
 ### iOS
 
@@ -66,10 +66,28 @@ This is a **single multiplatform target** (not separate macOS/iOS targets).
 2. Select it as the destination → **⌘R**
 3. On first launch, trust the developer certificate:
    **Settings → General → VPN & Device Management → [your Apple ID] → Trust**
-4. The connection screen appears — tap **Auto (Bonjour)** if on the same WiFi as the Mac
+4. The Mira splash appears briefly, then the connection screen — tap **Auto (Bonjour)** if on the same WiFi as the Mac
 
 After the initial install, USB is no longer needed:
 - Disconnect USB — the app connects over WiFi
 - Close Xcode — the macOS app keeps the server running independently
 
-For remote access (outside home network), install [Tailscale](https://tailscale.com) on both devices and use **Manual URL** with your Tailscale IP (e.g. `http://100.x.x.x:8000`).
+### Remote access (Tailscale)
+
+Bonjour only works on the local network. For access away from home:
+
+1. Install [Tailscale](https://tailscale.com) on both your Mac and iPhone
+2. In the iOS app, choose **Manual URL** and enter your Mac's Tailscale IP: `http://100.x.x.x:8000`
+3. The connection works identically to home WiFi
+
+### iOS icon appearance
+
+iOS 18 controls icon appearance separately from dark mode. To activate the dark icon variant:
+
+> Home screen → long-press → **Customize** → **Dark** or **Automatic**
+
+## Notes for future development
+
+- **Single multiplatform target** — all files in `Shared/` are compiled for both platforms; `macOS/` and `iOS/` are platform-conditional via `#if os(macOS)` / `#if os(iOS)`.
+- **`@Observable` and SwiftUI** — always read `@Observable` model state inside a `View` body, not in the `App` struct body. The App scene builder does not participate in SwiftUI's observation graph; state changes will not trigger re-renders there.
+- **Adding new shared files** — after creating a file in `Shared/`, right-click it in the Xcode navigator → **Integrate > Add** to register it with the target.
