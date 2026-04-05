@@ -11,6 +11,13 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Bookerly-Regular.ttf</string>
+		<string>Bookerly-Bold.ttf</string>
+		<string>Bookerly-Italic.ttf</string>
+		<string>Bookerly-BoldItalic.ttf</string>
+	</array>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_ollamasearch._tcp</string>
