@@ -1,25 +1,11 @@
 import SwiftUI
 import MarkdownUI
 
-// ── Adaptive color helper ──────────────────────────────────────────────────────
-//
-// Returns a Color that automatically switches between light and dark variants
-// as the system appearance changes. Uses NSColor/UIColor dynamic providers
-// so the OS handles the switch — no @Environment(\.colorScheme) needed in views.
+// ── Color helpers ──────────────────────────────────────────────────────────────
 
 extension Color {
-    init(light: Color, dark: Color) {
-        #if os(macOS)
-        self.init(NSColor(name: nil) { appearance in
-            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-                ? NSColor(dark) : NSColor(light)
-        })
-        #else
-        self.init(UIColor { tc in
-            tc.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
-        })
-        #endif
-    }
+    // Color(light:dark:) is provided by SwiftUI since macOS 14 / iOS 17.
+    // No custom init needed — the system version is used directly below.
 
     init(hex: UInt32) {
         self.init(
