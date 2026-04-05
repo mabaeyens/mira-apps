@@ -24,21 +24,8 @@ struct ConnectionView: View {
     private var isSearching: Bool { mode == .auto && bonjour.isSearching }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Color.appBg.ignoresSafeArea()
-
-            Button { showAbout = true } label: {
-                Image(systemName: "info.circle")
-                    .font(.title3)
-                    .foregroundStyle(Color.textSecondary)
-            }
-            .padding(.top, 56)
-            .padding(.trailing, 24)
-            .zIndex(1)
-            .sheet(isPresented: $showAbout) {
-                AboutView()
-                    .presentationDetents([.medium, .large])
-            }
 
             // Warm glow anchored near the top where the logo sits
             RadialGradient(
@@ -83,6 +70,19 @@ struct ConnectionView: View {
                 Spacer()
             }
             .padding(.horizontal, 32)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button { showAbout = true } label: {
+                Image(systemName: "info.circle")
+                    .font(.title3)
+                    .foregroundStyle(Color.textSecondary)
+            }
+            .padding(.top, 20)
+            .padding(.trailing, 24)
+        }
+        .sheet(isPresented: $showAbout) {
+            AboutView()
+                .presentationDetents([.medium, .large])
         }
         .onAppear {
             if mode == .auto { bonjour.start() }
