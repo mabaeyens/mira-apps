@@ -29,10 +29,6 @@ final class ServerManager {
 
     private init() {}
 
-    deinit {
-        pollTask?.cancel()
-    }
-
     // ── Public API ────────────────────────────────────────────────────────────
 
     func start() {
@@ -80,7 +76,7 @@ final class ServerManager {
         }
 
         do {
-            try p.launch()
+            try p.run()   // Process.run() is the non-deprecated throwing API
             process = p
         } catch {
             state = .failed("Could not launch server: \(error.localizedDescription)")

@@ -38,16 +38,15 @@ final class ChatViewModel {
 
     // Token throttle: accumulate tokens, flush every 100ms to avoid
     // re-rendering swift-markdown-ui on every individual token.
+    // Uses a Task instead of Timer — Task closures inherit @MainActor context,
+    // avoiding the nonisolated-closure issue that Timer callbacks have.
     private var pendingTokenBuffer: String = ""
-    private var flushTimer: Timer?
+    private var flushTask: Task<Void, Never>?
 
     private let api = APIClient.shared
     private let sse = SSEClient.shared
-
-    deinit {
-        streamTask?.cancel()
-        flushTimer?.invalidate()
-    }
+    // No deinit needed: streamTask/flushTask use [weak self] so self can be
+    // deallocated freely; stopStreaming() handles explicit cancellation.
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -65,7 +64,7 @@ final class ChatViewModel {
         messages.append(Message(role: .user, content: text))
 
         // Add an empty streaming assistant bubble
-        var assistantMsg = Message(role: .assistant)
+        let assistantMsg = Message(role: .assistant)
         messages.append(assistantMsg)
 
         isStreaming = true
@@ -95,6 +94,8 @@ final class ChatViewModel {
     func stopStreaming() {
         streamTask?.cancel()
         streamTask = nil
+        flushTask?.cancel()
+        flushTask = nil
         Task { await api.cancel() }
         flushPendingTokens()
         if let idx = messages.indices.last, messages[idx].role == .assistant {
@@ -239,16 +240,18 @@ final class ChatViewModel {
 
     private func bufferToken(_ token: String, msgId: UUID) {
         pendingTokenBuffer += token
-        if flushTimer == nil {
-            flushTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { [weak self] _ in
+        if flushTask == nil {
+            flushTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(100))
                 self?.flushPendingTokens()
+                self?.flushTask = nil
             }
         }
     }
 
     private func flushPendingTokens() {
-        flushTimer?.invalidate()
-        flushTimer = nil
+        flushTask?.cancel()
+        flushTask = nil
         guard !pendingTokenBuffer.isEmpty else { return }
         let buf = pendingTokenBuffer
         pendingTokenBuffer = ""
