@@ -43,9 +43,7 @@ struct MessageBubble: View {
             // Content — plain Text while streaming (fast, no re-parse),
             // full Markdown once done.
             if message.isStreaming {
-                (Text(message.content) +
-                 Text(cursorOn ? "_" : " ")
-                    .foregroundStyle(Color.accent))
+                Text("\(message.content)\(Text(cursorOn ? "_" : " ").foregroundStyle(Color.accent))")
                     .font(.chatBody)
                     .foregroundStyle(Color.textPrimary)
                     .textSelection(.enabled)
