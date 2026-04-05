@@ -63,7 +63,7 @@ final class BonjourDiscovery {
             if case .ready = state,
                case .hostPort(let host, let port) = conn.currentPath?.remoteEndpoint {
                 let ipString = "\(host)"
-                    .replacingOccurrences(of: "%", with: "")   // strip IPv6 scope
+                    .components(separatedBy: "%").first ?? "\(host)"  // strip interface scope (e.g. %en0)
                 Task { @MainActor [weak self] in
                     self?.discoveredURL = URL(string: "http://\(ipString):\(port)")
                     self?.isSearching = false

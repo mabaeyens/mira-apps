@@ -45,6 +45,8 @@ For the **iOS target**:
 - In `Info.plist` add key `NSLocalNetworkUsageDescription` with value:
   `"OllamaSearch needs local network access to discover the Mac server."`
 - Add key `NSBonjourServices` → Array → Item 0: `_ollamasearch._tcp`
+- Add key `NSAppTransportSecurity` → Dictionary → `NSAllowsLocalNetworking` → `YES`
+  (allows plain HTTP to local IPs and `.local` hostnames without opening the whole app to arbitrary HTTP)
 
 ## 4. Add SPM dependencies
 
