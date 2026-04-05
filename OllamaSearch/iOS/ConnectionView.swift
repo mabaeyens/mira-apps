@@ -4,6 +4,15 @@ import SwiftUI
 /// Connection setup screen — shown when no server URL is configured.
 /// Supports Bonjour auto-discovery (local WiFi) and manual URL (Tailscale/remote).
 struct ConnectionView: View {
+    /// When true (default, cold start), auto-connects as soon as Bonjour finds the server.
+    /// When false (opened from gear), shows the found server and waits for a tap.
+    let autoConnect: Bool
+
+    init(autoConnect: Bool = true, onConnect: @escaping (URL) -> Void) {
+        self.autoConnect = autoConnect
+        self.onConnect = onConnect
+    }
+
     @State private var bonjour = BonjourDiscovery()
     @State private var mode: Mode = .auto
     @State private var manualURL: String = UserDefaults.standard.string(forKey: "remoteURL") ?? ""
@@ -83,7 +92,7 @@ struct ConnectionView: View {
             if mode == .auto { bonjour.start() } else { bonjour.stop() }
         }
         .onChange(of: bonjour.discoveredURL) {
-            if let url = bonjour.discoveredURL { connectLocal(url) }
+            if autoConnect, let url = bonjour.discoveredURL { connectLocal(url) }
         }
     }
 
@@ -97,9 +106,16 @@ struct ConnectionView: View {
                         .foregroundStyle(Color.textSecondary)
                 }
             } else if let url = bonjour.discoveredURL {
-                Label(url.absoluteString, systemImage: "checkmark.circle.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.accent)
+                VStack(spacing: 10) {
+                    Label(url.absoluteString, systemImage: "checkmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.accent)
+                    if !autoConnect {
+                        Button("Connect") { connectLocal(url) }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.accent)
+                    }
+                }
             } else {
                 VStack(spacing: 10) {
                     Text("No server found. Make sure your Mac is on the same WiFi and Mira is running.")
