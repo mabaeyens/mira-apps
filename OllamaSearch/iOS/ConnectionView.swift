@@ -17,7 +17,7 @@ struct ConnectionView: View {
                 .font(.system(size: 56))
                 .foregroundStyle(Color.accent)
 
-            Text("Connect to MAI")
+            Text("Connect to Mira")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(Color.textPrimary)
 

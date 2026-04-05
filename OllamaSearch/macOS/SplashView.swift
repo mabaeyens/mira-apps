@@ -14,7 +14,7 @@ struct SplashView: View {
 
             switch state {
             case .idle:
-                Text("MAI")
+                Text("Mira")
                     .font(.largeTitle.weight(.semibold))
 
             case .starting:

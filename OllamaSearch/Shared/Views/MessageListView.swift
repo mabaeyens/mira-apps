@@ -26,7 +26,7 @@ struct MessageListView: View {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.accent)
-            Text("MAI")
+            Text("Mira")
                 .font(.system(size: 28, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
             Text("How can I help?")

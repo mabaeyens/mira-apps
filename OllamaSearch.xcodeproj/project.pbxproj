@@ -282,8 +282,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OllamaSearch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MAI;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MAI uses the local network to find your Mac server.";
+				INFOPLIST_KEY_CFBundleDisplayName = Mira;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Mira uses the local network to find your Mac server.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -300,7 +300,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mab.OllamaSearch;
-				PRODUCT_NAME = MAI;
+				PRODUCT_NAME = Mira;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -330,8 +330,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OllamaSearch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MAI;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MAI uses the local network to find your Mac server.";
+				INFOPLIST_KEY_CFBundleDisplayName = Mira;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Mira uses the local network to find your Mac server.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -348,7 +348,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mab.OllamaSearch;
-				PRODUCT_NAME = MAI;
+				PRODUCT_NAME = Mira;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
