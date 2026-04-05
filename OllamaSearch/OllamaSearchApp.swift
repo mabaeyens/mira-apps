@@ -82,10 +82,12 @@ struct OllamaSearchApp: App {
             }
             .preferredColorScheme(.dark)
             .task {
-                // Splash minimum and auto-connect run in parallel.
-                async let splashWait: Void = Task.sleep(for: .milliseconds(1_400))
+                // Start connection attempt immediately in background.
                 async let found = autoConnect()
-                let (_, url) = await (try? splashWait, found)
+                // Always show splash for at least 1.4 s.
+                try? await Task.sleep(for: .milliseconds(1_400))
+                // Collect result (likely already ready by now).
+                let url = await found
                 withAnimation(.easeOut(duration: 0.4)) {
                     if let url {
                         APIClient.shared.baseURL = url
