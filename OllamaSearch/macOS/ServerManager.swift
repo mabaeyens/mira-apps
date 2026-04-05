@@ -39,8 +39,16 @@ final class ServerManager {
         guard state != .ready && state != .starting else { return }
 
         state = .starting
-        launchProcess()
-        startHealthPoll()
+        Task {
+            // If something is already listening on port 8000, adopt it rather
+            // than launching a duplicate (e.g. user ran `python server.py` manually).
+            if await APIClient.shared.isHealthy() {
+                self.state = .ready
+                return
+            }
+            self.launchProcess()
+            self.startHealthPoll()
+        }
     }
 
     func stop() {
@@ -55,15 +63,39 @@ final class ServerManager {
 
     private func launchProcess() {
         let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        p.arguments = [
-            "-c",
-            "cd \"\(projectPath)\" && source .venv/bin/activate && python server.py"
+        // Resolve the symlink chain (.venv/bin/python → uv-managed python3.12).
+        // Process.executableURL does not follow symlinks, so we must resolve first.
+        let pythonURL = URL(fileURLWithPath: "\(projectPath)/.venv/bin/python")
+            .resolvingSymlinksInPath()
+        p.executableURL = pythonURL
+        p.arguments = ["server.py"]
+        p.currentDirectoryURL = URL(fileURLWithPath: projectPath)
+
+        // Discover venv site-packages path (python3.x subfolder may vary)
+        let libPath = "\(projectPath)/.venv/lib"
+        let sitePackages: String
+        if let dirs = try? FileManager.default.contentsOfDirectory(atPath: libPath),
+           let pyDir = dirs.first(where: { $0.hasPrefix("python") }) {
+            sitePackages = "\(libPath)/\(pyDir)/site-packages"
+        } else {
+            sitePackages = "\(libPath)/python3.12/site-packages"
+        }
+
+        p.environment = [
+            "PATH": "\(projectPath)/.venv/bin:/usr/local/bin:/usr/bin:/bin",
+            "HOME": NSHomeDirectory(),
+            "VIRTUAL_ENV": "\(projectPath)/.venv",
+            "PYTHONPATH": sitePackages,
+            "OLLAMA_HOST": "http://127.0.0.1:11434",
         ]
-        // Suppress server stdout/stderr from the app's console in release;
-        // in debug builds you can remove these lines to see server logs.
-        p.standardOutput = FileHandle.nullDevice
-        p.standardError  = FileHandle.nullDevice
+        // Capture stderr via pipe so we can log it to the Xcode console
+        let pipe = Pipe()
+        p.standardOutput = pipe
+        p.standardError  = pipe
+        pipe.fileHandleForReading.readabilityHandler = { handle in
+            let output = String(data: handle.availableData, encoding: .utf8) ?? ""
+            if !output.isEmpty { print("[server] \(output)") }
+        }
 
         p.terminationHandler = { [weak self] proc in
             Task { @MainActor [weak self] in
