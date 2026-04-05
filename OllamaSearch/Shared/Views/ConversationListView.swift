@@ -20,9 +20,21 @@ struct ConversationListView: View {
         .scrollContentBackground(.hidden)
         .background(Color.sidebarBg)
         .navigationTitle("Mira")
+        #if os(macOS)
         .safeAreaInset(edge: .top) {
             newChatButton
         }
+        #endif
+        #if os(iOS)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { vm.newConversation() } label: {
+                    Image(systemName: "square.and.pencil")
+                        .foregroundStyle(Color.accent)
+                }
+            }
+        }
+        #endif
     }
 
     // ── New Chat button ───────────────────────────────────────────────────────
