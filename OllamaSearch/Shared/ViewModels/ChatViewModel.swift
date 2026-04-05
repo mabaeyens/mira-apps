@@ -205,8 +205,9 @@ final class ChatViewModel {
             Task { await loadConversations() }
 
         case .title(let convId, let title):
+            // If we started the turn with no convId, adopt the server-assigned one
+            if currentConvId.isEmpty { currentConvId = convId }
             if let idx = conversations.firstIndex(where: { $0.id == convId }) {
-                // Rebuild the conversation with the new title (structs are value types)
                 let old = conversations[idx]
                 conversations[idx] = Conversation(
                     id: old.id, title: title,

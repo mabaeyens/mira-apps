@@ -31,9 +31,9 @@ struct SSEClient {
                         let payload = String(line.dropFirst(6))
                         if let event = ServerEvent.parse(payload) {
                             continuation.yield(event)
-                            // Stop consuming after `done` — server closes the stream
-                            // shortly after, but this avoids processing extra lines.
-                            if case .done = event { break }
+                            // Do NOT break after `done` — the server emits `title`
+                            // and `compress` events after `done` in the same stream.
+                            // The server closes the connection naturally when finished.
                         }
                     }
                     continuation.finish()
