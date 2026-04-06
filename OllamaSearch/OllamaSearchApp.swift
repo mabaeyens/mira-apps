@@ -235,10 +235,10 @@ struct iOSSplashView: View {
             .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer()
-                MiraLogoView(size: 100, animated: true)
-                Spacer().frame(height: 24)
+                MiraLogoView(size: 140, animated: true)
+                Spacer().frame(height: 28)
                 Text("Mira")
-                    .font(.bookerly(size: 34, weight: .semibold))
+                    .font(.bookerly(size: 38, weight: .semibold))
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
             }
