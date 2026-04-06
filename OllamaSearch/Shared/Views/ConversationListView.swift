@@ -5,19 +5,15 @@ struct ConversationListView: View {
     @Bindable var vm: ChatViewModel
 
     var body: some View {
-        List(selection: Binding<String?>(
-            get: { vm.currentConvId.isEmpty ? nil : vm.currentConvId },
-            set: { if let id = $0 { vm.selectConversation(id) } }
-        )) {
-            ForEach(vm.conversations) { conv in
-                conversationRow(conv)
-                    .tag(conv.id)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+        Group {
+            if vm.isLoadingConversations && vm.conversations.isEmpty {
+                loadingView
+            } else if vm.conversations.isEmpty {
+                emptyView
+            } else {
+                conversationList
             }
         }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
         .background(Color.sidebarBg)
         .navigationTitle("Mira")
         #if os(macOS)
@@ -35,6 +31,49 @@ struct ConversationListView: View {
             }
         }
         #endif
+    }
+
+    // ── Loading / empty states ────────────────────────────────────────────────
+
+    private var loadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("Connecting…")
+                .font(.caption)
+                .foregroundStyle(Color.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: 12) {
+            Text("No conversations")
+                .font(.subheadline)
+                .foregroundStyle(Color.textSecondary)
+            Button("Retry") {
+                Task { await vm.loadConversations() }
+            }
+            .buttonStyle(.bordered)
+            .tint(Color.accent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var conversationList: some View {
+        List(selection: Binding<String?>(
+            get: { vm.currentConvId.isEmpty ? nil : vm.currentConvId },
+            set: { if let id = $0 { vm.selectConversation(id) } }
+        )) {
+            ForEach(vm.conversations) { conv in
+                conversationRow(conv)
+                    .tag(conv.id)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+        }
+        .listStyle(.sidebar)
+        .scrollContentBackground(.hidden)
+        .refreshable { await vm.loadConversations() }
     }
 
     // ── New Chat button ───────────────────────────────────────────────────────
@@ -59,19 +98,27 @@ struct ConversationListView: View {
     // ── Conversation row ──────────────────────────────────────────────────────
 
     private func conversationRow(_ conv: Conversation) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(conv.title)
-                .font(.subheadline)
-                .foregroundStyle(Color.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            HStack(spacing: 4) {
-                Text("\(conv.messageCount) msg")
-                Text("·")
-                Text(relativeDate(conv.updatedAt))
+        let isLoading = vm.loadingConvId == conv.id
+        return HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(conv.title)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                HStack(spacing: 4) {
+                    Text("\(conv.messageCount) msg")
+                    Text("·")
+                    Text(relativeDate(conv.updatedAt))
+                }
+                .font(.caption)
+                .foregroundStyle(Color.textSecondary)
             }
-            .font(.caption)
-            .foregroundStyle(Color.textSecondary)
+            Spacer()
+            if isLoading {
+                ProgressView()
+                    .scaleEffect(0.7)
+            }
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 4)

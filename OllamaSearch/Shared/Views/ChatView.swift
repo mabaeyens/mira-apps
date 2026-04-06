@@ -49,6 +49,9 @@ struct ChatView: View {
             )
         }
         .background(Color.appBg)
+        // On iOS the error alert lives in iOSConnectedView so it's reachable
+        // whether the sidebar or the detail column is currently visible.
+        #if os(macOS)
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
             set: { if !$0 { vm.errorMessage = nil } }
@@ -57,5 +60,6 @@ struct ChatView: View {
         } message: {
             Text(vm.errorMessage ?? "")
         }
+        #endif
     }
 }

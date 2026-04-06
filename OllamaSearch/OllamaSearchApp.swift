@@ -265,6 +265,15 @@ struct iOSConnectedView: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ConversationListView(vm: chatVM)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button { onSettings() } label: {
+                            Label(connectionLabel, systemImage: connectionIcon)
+                                .labelStyle(.titleAndIcon)
+                                .font(.caption)
+                        }
+                    }
+                }
         } detail: {
             ChatView(
                 vm: chatVM,
@@ -276,14 +285,15 @@ struct iOSConnectedView: View {
                         Image(systemName: "info.circle")
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { onSettings() } label: {
-                        Label(connectionLabel, systemImage: "gear")
-                            .labelStyle(.titleAndIcon)
-                            .font(.caption)
-                    }
-                }
             }
+        }
+        .alert("Error", isPresented: Binding(
+            get: { chatVM.errorMessage != nil },
+            set: { if !$0 { chatVM.errorMessage = nil } }
+        )) {
+            Button("OK") { chatVM.errorMessage = nil }
+        } message: {
+            Text(chatVM.errorMessage ?? "")
         }
         .sheet(isPresented: $showAbout) {
             AboutView()

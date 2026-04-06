@@ -74,7 +74,9 @@ final class APIClient {
 
     func listConversations() async throws -> [Conversation] {
         let url = baseURL.appendingPathComponent("conversations")
-        let (data, _) = try await URLSession.shared.data(from: url)
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 8
+        let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(ConversationList.self, from: data)
         return obj.conversations
     }
@@ -101,7 +103,9 @@ final class APIClient {
 
     func getMessages(conversationId: String) async throws -> [ConversationMessage] {
         let url = baseURL.appendingPathComponent("conversations/\(conversationId)/messages")
-        let (data, _) = try await URLSession.shared.data(from: url)
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 8
+        let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(MessageList.self, from: data)
         return obj.messages
     }
