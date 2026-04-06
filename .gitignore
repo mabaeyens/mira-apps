@@ -25,3 +25,6 @@ DerivedData/
 # IDE
 .idea/
 *.swp
+
+# TLS certificates
+certs/

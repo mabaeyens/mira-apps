@@ -30,6 +30,34 @@ final class APIClient {
         }
     }
 
+    /// Races a `/health` check against a hard `deadline` in seconds.
+    ///
+    /// `nonisolated` is intentional: it forces the task group and its children
+    /// off the main actor onto the cooperative thread pool, making `Task.sleep`
+    /// a guaranteed hard deadline even when a VPN (e.g. Tailscale) is active.
+    /// A `@MainActor` task group has its children scheduled on the main actor,
+    /// where VPN-induced network stalls can prevent sleep continuations from firing.
+    nonisolated func probe(_ url: URL, deadline: Double = 5) async -> Bool {
+        guard let healthURL = URL(string: "/health", relativeTo: url) else { return false }
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                var req = URLRequest(url: healthURL)
+                req.timeoutInterval = deadline
+                do {
+                    let (_, response) = try await URLSession.shared.data(for: req)
+                    return (response as? HTTPURLResponse)?.statusCode == 200
+                } catch { return false }
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(deadline))
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
+        }
+    }
+
     // ── Chat ──────────────────────────────────────────────────────────────────
 
     /// Build the URLRequest for POST /chat (multipart).

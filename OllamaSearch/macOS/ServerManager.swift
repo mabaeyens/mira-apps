@@ -94,12 +94,16 @@ final class ServerManager {
             sitePackages = "\(libPath)/python3.12/site-packages"
         }
 
+        let certsDir = "\(NSHomeDirectory())/Documents/Projects/OllamaSearch/certs"
+        let certHost = "miguels-macbook-pro.tail51ad7d.ts.net"
         p.environment = [
             "PATH": "\(projectPath)/.venv/bin:/usr/local/bin:/usr/bin:/bin",
             "HOME": NSHomeDirectory(),
             "VIRTUAL_ENV": "\(projectPath)/.venv",
             "PYTHONPATH": sitePackages,
             "OLLAMA_HOST": "http://127.0.0.1:11434",
+            "SSL_CERTFILE": "\(certsDir)/\(certHost).crt",
+            "SSL_KEYFILE":  "\(certsDir)/\(certHost).key",
         ]
         // Capture stderr via pipe so we can log it to the Xcode console
         let pipe = Pipe()
