@@ -14,7 +14,8 @@ struct ConnectionView: View {
     }
 
     @State private var bonjour = BonjourDiscovery()
-    @State private var manualURL: String = UserDefaults.standard.string(forKey: "remoteURL") ?? ""
+    @State private var manualURL: String = UserDefaults.standard.string(forKey: "remoteURL")
+        ?? "https://miguels-macbook-pro.tail51ad7d.ts.net:8443"
     // Default to manual mode if a remote URL is already saved, so the user
     // sees their Tailscale address immediately instead of waiting for Bonjour.
     @State private var mode: Mode = UserDefaults.standard.string(forKey: "remoteURL") != nil ? .manual : .auto
