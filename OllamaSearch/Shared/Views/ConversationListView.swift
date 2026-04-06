@@ -68,7 +68,8 @@ struct ConversationListView: View {
                 conversationRow(conv)
                     .tag(conv.id)
                     .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+                    .listRowSeparator(.visible)
+                    .listRowSeparatorTint(Color.borderSubtle.opacity(0.5))
             }
         }
         .listStyle(.sidebar)
@@ -100,19 +101,15 @@ struct ConversationListView: View {
     private func conversationRow(_ conv: Conversation) -> some View {
         let isLoading = vm.loadingConvId == conv.id
         return HStack {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(conv.title)
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                HStack(spacing: 4) {
-                    Text("\(conv.messageCount) msg")
-                    Text("·")
-                    Text(relativeDate(conv.updatedAt))
-                }
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary)
+                Text(relativeDate(conv.updatedAt))
+                    .font(.footnote)
+                    .foregroundStyle(Color.textSecondary)
             }
             Spacer()
             if isLoading {
@@ -120,7 +117,7 @@ struct ConversationListView: View {
                     .scaleEffect(0.7)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 10)
         .padding(.horizontal, 4)
         .contextMenu {
             Button(role: .destructive) {

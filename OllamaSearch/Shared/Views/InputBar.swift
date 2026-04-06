@@ -13,6 +13,8 @@ struct InputBar: View {
     let onRemoveAttachment: (Int) -> Void
     let attachPicker: AnyView
 
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         VStack(spacing: 6) {
             // ── Staged attachment chips ───────────────────────────────────
@@ -37,8 +39,10 @@ struct InputBar: View {
                     .font(.chatBody)
                     .foregroundStyle(Color.textPrimary)
                     .padding(.vertical, 2)
+                    .focused($isFocused)
                     .onSubmit {
                         guard !isStreaming else { return }
+                        isFocused = false
                         onSend()
                     }
                     .keyboardShortcut(.return, modifiers: .command)
@@ -76,7 +80,10 @@ struct InputBar: View {
             .buttonStyle(.plain)
         } else {
             let canSend = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            Button(action: onSend) {
+            Button {
+                isFocused = false
+                onSend()
+            } label: {
                 Image(systemName: "arrow.up")
                     .foregroundStyle(.white)
                     .frame(width: 30, height: 30)
