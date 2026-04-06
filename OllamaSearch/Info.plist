@@ -13,6 +13,12 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Mira uses the local network to discover and connect to the server running on your Mac.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_ollamasearch._tcp</string>
+	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Bookerly-Regular.ttf</string>
@@ -20,15 +26,29 @@
 		<string>Bookerly-Italic.ttf</string>
 		<string>Bookerly-BoldItalic.ttf</string>
 	</array>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>Mira uses the local network to discover and connect to the server running on your Mac.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_ollamasearch._tcp</string>
-	</array>
-	<key>NSServices</key>
-	<array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
 		<dict/>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>
