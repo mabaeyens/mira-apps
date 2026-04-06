@@ -104,7 +104,7 @@ final class APIClient {
     func getMessages(conversationId: String) async throws -> [ConversationMessage] {
         let url = baseURL.appendingPathComponent("conversations/\(conversationId)/messages")
         var req = URLRequest(url: url)
-        req.timeoutInterval = 8
+        req.timeoutInterval = 20
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(MessageList.self, from: data)
         return obj.messages
