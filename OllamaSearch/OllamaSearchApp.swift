@@ -273,10 +273,10 @@ struct iOSConnectedView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button { onSettings() } label: {
-                            Label(connectionLabel, systemImage: connectionIcon)
-                                .labelStyle(.titleAndIcon)
-                                .font(.caption)
+                            Image(systemName: connectionIcon)
+                                .foregroundStyle(Color.accent)
                         }
+                        .help(connectionLabel)
                     }
                 }
         } detail: {
@@ -312,8 +312,15 @@ struct iOSConnectedView: View {
             }
         }
         .onChange(of: chatVM.currentConvId) { _, newId in
-            if !newId.isEmpty, horizontalSizeClass != .compact {
-                columnVisibility = .detailOnly
+            if !newId.isEmpty {
+                // Dismiss keyboard when switching conversations.
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil, from: nil, for: nil
+                )
+                if horizontalSizeClass != .compact {
+                    columnVisibility = .detailOnly
+                }
             }
         }
     }

@@ -12,13 +12,13 @@ struct SourcesPanel: View {
                 ForEach(fetches) { fetch in
                     HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "globe")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.accent)
                             .font(.caption)
                             .frame(width: 14)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(fetch.url)
                                 .font(.caption)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(Color.accent)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                             Text(fetch.preview)
@@ -33,13 +33,13 @@ struct SourcesPanel: View {
         } label: {
             Label("Pages read (\(fetches.count))", systemImage: "doc.text.magnifyingglass")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.accent)
         }
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.blue.opacity(0.07))
-                .stroke(Color.blue.opacity(0.25), lineWidth: 1)
+                .fill(Color.accent.opacity(0.07))
+                .stroke(Color.accent.opacity(0.25), lineWidth: 1)
         )
     }
 }

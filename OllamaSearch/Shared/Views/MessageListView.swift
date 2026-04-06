@@ -60,12 +60,19 @@ struct MessageListView: View {
                     Color.clear.frame(height: 1).id(bottomAnchor)
                 }
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)
             .onChange(of: messages.count) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
             }
             .onChange(of: messages.last?.content) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
+            }
+            // When streaming starts (user just sent a message) always snap to bottom.
+            .onChange(of: isStreaming) { _, nowStreaming in
+                if nowStreaming {
+                    scrollPinned = true
+                    scrollToBottom(proxy: proxy)
+                }
             }
             // Unpin on any upward drag so the button appears immediately.
             .simultaneousGesture(
