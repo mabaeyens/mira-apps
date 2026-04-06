@@ -250,7 +250,7 @@ struct iOSSplashView: View {
             .ignoresSafeArea()
             VStack(spacing: 0) {
                 Spacer()
-                MiraLogoView(size: 140, animated: true)
+                MiraLogoView(size: 140, animated: true, playIntro: true)
                 Spacer().frame(height: 28)
                 Text("Mira")
                     .font(.bookerly(size: 38, weight: .semibold))
