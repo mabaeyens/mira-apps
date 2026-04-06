@@ -75,6 +75,12 @@ final class BonjourDiscovery {
                case .hostPort(let host, let port) = conn.currentPath?.remoteEndpoint {
                 let ipString = "\(host)"
                     .components(separatedBy: "%").first ?? "\(host)"  // strip interface scope (e.g. %en0)
+                // Discard loopback — Tailscale intercepts NWConnection resolution and
+                // can return 127.0.0.1, which only works while the VPN tunnel is up.
+                guard ipString != "127.0.0.1", ipString != "::1" else {
+                    conn.cancel()
+                    return
+                }
                 Task { @MainActor [weak self] in
                     self?.searchTimeoutTask?.cancel()
                     self?.searchTimeoutTask = nil
