@@ -104,7 +104,10 @@ struct OllamaSearchApp: App {
     private func autoConnect() async -> URL? {
         let localURL  = UserDefaults.standard.string(forKey: "localURL").flatMap(URL.init(string:))
         let remoteURL = UserDefaults.standard.string(forKey: "remoteURL").flatMap(URL.init(string:))
-        if let local = localURL, await APIClient.shared.isHealthy(at: local) { return local }
+        // Skip loopback — a 127.0.0.1 localURL can appear when Bonjour resolved
+        // while Tailscale was active; it only works inside that specific VPN tunnel.
+        let isLoopback: (URL) -> Bool = { ["127.0.0.1", "::1"].contains($0.host ?? "") }
+        if let local = localURL, !isLoopback(local), await APIClient.shared.isHealthy(at: local) { return local }
         if let remote = remoteURL, await APIClient.shared.isHealthy(at: remote) { return remote }
         return nil
     }
