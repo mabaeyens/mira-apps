@@ -14,6 +14,7 @@ struct MiraLogoView: View {
 
     // ── animation state ──────────────────────────────────────────────────────
     @State private var spread:        CGFloat = 1.0   // 0 = closed, 1 = open
+    @State private var obliqueness:   CGFloat = 0.0   // 0 = sharp eye tips, 1 = oblique orbit tips
     @State private var orbitTilt:     Double  = 0.0   // 0° = eye, −32° = orbit
     @State private var starScale:     CGFloat = 0.0
     @State private var backOpacity:   Double  = 0.70  // symmetric eye → dim orbit back
@@ -23,7 +24,7 @@ struct MiraLogoView: View {
     @State private var introPlayed:   Bool    = false
 
     // ── geometry ─────────────────────────────────────────────────────────────
-    private var sw:        CGFloat { max(1.5, size * 0.035) }   // stroke width
+    private var sw:        CGFloat { max(1.5, size * 0.035) }
     private var arcWidth:  CGFloat { size * 0.88 }
     private var arcHeight: CGFloat { size * 0.44 }
 
@@ -37,7 +38,7 @@ struct MiraLogoView: View {
                 .frame(width: arcWidth * 0.80, height: arcHeight * 2.0)
 
             // Back arc — lower half, recedes behind star
-            MiraArcShape(spread: spread, isUpper: false)
+            MiraArcShape(spread: spread, isUpper: false, obliqueness: obliqueness)
                 .stroke(Color.accent, style: StrokeStyle(lineWidth: sw, lineCap: .round))
                 .opacity(backOpacity)
                 .frame(width: arcWidth, height: arcHeight)
@@ -49,7 +50,7 @@ struct MiraLogoView: View {
                 .scaleEffect(starScale)
 
             // Shadow cast by orbit on star surface (offset toward light, i.e. upward)
-            MiraArcShape(spread: spread, isUpper: true)
+            MiraArcShape(spread: spread, isUpper: true, obliqueness: obliqueness)
                 .stroke(Color.black,
                         style: StrokeStyle(lineWidth: sw * 2.1, lineCap: .round))
                 .blur(radius: size * 0.012)
@@ -58,7 +59,7 @@ struct MiraLogoView: View {
                 .frame(width: arcWidth, height: arcHeight)
 
             // Front arc — upper half, passes in front of star
-            MiraArcShape(spread: spread, isUpper: true)
+            MiraArcShape(spread: spread, isUpper: true, obliqueness: obliqueness)
                 .stroke(Color.accent, style: StrokeStyle(lineWidth: sw, lineCap: .round))
                 .opacity(frontOpacity)
                 .frame(width: arcWidth, height: arcHeight)
@@ -85,6 +86,7 @@ struct MiraLogoView: View {
     /// Instantly place into final orbit state (no animation).
     private func jumpToOrbit() {
         spread        = 1.0
+        obliqueness   = 1.0
         orbitTilt     = -32
         starScale     = 1.0
         backOpacity   = 0.18
@@ -94,10 +96,10 @@ struct MiraLogoView: View {
 
     // ── one-shot intro ────────────────────────────────────────────────────────
     //
-    //  0.0 s  — eye open, star hidden
+    //  0.0 s  — eye open (pointed tips), star hidden
     //  0.45 s — eye blinks shut   (spread 1 → 0)
     //  0.85 s — eye opens, star grows (spread 0 → 1, starScale 0 → 1)
-    //  1.70 s — tilt to orbit, opacities shift, shadow appears
+    //  1.70 s — tilt to orbit, tips soften, opacities shift, shadow appears
     //  2.55 s — pulse starts (if animated)
 
     private func runIntro() {
@@ -110,8 +112,9 @@ struct MiraLogoView: View {
             spread    = 1.0
             starScale = 1.0
         }
-        // Step 3 — tilt to orbit, shift opacities
+        // Step 3 — tilt to orbit, soften tips, shift opacities
         withAnimation(.easeInOut(duration: 0.70).delay(1.70)) {
+            obliqueness   = 1.0
             orbitTilt     = -32
             backOpacity   = 0.18
             frontOpacity  = 0.92
@@ -132,29 +135,44 @@ struct MiraLogoView: View {
 
 // ── Arc shape ─────────────────────────────────────────────────────────────────
 //
-//  Draws one half (upper or lower) of the eye / orbit ring.
-//  `spread` scales the arc height: 0 = flat line, 1 = full curve.
+//  Draws one half (upper or lower) of the eye / orbit ring using a cubic bezier.
+//
+//  `spread`      — 0 = flat line, 1 = full height
+//  `obliqueness` — 0 = control points at midX (pointed eye tips, quadratic-equivalent)
+//                  1 = control points at endpoint X (vertical tangents, oblique orbit tips)
+//
+//  At obliqueness=0 both cubic controls collapse to midX, matching the classic
+//  quadratic bezier almond shape. At obliqueness=1 the controls move to the
+//  endpoints' own X positions, so the curve arrives vertically — like a true
+//  ellipse at its leftmost/rightmost point — giving soft, rounded tips.
 
 struct MiraArcShape: Shape {
-    var spread:  CGFloat
-    var isUpper: Bool
+    var spread:      CGFloat
+    var isUpper:     Bool
+    var obliqueness: CGFloat = 0
 
-    var animatableData: CGFloat {
-        get { spread }
-        set { spread = newValue }
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(spread, obliqueness) }
+        set { spread = newValue.first; obliqueness = newValue.second }
     }
 
     func path(in rect: CGRect) -> Path {
         var p = Path()
-        let left    = CGPoint(x: rect.minX, y: rect.midY)
-        let right   = CGPoint(x: rect.maxX, y: rect.midY)
-        let dy      = rect.height * 0.5 * spread
-        let control = CGPoint(
-            x: rect.midX,
-            y: isUpper ? rect.midY - dy : rect.midY + dy
-        )
+        let left  = CGPoint(x: rect.minX, y: rect.midY)
+        let right = CGPoint(x: rect.maxX, y: rect.midY)
+        let dy    = rect.height * 0.5 * spread
+        let sign: CGFloat = isUpper ? -1 : 1
+
+        // Interpolate control-point X between midX (pointed) and endpoint X (oblique)
+        let c1x = rect.midX * (1 - obliqueness)                    // midX → minX
+        let c2x = rect.maxX - rect.midX * (1 - obliqueness)        // midX → maxX
+
         p.move(to: left)
-        p.addQuadCurve(to: right, control: control)
+        p.addCurve(
+            to: right,
+            control1: CGPoint(x: c1x, y: rect.midY + sign * dy),
+            control2: CGPoint(x: c2x, y: rect.midY + sign * dy)
+        )
         return p
     }
 }
