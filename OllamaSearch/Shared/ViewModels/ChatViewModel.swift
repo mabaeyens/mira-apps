@@ -133,9 +133,10 @@ final class ChatViewModel {
             // Task-based timeout: URLRequest.timeoutInterval is unreliable when
             // VPN routing silently drops packets (no TCP RST). Cancelling the
             // inner Task guarantees work.value throws within 8 s regardless.
+            // Message history can be large — allow 20 s on slow 5G/Tailscale paths.
             let work = Task { try await api.getMessages(conversationId: id) }
             let timeout = Task {
-                try? await Task.sleep(for: .seconds(8))
+                try? await Task.sleep(for: .seconds(20))
                 work.cancel()
             }
             defer { timeout.cancel() }
@@ -150,7 +151,7 @@ final class ChatViewModel {
                 }
                 inputTokens = 0; outputTokens = 0; contextPct = 0
             } catch {
-                errorMessage = "Could not load messages. Check your connection and try again."
+                errorMessage = "Could not load messages (\(error.localizedDescription)). Check your connection and try again."
             }
         }
     }
