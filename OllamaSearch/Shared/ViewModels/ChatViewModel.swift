@@ -185,7 +185,7 @@ final class ChatViewModel {
         do {
             conversations = try await work.value
         } catch {
-            errorMessage = "Could not reach server. Check your connection and try again."
+            errorMessage = "Could not reach server (\(error.localizedDescription)). Check your connection and try again."
         }
     }
 
