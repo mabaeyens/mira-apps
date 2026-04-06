@@ -67,10 +67,23 @@ struct MessageListView: View {
             .onChange(of: messages.last?.content) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
             }
+            // Unpin on any upward drag so the button appears immediately.
             .simultaneousGesture(
                 DragGesture(minimumDistance: 5)
                     .onChanged { _ in scrollPinned = false }
             )
+            // Re-pin (and hide the button) once the user scrolls back near the
+            // bottom. The 80 pt threshold makes it disappear before the very end
+            // so the transition feels instant rather than lagging behind the finger.
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                let distanceFromBottom = geometry.contentSize.height
+                    - geometry.contentOffset.y
+                    - geometry.containerSize.height
+                    - geometry.contentInsets.bottom
+                return distanceFromBottom <= 80
+            } action: { _, isAtBottom in
+                if isAtBottom { scrollPinned = true }
+            }
             .overlay(alignment: .bottom) {
                 if !scrollPinned && !messages.isEmpty {
                     Button {

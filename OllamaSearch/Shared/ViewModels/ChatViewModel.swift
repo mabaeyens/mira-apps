@@ -31,6 +31,11 @@ final class ChatViewModel {
     var isFetching: Bool = false
 
     var errorMessage: String? = nil
+    /// Non-nil while a conversation's message history is being fetched.
+    /// The value is the ID being loaded, used to show a per-row spinner.
+    var loadingConvId: String? = nil
+    /// True while the conversation list is being fetched from the server.
+    var isLoadingConversations: Bool = false
 
     // ── Internals ────────────────────────────────────────────────────────────
 
@@ -120,11 +125,22 @@ final class ChatViewModel {
     }
 
     func selectConversation(_ id: String) {
-        guard id != currentConvId else { return }
+        guard id != currentConvId, loadingConvId != id else { return }
         streamTask?.cancel()
+        loadingConvId = id
         Task {
+            defer { loadingConvId = nil }
+            // Task-based timeout: URLRequest.timeoutInterval is unreliable when
+            // VPN routing silently drops packets (no TCP RST). Cancelling the
+            // inner Task guarantees work.value throws within 8 s regardless.
+            let work = Task { try await api.getMessages(conversationId: id) }
+            let timeout = Task {
+                try? await Task.sleep(for: .seconds(8))
+                work.cancel()
+            }
+            defer { timeout.cancel() }
             do {
-                let history = try await api.getMessages(conversationId: id)
+                let history = try await work.value
                 currentConvId = id
                 messages = history.map { m in
                     Message(
@@ -134,7 +150,7 @@ final class ChatViewModel {
                 }
                 inputTokens = 0; outputTokens = 0; contextPct = 0
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = "Could not load messages. Check your connection and try again."
             }
         }
     }
@@ -156,12 +172,19 @@ final class ChatViewModel {
     }
 
     func loadConversations() async {
+        isLoadingConversations = true
+        defer { isLoadingConversations = false }
+        // Same Task-based timeout pattern as selectConversation — see comment there.
+        let work = Task { try await api.listConversations() }
+        let timeout = Task {
+            try? await Task.sleep(for: .seconds(8))
+            work.cancel()
+        }
+        defer { timeout.cancel() }
         do {
-            let list = try await api.listConversations()
-            conversations = list
-            print("[sidebar] loaded \(list.count) conversation(s)")
+            conversations = try await work.value
         } catch {
-            print("[sidebar] loadConversations failed: \(error)")
+            errorMessage = "Could not reach server. Check your connection and try again."
         }
     }
 
