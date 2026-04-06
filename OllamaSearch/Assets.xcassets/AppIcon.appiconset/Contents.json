@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "ios-light-1024.png",
+      "filename" : "ios-dark-1024.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -10,10 +10,10 @@
       "appearances" : [
         {
           "appearance" : "luminosity",
-          "value" : "dark"
+          "value" : "light"
         }
       ],
-      "filename" : "ios-dark-1024.png",
+      "filename" : "ios-light-1024.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
