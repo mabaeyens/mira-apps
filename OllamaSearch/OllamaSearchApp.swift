@@ -56,12 +56,13 @@ struct OllamaSearchApp: App {
     @State private var activeURL: URL? = nil
     @State private var splashDone = false
     @State private var showingConnectionSettings = false
+    @State private var splashStatus: String = ""
 
     var body: some Scene {
         WindowGroup {
             Group {
                 if !splashDone {
-                    iOSSplashView()
+                    iOSSplashView(status: splashStatus)
                 } else if let url = activeURL {
                     iOSConnectedView(chatVM: chatVM, serverURL: url) {
                         showingConnectionSettings = true
@@ -101,14 +102,26 @@ struct OllamaSearchApp: App {
 
     /// Tries the saved local URL first, then the saved remote URL.
     /// Returns the first one that responds, or nil if neither is reachable.
+    /// Updates `splashStatus` at each step so the splash screen shows progress.
     private func autoConnect() async -> URL? {
         let localURL  = UserDefaults.standard.string(forKey: "localURL").flatMap(URL.init(string:))
         let remoteURL = UserDefaults.standard.string(forKey: "remoteURL").flatMap(URL.init(string:))
-        // Skip loopback — a 127.0.0.1 localURL can appear when Bonjour resolved
-        // while Tailscale was active; it only works inside that specific VPN tunnel.
         let isLoopback: (URL) -> Bool = { ["127.0.0.1", "::1"].contains($0.host ?? "") }
-        if let local = localURL, !isLoopback(local), await APIClient.shared.probe(local, deadline: 2) { return local }
-        if let remote = remoteURL, await APIClient.shared.probe(remote, deadline: 2) { return remote }
+        if let local = localURL, !isLoopback(local) {
+            splashStatus = "Looking for server on local network…"
+            if await APIClient.shared.probe(local, deadline: 2) {
+                splashStatus = "Connected"
+                return local
+            }
+        }
+        if let remote = remoteURL {
+            splashStatus = "Trying remote connection…"
+            if await APIClient.shared.probe(remote, deadline: 2) {
+                splashStatus = "Connected"
+                return remote
+            }
+        }
+        splashStatus = ""
         return nil
     }
     #endif
@@ -223,6 +236,8 @@ struct MenuBarContent: View {
 // ── iOS helpers ───────────────────────────────────────────────────────────────
 #if os(iOS)
 struct iOSSplashView: View {
+    var status: String = ""
+
     var body: some View {
         ZStack {
             Color.appBg.ignoresSafeArea()
@@ -240,6 +255,11 @@ struct iOSSplashView: View {
                 Text("Mira")
                     .font(.bookerly(size: 38, weight: .semibold))
                     .foregroundStyle(Color.textPrimary)
+                Spacer().frame(height: 16)
+                Text(status.isEmpty ? " " : status)
+                    .font(.footnote)
+                    .foregroundStyle(Color.textSecondary)
+                    .animation(.easeInOut(duration: 0.25), value: status)
                 Spacer()
             }
         }
