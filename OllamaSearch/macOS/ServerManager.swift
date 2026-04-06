@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import Network
 
 /// Manages the Python FastAPI server subprocess lifecycle.
 ///
@@ -26,6 +27,10 @@ final class ServerManager {
 
     private var process: Process?
     private var pollTask: Task<Void, Never>?
+    /// Advertises _ollamasearch._tcp via the system mDNSResponder so all
+    /// network interfaces (WiFi, Ethernet) broadcast the service — the Python
+    /// server's zeroconf only binds to loopback and is invisible to iOS.
+    private var bonjourService: NetService?
 
     private init() {}
 
@@ -58,6 +63,8 @@ final class ServerManager {
     }
 
     func stop() {
+        bonjourService?.stop()
+        bonjourService = nil
         pollTask?.cancel()
         pollTask = nil
         process?.terminate()
@@ -134,7 +141,19 @@ final class ServerManager {
                 let healthy = await APIClient.shared.isHealthy()
                 if healthy {
                     await MainActor.run { [weak self] in
-                        self?.state = .ready
+                        guard let self else { return }
+                        self.state = .ready
+                        // Register via system mDNSResponder so all interfaces
+                        // (WiFi, Ethernet) advertise the service. Python's
+                        // zeroconf only binds to loopback and is invisible to iOS.
+                        let svc = NetService(
+                            domain: "local.",
+                            type: "_ollamasearch._tcp",
+                            name: "Mira",
+                            port: 8000
+                        )
+                        svc.publish()
+                        self.bonjourService = svc
                     }
                     return
                 }

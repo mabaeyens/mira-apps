@@ -15,11 +15,20 @@ final class BonjourDiscovery {
     var isSearching = false
 
     private var browser: NWBrowser?
-    // Cancellation happens in stop(), called from the view's onDisappear.
+    private var searchTimeoutTask: Task<Void, Never>?
 
     func start() {
         guard browser == nil else { return }
         isSearching = true
+
+        // Stop searching after 12 s — mDNS won't resolve on cellular or VPN
+        // so we need to surface the "No server found" fallback eventually.
+        // 12 s gives enough headroom for the first-run local network permission
+        // prompt (which pauses discovery while the user responds).
+        searchTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(12))
+            await MainActor.run { self?.isSearching = false }
+        }
 
         let params = NWParameters()
         params.includePeerToPeer = true
@@ -51,6 +60,8 @@ final class BonjourDiscovery {
     }
 
     func stop() {
+        searchTimeoutTask?.cancel()
+        searchTimeoutTask = nil
         browser?.cancel()
         browser = nil
         isSearching = false
@@ -65,6 +76,8 @@ final class BonjourDiscovery {
                 let ipString = "\(host)"
                     .components(separatedBy: "%").first ?? "\(host)"  // strip interface scope (e.g. %en0)
                 Task { @MainActor [weak self] in
+                    self?.searchTimeoutTask?.cancel()
+                    self?.searchTimeoutTask = nil
                     self?.discoveredURL = URL(string: "http://\(ipString):\(port)")
                     self?.isSearching = false
                 }
