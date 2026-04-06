@@ -19,6 +19,8 @@ struct ConnectionView: View {
     // sees their Tailscale address immediately instead of waiting for Bonjour.
     @State private var mode: Mode = UserDefaults.standard.string(forKey: "remoteURL") != nil ? .manual : .auto
     @State private var showAbout = false
+    @State private var isConnecting = false
+    @State private var connectionError: String? = nil
     let onConnect: (URL) -> Void
 
     enum Mode { case auto, manual }
@@ -134,20 +136,45 @@ struct ConnectionView: View {
 
     private var manualURLSection: some View {
         VStack(spacing: 12) {
-            TextField("http://100.x.x.x:8000", text: $manualURL)
+            TextField("https://miguels-macbook-pro.tail51ad7d.ts.net:8443", text: $manualURL)
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.URL)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
                 .frame(maxWidth: 320)
-            Button("Connect") {
-                guard let url = URL(string: manualURL),
+                .onChange(of: manualURL) { connectionError = nil }
+            Button {
+                let trimmed = manualURL.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let url = URL(string: trimmed),
                       url.scheme == "http" || url.scheme == "https" else { return }
-                connectRemote(url)
+                isConnecting = true
+                connectionError = nil
+                Task {
+                    if await APIClient.shared.probe(url) {
+                        connectRemote(url)
+                    } else {
+                        isConnecting = false
+                        connectionError = "Could not reach server. Check the URL and your connection."
+                    }
+                }
+            } label: {
+                if isConnecting {
+                    ProgressView().tint(.white)
+                } else {
+                    Text("Connect")
+                }
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.accent)
-            .disabled(manualURL.isEmpty)
+            .disabled(manualURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isConnecting)
+
+            if let error = connectionError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 300)
+            }
         }
     }
 

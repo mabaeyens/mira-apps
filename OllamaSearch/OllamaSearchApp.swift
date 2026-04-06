@@ -99,7 +99,7 @@ struct OllamaSearchApp: App {
         }
     }
 
-    /// Tries the saved local URL first (1.5 s timeout), then the saved remote URL.
+    /// Tries the saved local URL first, then the saved remote URL.
     /// Returns the first one that responds, or nil if neither is reachable.
     private func autoConnect() async -> URL? {
         let localURL  = UserDefaults.standard.string(forKey: "localURL").flatMap(URL.init(string:))
@@ -107,8 +107,8 @@ struct OllamaSearchApp: App {
         // Skip loopback — a 127.0.0.1 localURL can appear when Bonjour resolved
         // while Tailscale was active; it only works inside that specific VPN tunnel.
         let isLoopback: (URL) -> Bool = { ["127.0.0.1", "::1"].contains($0.host ?? "") }
-        if let local = localURL, !isLoopback(local), await APIClient.shared.isHealthy(at: local) { return local }
-        if let remote = remoteURL, await APIClient.shared.isHealthy(at: remote) { return remote }
+        if let local = localURL, !isLoopback(local), await APIClient.shared.probe(local, deadline: 2) { return local }
+        if let remote = remoteURL, await APIClient.shared.probe(remote, deadline: 2) { return remote }
         return nil
     }
     #endif
@@ -257,9 +257,11 @@ struct iOSConnectedView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
     @State private var showAbout = false
 
-    /// "Tailscale" for 100.x addresses, "Local" otherwise.
+    /// "Tailscale" for 100.x addresses or *.ts.net hostnames, "Local" otherwise.
     private var connectionLabel: String {
-        serverURL.host.map { $0.hasPrefix("100.") ? "Tailscale" : "Local" } ?? "Server"
+        guard let host = serverURL.host else { return "Server" }
+        let isTailscale = host.hasPrefix("100.") || host.hasSuffix(".ts.net")
+        return isTailscale ? "Tailscale" : "Local"
     }
     private var connectionIcon: String {
         connectionLabel == "Tailscale" ? "network" : "wifi"
