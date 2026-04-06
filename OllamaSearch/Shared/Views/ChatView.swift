@@ -29,7 +29,8 @@ struct ChatView: View {
                 messages: vm.messages,
                 isStreaming: vm.isStreaming,
                 currentSearchQuery: vm.currentSearchQuery,
-                isFetching: vm.isFetching
+                isFetching: vm.isFetching,
+                isLoadingMessages: vm.loadingConvId != nil
             )
 
             Color.borderSubtle.frame(height: 1)

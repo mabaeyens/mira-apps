@@ -7,16 +7,33 @@ struct MessageListView: View {
     let isStreaming: Bool
     let currentSearchQuery: String?
     let isFetching: Bool
+    var isLoadingMessages: Bool = false
 
     @State private var scrollPinned = true
     private let bottomAnchor = "bottom"
 
     var body: some View {
-        if messages.isEmpty && !isStreaming {
+        if isLoadingMessages {
+            loadingView
+        } else if messages.isEmpty && !isStreaming {
             welcomeView
         } else {
             scrollingMessages
         }
+    }
+
+    // ── Loading state ─────────────────────────────────────────────────────────
+
+    private var loadingView: some View {
+        VStack(spacing: 14) {
+            ProgressView()
+                .tint(Color.accent)
+            Text("Loading conversation…")
+                .font(.subheadline)
+                .foregroundStyle(Color.textSecondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBg)
     }
 
     // ── Welcome empty state ───────────────────────────────────────────────────
