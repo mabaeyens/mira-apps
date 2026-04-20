@@ -3,6 +3,9 @@ import SwiftUI
 /// Sidebar list of past conversations.
 struct ConversationListView: View {
     @Bindable var vm: ChatViewModel
+    #if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+    #endif
 
     var body: some View {
         Group {
@@ -19,6 +22,9 @@ struct ConversationListView: View {
         #if os(macOS)
         .safeAreaInset(edge: .top) {
             newChatButton
+        }
+        .safeAreaInset(edge: .bottom) {
+            aboutButton
         }
         #endif
         #if os(iOS)
@@ -76,6 +82,27 @@ struct ConversationListView: View {
         .scrollContentBackground(.hidden)
         .refreshable { await vm.loadConversations() }
     }
+
+    // ── About button (macOS sidebar footer) ──────────────────────────────────
+
+    #if os(macOS)
+    private var aboutButton: some View {
+        Button(action: { openWindow(id: "about") }) {
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(Color.textSecondary)
+                Text("About Mira")
+                    .foregroundStyle(Color.textSecondary)
+                Spacer()
+            }
+            .font(.subheadline)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+        .background(Color.sidebarBg)
+    }
+    #endif
 
     // ── New Chat button ───────────────────────────────────────────────────────
 
