@@ -53,7 +53,7 @@ extension Color {
         dark:  Color(hex: 0x57534E)
     )
     /// Warm amber — same hue in both modes, slightly deeper in light for contrast.
-    static let accent = Color(
+    static let appAccent = Color(
         light: Color(hex: 0xC07A4F),
         dark:  Color(hex: 0xD09268)
     )
@@ -78,7 +78,11 @@ extension Font {
     }
 
     /// Body size used in chat bubbles and streaming text.
+    #if os(iOS)
+    static let chatBody: Font = .system(size: 20)
+    #else
     static let chatBody: Font = .system(size: 16)
+    #endif
 }
 
 // ── Markdown theme ────────────────────────────────────────────────────────────
@@ -87,7 +91,11 @@ extension MarkdownUI.Theme {
     /// App-wide Markdown theme: system body font, adaptive warm palette.
     static let app: Self = .gitHub
         .text {
+            #if os(iOS)
+            FontSize(20)
+            #else
             FontSize(16)
+            #endif
             ForegroundColor(Color.textPrimary)
         }
         .link {

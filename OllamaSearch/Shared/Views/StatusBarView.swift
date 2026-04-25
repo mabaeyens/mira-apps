@@ -12,7 +12,11 @@ struct StatusBarView: View {
             badge("↑\(formatted(inputTokens)) ↓\(formatted(outputTokens))", color: .secondary)
             badge("ctx:\(Int(contextPct))%", color: ctxColor)
         }
+        #if os(iOS)
+        .font(.system(size: 13, weight: .medium, design: .monospaced))
+        #else
         .font(.system(size: 11, weight: .medium, design: .monospaced))
+        #endif
     }
 
     private var ctxColor: Color {
