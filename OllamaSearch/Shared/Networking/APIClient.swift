@@ -12,9 +12,28 @@ final class APIClient {
 
     // ── Health ────────────────────────────────────────────────────────────────
 
+    enum StartupStatus { case ready, starting, unavailable }
+
+    /// Returns the server's startup state: ready (200), starting (503), or unreachable.
+    func startupStatus() async -> StartupStatus {
+        guard let healthURL = URL(string: "/health", relativeTo: baseURL) else { return .unavailable }
+        var req = URLRequest(url: healthURL)
+        req.timeoutInterval = 1.5
+        do {
+            let (_, response) = try await URLSession.shared.data(for: req)
+            switch (response as? HTTPURLResponse)?.statusCode {
+            case 200: return .ready
+            case 503: return .starting
+            default:  return .unavailable
+            }
+        } catch {
+            return .unavailable
+        }
+    }
+
     /// Returns true when the server at `baseURL` is up and ready.
     func isHealthy() async -> Bool {
-        await isHealthy(at: baseURL)
+        await startupStatus() == .ready
     }
 
     /// Returns true when the server at the given URL responds within `timeout` seconds.

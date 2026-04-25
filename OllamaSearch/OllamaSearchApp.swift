@@ -201,9 +201,9 @@ struct MenuBarContent: View {
 
     private var statusLabel: String {
         switch connection.state {
-        case .connecting: return "Connecting…"
-        case .ready:      return "Ready"
-        case .failed:     return "Server not running"
+        case .connecting(let msg): return msg
+        case .ready:               return "Ready"
+        case .failed:              return "Server not running"
         }
     }
     private var statusIcon: String {
@@ -296,8 +296,13 @@ struct iOSConnectedView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showAbout = true } label: {
-                        Image(systemName: "info.circle")
+                    HStack(spacing: 4) {
+                        Button { chatVM.newConversation() } label: {
+                            Image(systemName: "square.and.pencil")
+                        }
+                        Button { showAbout = true } label: {
+                            Image(systemName: "info.circle")
+                        }
                     }
                 }
             }
