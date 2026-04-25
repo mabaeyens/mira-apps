@@ -172,6 +172,27 @@ final class ChatViewModel {
         }
     }
 
+    func renameConversation(_ id: String, title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            do {
+                try await api.renameConversation(id: id, title: trimmed)
+                if let idx = conversations.firstIndex(where: { $0.id == id }) {
+                    let old = conversations[idx]
+                    conversations[idx] = Conversation(
+                        id: old.id, title: trimmed,
+                        createdAt: old.createdAt, updatedAt: old.updatedAt,
+                        modelName: old.modelName,
+                        messageCount: old.messageCount
+                    )
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     func loadConversations() async {
         isLoadingConversations = true
         defer { isLoadingConversations = false }

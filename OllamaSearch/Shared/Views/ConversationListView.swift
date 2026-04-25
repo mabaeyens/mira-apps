@@ -7,6 +7,17 @@ struct ConversationListView: View {
     @Environment(\.openWindow) private var openWindow
     #endif
 
+    @State private var renamingConv: Conversation? = nil
+    @State private var renameText: String = ""
+    @State private var searchText: String = ""
+
+    private var filteredConversations: [Conversation] {
+        guard !searchText.isEmpty else { return vm.conversations }
+        return vm.conversations.filter {
+            $0.title.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
     var body: some View {
         Group {
             if vm.isLoadingConversations && vm.conversations.isEmpty {
@@ -70,7 +81,7 @@ struct ConversationListView: View {
             get: { vm.currentConvId.isEmpty ? nil : vm.currentConvId },
             set: { if let id = $0 { vm.selectConversation(id) } }
         )) {
-            ForEach(vm.conversations) { conv in
+            ForEach(filteredConversations) { conv in
                 conversationRow(conv)
                     .tag(conv.id)
                     .listRowBackground(Color.clear)
@@ -80,7 +91,21 @@ struct ConversationListView: View {
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
+        .searchable(text: $searchText, prompt: "Search conversations")
         .refreshable { await vm.loadConversations() }
+        .alert("Rename conversation", isPresented: Binding(
+            get: { renamingConv != nil },
+            set: { if !$0 { renamingConv = nil } }
+        )) {
+            TextField("Title", text: $renameText)
+            Button("Rename") {
+                if let conv = renamingConv {
+                    vm.renameConversation(conv.id, title: renameText)
+                }
+                renamingConv = nil
+            }
+            Button("Cancel", role: .cancel) { renamingConv = nil }
+        }
     }
 
     // ── About button (macOS sidebar footer) ──────────────────────────────────
@@ -147,11 +172,26 @@ struct ConversationListView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 4)
         .contextMenu {
+            Button {
+                renameText = conv.title
+                renamingConv = conv
+            } label: {
+                Label("Rename", systemImage: "pencil")
+            }
             Button(role: .destructive) {
                 vm.deleteConversation(conv.id)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+        }
+        .swipeActions(edge: .leading) {
+            Button {
+                renameText = conv.title
+                renamingConv = conv
+            } label: {
+                Label("Rename", systemImage: "pencil")
+            }
+            .tint(.orange)
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {

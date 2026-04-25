@@ -120,6 +120,17 @@ final class APIClient {
         return obj.id
     }
 
+    func renameConversation(id: String, title: String) async throws {
+        guard let url = URL(string: "/conversations/\(id)", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["title": title])
+        _ = try await URLSession.shared.data(for: req)
+    }
+
     func deleteConversation(id: String) async throws {
         guard let url = URL(string: "/conversations/\(id)", relativeTo: baseURL) else {
             throw APIError.invalidURL
