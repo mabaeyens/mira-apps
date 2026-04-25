@@ -28,7 +28,10 @@
       "Bash(cd * && cat *)",
       "Bash(cd * && git add * && git commit *)",
       "Bash(cd * && git pull * && git add *)",
-      "Bash(cd * && git pull * && git status)"
+      "Bash(cd * && git pull * && git status)",
+      "Bash(cd * && git status && echo * && git diff *)",
+      "Bash(cd * && git pull * && git add * && git status)",
+      "Bash(cd * && git push * && echo *)"
     ]
   }
 }
