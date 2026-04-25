@@ -35,6 +35,24 @@ struct ChatView: View {
 
             Color.borderSubtle.frame(height: 1)
 
+            // ── Active project pill ───────────────────────────────────────
+            if let project = vm.activeProject {
+                HStack(spacing: 4) {
+                    Image(systemName: project.localPath != nil ? "folder" : "network")
+                        .font(.system(size: 11, weight: .medium))
+                    Text(project.name)
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(Color.appAccent)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.appAccent.opacity(0.12), in: Capsule())
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 5)
+                .padding(.bottom, 1)
+                .background(Color.appBg)
+            }
+
             // ── Input bar ─────────────────────────────────────────────────
             InputBar(
                 text: $vm.inputText,
