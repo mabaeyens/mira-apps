@@ -31,7 +31,7 @@ struct ConnectionView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                MiraLogoView(size: 88)
+                MiraLogoView(size: 100)
                 Spacer().frame(height: 18)
                 Text("Mira")
                     .font(.bookerly(size: 32, weight: .semibold))
@@ -45,7 +45,8 @@ struct ConnectionView: View {
                     }
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
-                    .frame(maxHeight: min(CGFloat(store.connections.count) * 72 + 44, 420))
+                } else {
+                    Spacer()
                 }
 
                 Button {
@@ -70,7 +71,7 @@ struct ConnectionView: View {
                         .padding(.top, 4)
                 }
 
-                Spacer()
+                Spacer().frame(height: 32)
             }
             .padding(.horizontal, 16)
         }

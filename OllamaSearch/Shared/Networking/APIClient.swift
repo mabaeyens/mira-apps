@@ -128,15 +128,55 @@ final class APIClient {
         return obj.conversations
     }
 
-    func createConversation() async throws -> String {
+    func createConversation(projectId: String? = nil) async throws -> String {
         guard let url = URL(string: "/conversations", relativeTo: baseURL) else {
             throw APIError.invalidURL
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        if let pid = projectId {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try JSONEncoder().encode(["project_id": pid])
+        }
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(NewConversationResponse.self, from: data)
         return obj.id
+    }
+
+    // ── Projects ──────────────────────────────────────────────────────────────
+
+    func listProjects() async throws -> [Project] {
+        let url = baseURL.appendingPathComponent("projects")
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode(ProjectList.self, from: data).projects
+    }
+
+    func createProject(name: String, localPath: String?, githubRepo: String?) async throws -> Project {
+        guard let url = URL(string: "/projects", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        var body: [String: String] = ["name": name]
+        if let lp = localPath { body["local_path"] = lp }
+        if let gh = githubRepo { body["github_repo"] = gh }
+        req.httpBody = try JSONEncoder().encode(body)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.detail ?? "Server error \(http.statusCode)"
+            throw APIError.serverError(msg)
+        }
+        return try JSONDecoder().decode(Project.self, from: data)
+    }
+
+    func deleteProject(id: String) async throws {
+        guard let url = URL(string: "/projects/\(id)", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        _ = try await URLSession.shared.data(for: req)
     }
 
     func renameConversation(id: String, title: String) async throws {
@@ -220,7 +260,13 @@ enum AttachmentPayload {
 
 enum APIError: LocalizedError {
     case invalidURL
-    var errorDescription: String? { "Invalid server URL" }
+    case serverError(String)
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:        return "Invalid server URL"
+        case .serverError(let m): return m
+        }
+    }
 }
 
 private struct NewConversationResponse: Decodable {
@@ -241,6 +287,14 @@ private struct ConversationList: Decodable {
     let conversations: [Conversation]
 }
 
+private struct ProjectList: Decodable {
+    let projects: [Project]
+}
+
 private struct MessageList: Decodable {
     let messages: [ConversationMessage]
+}
+
+private struct APIErrorResponse: Decodable {
+    let detail: String
 }
