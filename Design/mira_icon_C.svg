@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Mira icon C</title>
+  <desc>Vector base for Mira logo, ultra-icon composition with primary and secondary star only. No glow effects.</desc>
+  <rect width="1024" height="1024" fill="#05070A"/>
+  <g id="logo_C" transform="translate(512 512)">
+    <path id="star_main"
+      d="M 0 -318
+         C 8 -214, 15 -140, 23 -102
+         C 33 -56, 56 -33, 102 -23
+         C 140 -15, 214 -8, 318 0
+         C 214 8, 140 15, 102 23
+         C 56 33, 33 56, 23 102
+         C 15 140, 8 214, 0 318
+         C -8 214, -15 140, -23 102
+         C -33 56, -56 33, -102 23
+         C -140 15, -214 8, -318 0
+         C -214 -8, -140 -15, -102 -23
+         C -56 -33, -33 -56, -23 -102
+         C -15 -140, -8 -214, 0 -318 Z"
+      fill="#F7C768"/>
+
+    <g id="star_secondary" transform="translate(212 148) scale(0.235)">
+      <path
+        d="M 0 -318
+           C 8 -214, 15 -140, 23 -102
+           C 33 -56, 56 -33, 102 -23
+           C 140 -15, 214 -8, 318 0
+           C 214 8, 140 15, 102 23
+           C 56 33, 33 56, 23 102
+           C 15 140, 8 214, 0 318
+           C -8 214, -15 140, -23 102
+           C -33 56, -56 33, -102 23
+           C -140 15, -214 8, -318 0
+           C -214 -8, -140 -15, -102 -23
+           C -56 -33, -33 -56, -23 -102
+           C -15 -140, -8 -214, 0 -318 Z"
+        fill="#F7C768"/>
+    </g>
+  </g>
+</svg>
