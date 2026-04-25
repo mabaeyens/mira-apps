@@ -65,7 +65,7 @@ struct OllamaSearchApp: App {
                         showingConnectionSettings = true
                     }
                     .sheet(isPresented: $showingConnectionSettings) {
-                        ConnectionView(autoConnect: false) { newURL in
+                        ConnectionView { newURL in
                             APIClient.shared.baseURL = newURL
                             activeURL = newURL
                             showingConnectionSettings = false
