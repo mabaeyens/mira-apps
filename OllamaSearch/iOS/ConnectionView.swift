@@ -1,39 +1,19 @@
 #if os(iOS)
 import SwiftUI
 
-/// Connection setup screen — shown when no server URL is configured,
-/// or opened from the gear icon to switch servers.
-///
-/// Displays saved connections as a tappable list, a Bonjour auto-discovery
-/// row, and an Add sheet for entering new URLs.
 struct ConnectionView: View {
-    /// When true (cold start), auto-connects as soon as Bonjour finds the server
-    /// and saves it without prompting. When false (gear icon), asks to save.
-    let autoConnect: Bool
     let onConnect: (URL) -> Void
 
-    init(autoConnect: Bool = true, onConnect: @escaping (URL) -> Void) {
-        self.autoConnect = autoConnect
-        self.onConnect = onConnect
-    }
-
     @Environment(SavedConnectionsStore.self) private var store
-    @State private var bonjour = BonjourDiscovery()
 
-    // Add-connection sheet
-    @State private var showAddSheet = false
-    @State private var addURL   = ""
-    @State private var addLabel = ""
+    @State private var showAddSheet  = false
+    @State private var addURL        = ""
+    @State private var addLabel      = ""
     @State private var addError: String? = nil
     @State private var isAddConnecting = false
 
-    // Per-row connecting state (URL string being probed)
     @State private var connectingURL: String? = nil
     @State private var rowError: String? = nil
-
-    // Save-prompt for Bonjour-discovered URLs (shown when autoConnect = false)
-    @State private var pendingSave: SavedConnection? = nil
-    @State private var pendingSaveLabel = ""
 
     @State private var showAbout = false
 
@@ -51,7 +31,7 @@ struct ConnectionView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                MiraLogoView(size: 88, animated: bonjour.isSearching)
+                MiraLogoView(size: 88)
                 Spacer().frame(height: 18)
                 Text("Mira")
                     .font(.bookerly(size: 32, weight: .semibold))
@@ -59,16 +39,15 @@ struct ConnectionView: View {
 
                 Spacer().frame(height: 28)
 
-                // ── Connection list ────────────────────────────────────────
-                List {
-                    bonjourSection
-                    savedSection
+                if !store.connections.isEmpty {
+                    List {
+                        savedSection
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .frame(maxHeight: min(CGFloat(store.connections.count) * 72 + 44, 420))
                 }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden)
-                .frame(maxHeight: min(CGFloat(2 + store.connections.count) * 72 + 80, 420))
 
-                // ── Add connection ─────────────────────────────────────────
                 Button {
                     addURL = ""
                     addLabel = ""
@@ -110,107 +89,16 @@ struct ConnectionView: View {
         .sheet(isPresented: $showAddSheet) {
             addConnectionSheet
         }
-        // Save-prompt for Bonjour-discovered connections
-        .alert("Save this connection?", isPresented: Binding(
-            get: { pendingSave != nil },
-            set: { if !$0 { pendingSave = nil } }
-        )) {
-            TextField("Label (e.g. Home WiFi)", text: $pendingSaveLabel)
-            Button("Save") {
-                if var conn = pendingSave {
-                    let trimmed = pendingSaveLabel.trimmingCharacters(in: .whitespacesAndNewlines)
-                    conn.label = trimmed.isEmpty ? conn.label : trimmed
-                    store.add(conn)
-                }
-                pendingSave = nil
-            }
-            Button("Don't Save", role: .cancel) { pendingSave = nil }
-        } message: {
-            if let conn = pendingSave { Text(conn.urlString) }
-        }
-        .onAppear { bonjour.start() }
-        .onDisappear { bonjour.stop() }
-        .onChange(of: bonjour.discoveredURL) { handleBonjourDiscovery() }
-    }
-
-    // ── Bonjour section ────────────────────────────────────────────────────
-
-    private var bonjourSection: some View {
-        Section {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Auto (Bonjour)")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.textPrimary)
-                    Group {
-                        if bonjour.isSearching {
-                            Text("Searching on local network…")
-                        } else if let url = bonjour.discoveredURL {
-                            Text(url.absoluteString)
-                        } else {
-                            Text("No server found")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(Color.textSecondary)
-                }
-                Spacer()
-                bonjourTrailing
-            }
-            .padding(.vertical, 2)
-            .listRowBackground(Color.surfaceBg)
-        }
-    }
-
-    @ViewBuilder
-    private var bonjourTrailing: some View {
-        if bonjour.isSearching {
-            ProgressView().tint(Color.accent)
-        } else if let url = bonjour.discoveredURL {
-            if !autoConnect {
-                VStack(spacing: 4) {
-                    bonjourConnectButton(url: url, save: true)
-                    bonjourConnectButton(url: url, save: false)
-                }
-            } else {
-                // autoConnect already handled in onChange — show spinner while probing
-                if connectingURL == url.absoluteString {
-                    ProgressView().tint(Color.accent)
-                } else {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accent)
-                }
-            }
-        } else {
-            Button("Retry") { bonjour.stop(); bonjour.start() }
-                .buttonStyle(.bordered)
-                .tint(Color.accent)
-                .font(.caption)
-                .controlSize(.small)
-        }
-    }
-
-    private func bonjourConnectButton(url: URL, save: Bool) -> some View {
-        Button(save ? "Connect & Save" : "Connect") {
-            connectRow(urlString: url.absoluteString, saveIfNew: save)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(save ? Color.accent : Color.secondary)
-        .font(.caption)
-        .controlSize(.small)
-        .disabled(connectingURL != nil)
     }
 
     // ── Saved connections section ──────────────────────────────────────────
 
-    @ViewBuilder
     private var savedSection: some View {
-        if !store.connections.isEmpty {
-            Section("Saved") {
-                ForEach(store.connections) { conn in
-                    savedRow(conn)
-                }
-                .onDelete { store.delete(at: $0) }
+        Section("Saved") {
+            ForEach(store.connections) { conn in
+                savedRow(conn)
             }
+            .onDelete { store.delete(at: $0) }
         }
     }
 
@@ -238,7 +126,7 @@ struct ConnectionView: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
-        .onTapGesture { connectRow(urlString: conn.urlString, saveIfNew: false) }
+        .onTapGesture { connectRow(urlString: conn.urlString) }
         .listRowBackground(Color.surfaceBg)
     }
 
@@ -253,7 +141,6 @@ struct ConnectionView: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .onChange(of: addURL) {
-                            // Auto-populate label hint from URL
                             if addLabel.isEmpty {
                                 addLabel = SavedConnection.autoLabel(for: addURL)
                             }
@@ -299,7 +186,7 @@ struct ConnectionView: View {
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private func connectRow(urlString: String, saveIfNew: Bool) {
+    private func connectRow(urlString: String) {
         guard let url = URL(string: urlString), connectingURL == nil else { return }
         connectingURL = urlString
         rowError = nil
@@ -309,54 +196,11 @@ struct ConnectionView: View {
                 connectingURL = nil
                 if ok {
                     store.setActive(urlString)
-                    let isNew = !store.connections.contains(where: { $0.urlString == urlString })
-                    if saveIfNew && isNew {
-                        store.add(SavedConnection(
-                            label: SavedConnection.autoLabel(for: urlString),
-                            urlString: urlString
-                        ))
-                    } else if !saveIfNew && isNew {
-                        // Don't save — just connect
-                    }
                     onConnect(url)
                 } else {
                     rowError = "Could not reach \(urlString). Check the URL and your connection."
                 }
             }
-        }
-    }
-
-    private func handleBonjourDiscovery() {
-        guard let url = bonjour.discoveredURL else { return }
-        let urlString = url.absoluteString
-        let isNew = !store.connections.contains(where: { $0.urlString == urlString })
-
-        if autoConnect {
-            // Cold start: connect + auto-save silently
-            connectingURL = urlString
-            Task {
-                let ok = await APIClient.shared.probe(url)
-                await MainActor.run {
-                    connectingURL = nil
-                    if ok {
-                        if isNew {
-                            store.add(SavedConnection(
-                                label: SavedConnection.autoLabel(for: urlString),
-                                urlString: urlString
-                            ))
-                        }
-                        store.setActive(urlString)
-                        onConnect(url)
-                    }
-                }
-            }
-        } else if isNew {
-            // Settings sheet: ask to save
-            pendingSaveLabel = SavedConnection.autoLabel(for: urlString)
-            pendingSave = SavedConnection(
-                label: pendingSaveLabel,
-                urlString: urlString
-            )
         }
     }
 
