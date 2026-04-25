@@ -1,5 +1,22 @@
 #if os(macOS)
 import SwiftUI
+import AppKit
+
+// Makes the window title bar transparent so the content fills edge-to-edge.
+private struct TransparentTitleBar: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            guard let w = view.window else { return }
+            w.titlebarAppearsTransparent = true
+            w.titleVisibility = .hidden
+            w.styleMask.insert(.fullSizeContentView)
+            w.backgroundColor = NSColor(Color.appBg)
+        }
+        return view
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
 
 struct SplashView: View {
     let state: MacConnectionManager.State
@@ -12,7 +29,14 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            Color.appBg.ignoresSafeArea()
+            // Radial gradient matches the app icon background (#272220 center → #1C1917 edge).
+            RadialGradient(
+                colors: [Color(hex: 0x272220), Color.appBg],
+                center: .center,
+                startRadius: 0,
+                endRadius: 280
+            )
+            .ignoresSafeArea()
 
             RadialGradient(
                 colors: [Color.accent.opacity(0.10), .clear],
@@ -43,6 +67,7 @@ struct SplashView: View {
             .padding(.horizontal, 48)
         }
         .frame(width: 440, height: 320)
+        .background(TransparentTitleBar())
     }
 
     @ViewBuilder
