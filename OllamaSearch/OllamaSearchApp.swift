@@ -49,6 +49,7 @@ struct OllamaSearchApp: App {
     // ── iOS ───────────────────────────────────────────────────────────────────
     #if os(iOS)
     @State private var chatVM = ChatViewModel()
+    @State private var connectionsStore = SavedConnectionsStore()
     @State private var activeURL: URL? = nil
     @State private var splashDone = false
     @State private var showingConnectionSettings = false
@@ -69,21 +70,20 @@ struct OllamaSearchApp: App {
                             activeURL = newURL
                             showingConnectionSettings = false
                         }
+                        .environment(connectionsStore)
                     }
                 } else {
                     ConnectionView { url in
                         APIClient.shared.baseURL = url
                         activeURL = url
                     }
+                    .environment(connectionsStore)
                 }
             }
             .preferredColorScheme(.dark)
             .task {
-                // Start connection attempt immediately in background.
                 async let found = autoConnect()
-                // Always show splash for at least 1.4 s.
                 try? await Task.sleep(for: .milliseconds(1_400))
-                // Collect result (likely already ready by now).
                 let url = await found
                 withAnimation(.easeOut(duration: 0.4)) {
                     if let url {
@@ -96,25 +96,29 @@ struct OllamaSearchApp: App {
         }
     }
 
-    /// Tries the saved local URL first, then the saved remote URL.
-    /// Returns the first one that responds, or nil if neither is reachable.
-    /// Updates `splashStatus` at each step so the splash screen shows progress.
+    /// Tries the active saved connection first, then falls through to others.
     private func autoConnect() async -> URL? {
-        let localURL  = UserDefaults.standard.string(forKey: "localURL").flatMap(URL.init(string:))
-        let remoteURL = UserDefaults.standard.string(forKey: "remoteURL").flatMap(URL.init(string:))
         let isLoopback: (URL) -> Bool = { ["127.0.0.1", "::1"].contains($0.host ?? "") }
-        if let local = localURL, !isLoopback(local) {
-            splashStatus = "Looking for server on local network…"
-            if await APIClient.shared.probe(local, deadline: 2) {
+
+        // Try the last-used URL first
+        if let active = connectionsStore.activeURLString,
+           let url = URL(string: active), !isLoopback(url) {
+            splashStatus = "Connecting…"
+            if await APIClient.shared.probe(url, deadline: 2) {
                 splashStatus = "Connected"
-                return local
+                return url
             }
         }
-        if let remote = remoteURL {
-            splashStatus = "Trying remote connection…"
-            if await APIClient.shared.probe(remote, deadline: 2) {
+        // Fall through to other saved connections
+        for conn in connectionsStore.connections {
+            guard let url = conn.url,
+                  !isLoopback(url),
+                  conn.urlString != connectionsStore.activeURLString else { continue }
+            splashStatus = "Trying \(conn.label)…"
+            if await APIClient.shared.probe(url, deadline: 2) {
+                connectionsStore.setActive(conn.urlString)
                 splashStatus = "Connected"
-                return remote
+                return url
             }
         }
         splashStatus = ""
