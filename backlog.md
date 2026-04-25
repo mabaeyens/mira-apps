@@ -1,6 +1,9 @@
 # Backlog
 
 ## Done
+- [2026-04-25] macOS: server startup UX — /health returns 503 during Ollama warm-up (up to 25s); macOS splash polls for 60s, shows "Starting Ollama…" on 503 vs "Connecting…" on unreachable; first chat can no longer silently fail before model is ready
+- [2026-04-25] iOS: new-chat button — square.and.pencil toolbar button in detail pane calls newConversation(); equivalent to macOS New Chat menu command
+- [2026-04-25] Both: inline image thumbnails — Message.imageAttachments: [Data] populated on send; MessageBubble renders 120×120 thumbnails above text in user bubbles on iOS and macOS
 - [2026-04-25] Both: conversation search — .searchable() on sidebar list, client-side filter on title, works on iOS and macOS with no server changes
 - [2026-04-25] iOS: conversation rename — swipe-left reveals Rename action, context-menu also has Rename; alert pre-fills current title; PATCH /conversations/{id} endpoint added to server.py; renameConversation wired through APIClient → ChatViewModel → ConversationListView
 - [2026-04-25] Fix Ollama startup race condition — server.py lifespan pre-warm now retries up to 5× with 5s delay so model loads even when Ollama starts after the server on login
@@ -21,10 +24,8 @@
 - [2026-04-25] Bump version 0.1.2 (build 2) — macOS thin-client rearchitecture (launchd LaunchAgent)
 
 ## Pending
-- Make repos available through Obsidian
-- iOS: reset / clear current chat button (web UI has one, iOS doesn't)
-- Both: inline image thumbnail preview in chat bubbles
-- macOS: server startup UX — silent failure when Ollama isn't running
+- Obsidian: keep as-is (free for local use, no subscription needed; open vault pointing at ~/.claude/ or project dirs)
+- Next TestFlight build needed to ship this session's features to devices
 
 ## Notes
 - iOS server connection: Bonjour removed in favour of saved connections + DHCP reservation on TP-Link AX73. Add Tailscale hostname as a second saved connection when remote access is needed.
