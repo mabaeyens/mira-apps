@@ -14,11 +14,11 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/gonzalezreal/swift-markdown-ui",
-            from: "2.4.0"
+            .upToNextMajor(from: "2.4.0")
         ),
         .package(
             url: "https://github.com/raspu/Highlightr",
-            from: "2.2.0"
+            .upToNextMajor(from: "2.2.0")
         ),
     ],
     targets: [

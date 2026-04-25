@@ -6,7 +6,6 @@ import MarkdownUI
 /// page background. During streaming a blinking DOS-style `_` cursor is shown.
 struct MessageBubble: View {
     let message: Message
-    @State private var cursorOn = true
 
     var body: some View {
         if message.role == .user {
@@ -79,11 +78,14 @@ struct MessageBubble: View {
             // Content — plain Text while streaming (fast, no re-parse),
             // full Markdown once done.
             if message.isStreaming {
-                Text("\(message.content)\(Text(cursorOn ? "_" : " ").foregroundStyle(Color.accent))")
-                    .font(.chatBody)
-                    .foregroundStyle(Color.textPrimary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                TimelineView(.periodic(from: .now, by: 0.53)) { tl in
+                    let showCursor = Int(tl.date.timeIntervalSinceReferenceDate / 0.53) % 2 == 0
+                    Text("\(message.content)\(Text(showCursor ? "_" : " ").foregroundStyle(Color.accent))")
+                        .font(.chatBody)
+                        .foregroundStyle(Color.textPrimary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             } else {
                 Markdown(message.content)
                     .markdownTheme(.app)
@@ -101,17 +103,5 @@ struct MessageBubble: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
-        // Cursor blink: task re-fires whenever isStreaming toggles.
-        // When streaming ends the task is cancelled, cursorOn is reset to false.
-        .task(id: message.isStreaming) {
-            guard message.isStreaming else { cursorOn = false; return }
-            cursorOn = true
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(530))
-                guard !Task.isCancelled else { break }
-                cursorOn.toggle()
-            }
-            cursorOn = false
-        }
     }
 }
