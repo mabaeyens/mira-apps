@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s --max-time 2 localhost:8000/health *)",
+      "Bash(curl -s --max-time 2 http://localhost:8000/health *)",
+      "Bash(curl -s --max-time 4 http://localhost:8000/health *)",
+      "Bash(curl -s --max-time 5 http://localhost:8000/health *)",
+      "Bash(curl -s http://localhost:8000/health *)",
+      "Bash(curl -s http://localhost:8000/projects *)",
+      "Bash(curl -s http://localhost:8000/conversations *)",
+      "Bash(crontab -l *)"
+    ]
+  }
+}

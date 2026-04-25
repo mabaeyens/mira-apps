@@ -1,11 +1,10 @@
 # Backlog
 
 ## Done
+- [2026-04-25] Claude Code skills created and documented — mira-release (full TestFlight pipeline), mira-server (LaunchAgent management), mira-status (cross-project warm start); .claude/settings.json and settings.local.json committed
 - [2026-04-25] AboutView: always full-sheet with X close button — removed presentationDetents from both iOS sheet call sites; added xmark.circle.fill dismiss button via ZStack overlay
 - [2026-04-25] mira-core /ask endpoint — ephemeral one-shot POST to Gemma4/Ollama, no conversation saved, no tools, no DB writes; accepts optional system prompt; enables Claude Code orchestration delegation
 - [2026-04-25] Active project pill in chat header — amber capsule above input bar shows folder/network icon + project name; visible only when conversation has an active project; `vm.activeProject` drives it with no extra state
-
-## Done
 - [2026-04-25] Project picker UI — Projects section in sidebar, tap to start scoped chat, Add Project sheet (name + local path + GitHub repo), project badge on conversation rows, loadProjects on startup
 - [2026-04-25] TestFlight build — v0.1.4 (build 4) shipped to devices
 - [2026-04-25] Obsidian — confirmed keep as-is (free for local use; open vault pointing at ~/.claude/ or project dirs)
