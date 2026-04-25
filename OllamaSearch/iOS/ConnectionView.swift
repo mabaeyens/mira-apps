@@ -85,7 +85,7 @@ struct ConnectionView: View {
             .padding(.trailing, 24)
         }
         .sheet(isPresented: $showAbout) {
-            AboutView().presentationDetents([.medium, .large])
+            AboutView()
         }
         .sheet(isPresented: $showAddSheet) {
             addConnectionSheet

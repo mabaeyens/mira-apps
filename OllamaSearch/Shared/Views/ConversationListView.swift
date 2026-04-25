@@ -373,6 +373,7 @@ struct AddProjectSheet: View {
                     }
                 }
             }
+            .formStyle(.grouped)
             .navigationTitle("Add Project")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

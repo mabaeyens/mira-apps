@@ -1,12 +1,15 @@
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(\.dismiss) private var dismiss
+
     private var version: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .topTrailing) {
+          VStack(spacing: 0) {
             Spacer()
 
             MiraLogoView(size: 80, playIntro: true)
@@ -42,10 +45,23 @@ struct AboutView: View {
             }
 
             Spacer()
+          }
+          .padding(.horizontal, 40)
+          .padding(.vertical, 24)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .background(Color.appBg)
+
+          Button {
+              dismiss()
+          } label: {
+              Image(systemName: "xmark.circle.fill")
+                  .font(.system(size: 28))
+                  .symbolRenderingMode(.hierarchical)
+                  .foregroundStyle(Color.textSecondary)
+          }
+          .buttonStyle(.plain)
+          .padding(16)
         }
-        .padding(.horizontal, 40)
-        .padding(.vertical, 24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBg)
     }
 }

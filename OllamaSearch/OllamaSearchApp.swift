@@ -318,7 +318,6 @@ struct iOSConnectedView: View {
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
-                .presentationDetents([.medium, .large])
         }
         .task {
             APIClient.shared.baseURL = serverURL
