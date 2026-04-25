@@ -14,7 +14,6 @@
 
 /* Begin PBXFileReference section */
 		497B07F72F82C7D90018933E /* Mira.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mira.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		49A5E7672F9CDA0B00395E72 /* OllamaSearch.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OllamaSearch.xcodeproj; sourceTree = "<group>"; };
 		49A5E78D2F9CDB2500395E72 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = OllamaSearch/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -66,11 +65,6 @@
 			children = (
 				497B07F72F82C7D90018933E /* Mira.app */,
 			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		49A5E76C2F9CDA0B00395E72 /* Products */ = {
-			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -132,12 +126,6 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 497B07F82F82C7D90018933E /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 49A5E76C2F9CDA0B00395E72 /* Products */;
-					ProjectRef = 49A5E7672F9CDA0B00395E72 /* OllamaSearch.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				497B07F62F82C7D90018933E /* OllamaSearch */,
