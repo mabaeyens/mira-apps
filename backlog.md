@@ -1,6 +1,11 @@
 # Backlog
 
 ## Done
+- [2026-04-25] AboutView: always full-sheet with X close button — removed presentationDetents from both iOS sheet call sites; added xmark.circle.fill dismiss button via ZStack overlay
+- [2026-04-25] mira-core /ask endpoint — ephemeral one-shot POST to Gemma4/Ollama, no conversation saved, no tools, no DB writes; accepts optional system prompt; enables Claude Code orchestration delegation
+- [2026-04-25] Active project pill in chat header — amber capsule above input bar shows folder/network icon + project name; visible only when conversation has an active project; `vm.activeProject` drives it with no extra state
+
+## Done
 - [2026-04-25] Project picker UI — Projects section in sidebar, tap to start scoped chat, Add Project sheet (name + local path + GitHub repo), project badge on conversation rows, loadProjects on startup
 - [2026-04-25] TestFlight build — v0.1.4 (build 4) shipped to devices
 - [2026-04-25] Obsidian — confirmed keep as-is (free for local use; open vault pointing at ~/.claude/ or project dirs)
@@ -29,11 +34,9 @@
 ## Pending
 
 
-## Pending
-- Show active project in chat view header — a small pill above the input bar confirms which project is active; `vm.activeProject` is already computed and ready to use
-- Step 4: github_clone_repo tool + "Clone repo as project" action in AddProjectSheet
-
 ## Notes
+- Claude Code ↔ Mira orchestration: Claude delegates simple tasks (summarization, classification, drafts) to Mira via `POST /ask`. Gemma4 handles easy work; Claude keeps multi-step reasoning and complex tool chains. Invoke: `curl -s -X POST http://localhost:8000/ask -H "Content-Type: application/json" -d '{"prompt":"...","system":"..."}'`
+- /ask is intentionally tool-free and stateless — do not add tool dispatch to it; use /chat for agentic turns
 - Project model lives in Conversation.swift (not a separate file) to avoid project.pbxproj changes; same for AddProjectSheet in ConversationListView.swift
 - `vm.activeProject` is a computed property derived from currentConvId + conversations + projects — no extra state needed, automatically tracks conversation switches
 - iOS server connection: Bonjour removed in favour of saved connections + DHCP reservation on TP-Link AX73. Add Tailscale hostname as a second saved connection when remote access is needed.
