@@ -41,12 +41,6 @@ struct AboutView: View {
                 .frame(maxWidth: 360)
             }
 
-            Spacer().frame(height: 28)
-
-            Text("© Miguel Angel Baeyens 2026")
-                .font(.caption)
-                .foregroundStyle(Color.textSecondary.opacity(0.6))
-
             Spacer()
         }
         .padding(.horizontal, 40)
