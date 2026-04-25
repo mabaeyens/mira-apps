@@ -2,190 +2,149 @@ import SwiftUI
 
 // ── Mira brand mark ───────────────────────────────────────────────────────────
 //
-//  Static:   orbit ring + 4-pointed star, no animation.
-//  Animated: breathing glow (idle loading state).
-//  Intro:    one-shot sequence — eye open → blink → star grows → tilt to orbit.
-//            Runs once on appear (splash screen, About sheet).
+//  Large 4-pointed star at center; small companion star orbits around it.
+//  Orbit uses TimelineView for per-frame position so z-ordering (behind/in
+//  front of the big star) is computed correctly each frame.
+//
+//  Static:   both stars at rest (small star at design position, lower-right).
+//  Animated: companion orbits continuously + breathing ambient glow.
+//  Intro:    same as animated but orbit begins after a short settle delay.
 
 struct MiraLogoView: View {
     var size:      CGFloat = 80
-    var animated:  Bool    = false   // idle breathing glow
-    var playIntro: Bool    = false   // one-shot intro animation
+    var animated:  Bool    = false
+    var playIntro: Bool    = false
 
-    // ── animation state ──────────────────────────────────────────────────────
-    @State private var spread:        CGFloat = 1.0   // 0 = closed, 1 = open
-    @State private var obliqueness:   CGFloat = 0.0   // 0 = sharp eye tips, 1 = oblique orbit tips
-    @State private var orbitTilt:     Double  = 0.0   // 0° = eye, −32° = orbit
-    @State private var starScale:     CGFloat = 0.0
-    @State private var backOpacity:   Double  = 0.70  // symmetric eye → dim orbit back
-    @State private var frontOpacity:  Double  = 0.80  // symmetric eye → bright orbit front
-    @State private var shadowOpacity: Double  = 0.0   // hidden during eye phase
-    @State private var glowing:       Bool    = false
-    @State private var introPlayed:   Bool    = false
+    private let orbitDuration: Double = 5.0   // seconds per full revolution
 
-    // ── geometry ─────────────────────────────────────────────────────────────
-    private var sw:        CGFloat { max(1.5, size * 0.035) }
-    private var arcWidth:  CGFloat { size * 0.88 }
-    private var arcHeight: CGFloat { size * 0.44 }
+    @State private var orbitStart:  Date? = nil
+    @State private var glowing:     Bool  = false
+    @State private var introPlayed: Bool  = false
+
+    private var bigStarSize:   CGFloat { size * 0.60 }
+    private var smallStarSize: CGFloat { bigStarSize * 0.235 }  // matches SVG scale(0.235)
+    private var orbitRX:       CGFloat { size * 0.260 }         // horizontal radius
+    private var orbitRY:       CGFloat { size * 0.145 }         // vertical radius (compressed → 3-D look)
 
     var body: some View {
-        ZStack {
-            // Breathing ambient glow
-            Ellipse()
-                .fill(Color.accent.opacity(0.22))
-                .blur(radius: size * 0.18)
-                .scaleEffect(glowing ? 1.45 : 1.0)
-                .frame(width: arcWidth * 0.80, height: arcHeight * 2.0)
+        TimelineView(.animation(minimumInterval: nil, paused: orbitStart == nil)) { tl in
+            let elapsed  = orbitStart.map { tl.date.timeIntervalSince($0) } ?? 0
+            // natural design position is 35° (lower-right), advance from there
+            let deg      = 35.0 + (elapsed / orbitDuration) * 360.0
+            let rad      = deg * .pi / 180.0
+            let ox       = orbitRX * CGFloat(cos(rad))
+            let oy       = orbitRY * CGFloat(sin(rad))
+            let inFront  = sin(rad) >= 0   // positive y → lower half → in front
 
-            // Back arc — lower half, recedes behind star
-            MiraArcShape(spread: spread, isUpper: false, obliqueness: obliqueness)
-                .stroke(Color.accent, style: StrokeStyle(lineWidth: sw, lineCap: .round))
-                .opacity(backOpacity)
-                .frame(width: arcWidth, height: arcHeight)
+            ZStack {
+                // Ambient glow
+                Ellipse()
+                    .fill(Color.accent.opacity(0.18))
+                    .blur(radius: size * 0.20)
+                    .scaleEffect(glowing ? 1.4 : 1.0)
+                    .frame(width: size * 0.70, height: size * 0.44)
 
-            // 4-pointed star — grows in step 3
-            Image(systemName: "sparkle")
-                .font(.system(size: size * 0.50, weight: .regular))
-                .foregroundStyle(Color.accent)
-                .scaleEffect(starScale)
+                // Small star — back half (behind big star, slightly dim)
+                if !inFront {
+                    FourPointStar()
+                        .fill(Color.accent.opacity(0.52))
+                        .frame(width: smallStarSize, height: smallStarSize)
+                        .offset(x: ox, y: oy)
+                }
 
-            // Shadow cast by orbit on star surface (offset toward light, i.e. upward)
-            MiraArcShape(spread: spread, isUpper: true, obliqueness: obliqueness)
-                .stroke(Color.black,
-                        style: StrokeStyle(lineWidth: sw * 2.1, lineCap: .round))
-                .blur(radius: size * 0.012)
-                .opacity(shadowOpacity)
-                .offset(y: -size * 0.044)
-                .frame(width: arcWidth, height: arcHeight)
+                // Big star
+                FourPointStar()
+                    .fill(Color.accent)
+                    .frame(width: bigStarSize, height: bigStarSize)
 
-            // Front arc — upper half, passes in front of star
-            MiraArcShape(spread: spread, isUpper: true, obliqueness: obliqueness)
-                .stroke(Color.accent, style: StrokeStyle(lineWidth: sw, lineCap: .round))
-                .opacity(frontOpacity)
-                .frame(width: arcWidth, height: arcHeight)
+                // Small star — front half (in front of big star, full opacity)
+                if inFront {
+                    FourPointStar()
+                        .fill(Color.accent)
+                        .frame(width: smallStarSize, height: smallStarSize)
+                        .offset(x: ox, y: oy)
+                }
+            }
         }
-        .rotationEffect(.degrees(orbitTilt))
         .frame(width: size, height: size)
         .onAppear { handleAppear() }
-        .onChange(of: animated)  { if animated && !playIntro { startPulse() } }
-        .onChange(of: playIntro) { if playIntro && !introPlayed { runIntro() } }
+        .onChange(of: animated) { if animated { beginOrbit() } }
     }
 
-    // ── appear logic ─────────────────────────────────────────────────────────
+    // ── appear / start logic ──────────────────────────────────────────────────
 
     private func handleAppear() {
         if playIntro && !introPlayed {
             introPlayed = true
-            runIntro()
-        } else {
-            jumpToOrbit()
-            if animated { startPulse() }
+            // brief settle delay so the view is fully laid out before orbiting
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) { beginOrbit() }
+        } else if animated {
+            beginOrbit()
         }
+        if animated { startGlow() }
     }
 
-    /// Instantly place into final orbit state (no animation).
-    private func jumpToOrbit() {
-        spread        = 1.0
-        obliqueness   = 1.0
-        orbitTilt     = -32
-        starScale     = 1.0
-        backOpacity   = 0.18
-        frontOpacity  = 0.92
-        shadowOpacity = 0.92
+    private func beginOrbit() {
+        guard orbitStart == nil else { return }
+        orbitStart = Date()
     }
 
-    // ── one-shot intro ────────────────────────────────────────────────────────
-    //
-    //  0.0 s  — eye open (pointed tips), star hidden
-    //  0.45 s — eye blinks shut   (spread 1 → 0)
-    //  0.85 s — eye opens, star grows (spread 0 → 1, starScale 0 → 1)
-    //  1.70 s — tilt to orbit, tips soften, opacities shift, shadow appears
-    //  2.55 s — pulse starts (if animated)
-
-    private func runIntro() {
-        // Step 1 — blink shut
-        withAnimation(.easeIn(duration: 0.28).delay(0.45)) {
-            spread = 0.0
-        }
-        // Step 2 — open with star
-        withAnimation(.spring(response: 0.65, dampingFraction: 0.68).delay(0.85)) {
-            spread    = 1.0
-            starScale = 1.0
-        }
-        // Step 3 — tilt to orbit, soften tips, shift opacities
-        withAnimation(.easeInOut(duration: 0.70).delay(1.70)) {
-            obliqueness   = 1.0
-            orbitTilt     = -32
-            backOpacity   = 0.18
-            frontOpacity  = 0.92
-            shadowOpacity = 0.92
-        }
-        // Step 4 — start idle pulse
-        if animated {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.55) { startPulse() }
-        }
-    }
-
-    private func startPulse() {
+    private func startGlow() {
         withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) {
             glowing = true
         }
     }
 }
 
-// ── Arc shape ─────────────────────────────────────────────────────────────────
+// ── Four-pointed star shape ───────────────────────────────────────────────────
 //
-//  Draws one half (upper or lower) of the eye / orbit ring using a cubic bezier.
-//
-//  `spread`      — 0 = flat line, 1 = full height
-//  `obliqueness` — 0 = control points at midX (pointed eye tips, quadratic-equivalent)
-//                  1 = control points at endpoint X (vertical tangents, oblique orbit tips)
-//
-//  At obliqueness=0 both cubic controls collapse to midX, matching the classic
-//  quadratic bezier almond shape. At obliqueness=1 the controls move to the
-//  endpoints' own X positions, so the curve arrives vertically — like a true
-//  ellipse at its leftmost/rightmost point — giving soft, rounded tips.
+//  Replicates the exact bezier curves from the Concept C SVG (mira_icon_C.svg).
+//  The star arms meet at (0,±318) and (±318,0); each quadrant is two cubic
+//  segments that create the concave waist between adjacent points.
 
-struct MiraArcShape: Shape {
-    var spread:      CGFloat
-    var isUpper:     Bool
-    var obliqueness: CGFloat = 0
-
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(spread, obliqueness) }
-        set { spread = newValue.first; obliqueness = newValue.second }
-    }
-
+struct FourPointStar: Shape {
     func path(in rect: CGRect) -> Path {
+        let s  = min(rect.width, rect.height)
+        let cx = rect.midX
+        let cy = rect.midY
+        let k  = s / 636.0   // path spans −318…+318 = 636 units total
+
+        func pt(_ x: Double, _ y: Double) -> CGPoint {
+            CGPoint(x: cx + CGFloat(x) * k, y: cy + CGFloat(y) * k)
+        }
+
         var p = Path()
-        let left  = CGPoint(x: rect.minX, y: rect.midY)
-        let right = CGPoint(x: rect.maxX, y: rect.midY)
-        let dy    = rect.height * 0.5 * spread
-        let sign: CGFloat = isUpper ? -1 : 1
-
-        // Interpolate control-point X between midX (pointed) and endpoint X (oblique)
-        let c1x = rect.midX * (1 - obliqueness)                    // midX → minX
-        let c2x = rect.maxX - rect.midX * (1 - obliqueness)        // midX → maxX
-
-        p.move(to: left)
-        p.addCurve(
-            to: right,
-            control1: CGPoint(x: c1x, y: rect.midY + sign * dy),
-            control2: CGPoint(x: c2x, y: rect.midY + sign * dy)
-        )
+        p.move(to: pt(0, -318))
+        // top → right
+        p.addCurve(to: pt(23, -102),   control1: pt(8, -214),   control2: pt(15, -140))
+        p.addCurve(to: pt(102, -23),   control1: pt(33, -56),   control2: pt(56, -33))
+        p.addCurve(to: pt(318, 0),     control1: pt(140, -15),  control2: pt(214, -8))
+        // right → bottom
+        p.addCurve(to: pt(102, 23),    control1: pt(214, 8),    control2: pt(140, 15))
+        p.addCurve(to: pt(23, 102),    control1: pt(56, 33),    control2: pt(33, 56))
+        p.addCurve(to: pt(0, 318),     control1: pt(15, 140),   control2: pt(8, 214))
+        // bottom → left
+        p.addCurve(to: pt(-23, 102),   control1: pt(-8, 214),   control2: pt(-15, 140))
+        p.addCurve(to: pt(-102, 23),   control1: pt(-33, 56),   control2: pt(-56, 33))
+        p.addCurve(to: pt(-318, 0),    control1: pt(-140, 15),  control2: pt(-214, 8))
+        // left → top
+        p.addCurve(to: pt(-102, -23),  control1: pt(-214, -8),  control2: pt(-140, -15))
+        p.addCurve(to: pt(-23, -102),  control1: pt(-56, -33),  control2: pt(-33, -56))
+        p.addCurve(to: pt(0, -318),    control1: pt(-15, -140), control2: pt(-8, -214))
+        p.closeSubpath()
         return p
     }
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
-#Preview("Static orbit") {
+#Preview("Static") {
     MiraLogoView(size: 120)
         .padding(40)
         .background(Color.appBg)
 }
 
-#Preview("Animated pulse") {
+#Preview("Animated orbit") {
     MiraLogoView(size: 120, animated: true)
         .padding(40)
         .background(Color.appBg)
