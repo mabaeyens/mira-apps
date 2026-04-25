@@ -1,4 +1,7 @@
 import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "com.mab.mira", category: "ServerEvent")
 
 // ── Data types carried by events ──────────────────────────────────────────────
 
@@ -143,6 +146,7 @@ extension ServerEvent {
             return .heartbeat
 
         default:
+            logger.debug("Unknown SSE event type: \(type_)")
             return nil
         }
     }

@@ -33,14 +33,30 @@ struct MacAttachButton: View {
 
         guard panel.runModal() == .OK else { return }
 
-        for url in panel.urls {
-            guard let data = try? Data(contentsOf: url) else { continue }
-            let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
-                       ?? "application/octet-stream"
-            vm.pendingAttachments.append(
-                .fileData(name: url.lastPathComponent, data: data, mimeType: mime)
-            )
-            vm.stagedAttachmentNames.append(url.lastPathComponent)
+        let urls = panel.urls
+        Task.detached {
+            var loaded: [(name: String, data: Data, mime: String)] = []
+            var failed: [String] = []
+
+            for url in urls {
+                if let data = try? Data(contentsOf: url) {
+                    let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
+                               ?? "application/octet-stream"
+                    loaded.append((url.lastPathComponent, data, mime))
+                } else {
+                    failed.append(url.lastPathComponent)
+                }
+            }
+
+            await MainActor.run {
+                for att in loaded {
+                    self.vm.pendingAttachments.append(.fileData(name: att.name, data: att.data, mimeType: att.mime))
+                    self.vm.stagedAttachmentNames.append(att.name)
+                }
+                if !failed.isEmpty {
+                    self.vm.errorMessage = "Could not load: \(failed.joined(separator: ", "))"
+                }
+            }
         }
     }
 }

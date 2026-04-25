@@ -1,6 +1,8 @@
 # Backlog
 
 ## Done
+- [2026-04-25] Code audit MEDIUM fixes — file I/O moved to background tasks (A2/A3), unknown SSE events logged (A5), multipart boundary hardened + filenames percent-encoded (A6), role string replaced with exhaustive switch (A8), token stats batched (A4)
+- [2026-04-25] Security hardening — resolved all HIGH issues identified in code audit
 - [2026-04-25] Claude Code skills created and documented — mira-release (full TestFlight pipeline), mira-server (LaunchAgent management), mira-status (cross-project warm start); .claude/settings.json and settings.local.json committed
 - [2026-04-25] AboutView: always full-sheet with X close button — removed presentationDetents from both iOS sheet call sites; added xmark.circle.fill dismiss button via ZStack overlay
 - [2026-04-25] mira-core /ask endpoint — ephemeral one-shot POST to Gemma4/Ollama, no conversation saved, no tools, no DB writes; accepts optional system prompt; enables Claude Code orchestration delegation

@@ -1,5 +1,8 @@
 import Foundation
+import OSLog
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.mab.mira", category: "ChatViewModel")
 
 /// Drives the main chat view. All mutations happen on @MainActor (the main thread).
 ///
@@ -183,10 +186,13 @@ final class ChatViewModel {
                 let history = try await work.value
                 currentConvId = id
                 messages = history.map { m in
-                    Message(
-                        role: m.role == "user" ? .user : .assistant,
-                        content: m.content
-                    )
+                    let role: Message.Role
+                    switch m.role {
+                    case "user":      role = .user
+                    case "assistant": role = .assistant
+                    default:          role = .assistant
+                    }
+                    return Message(role: role, content: m.content)
                 }
                 inputTokens = 0; outputTokens = 0; contextPct = 0
             } catch {
@@ -280,7 +286,9 @@ final class ChatViewModel {
             updateMessage(id: assistantMsgId) { $0.ragContext = chunks }
 
         case .stats(let i, let o, let pct):
-            inputTokens = i; outputTokens = o; contextPct = pct
+            // Assign through a local binding so the three writes reach the run-loop
+            // in a single batch, preventing transient UI inconsistency.
+            (inputTokens, outputTokens, contextPct) = (i, o, pct)
 
         case .done(let content):
             flushPendingTokens()
@@ -305,8 +313,7 @@ final class ChatViewModel {
             }
 
         case .compress(let msg):
-            // Could show a transient notification; log for now
-            print("[compress] \(msg)")
+            logger.info("History compressed: \(msg)")
 
         case .warning(let msg):
             errorMessage = "⚠️ \(msg)"

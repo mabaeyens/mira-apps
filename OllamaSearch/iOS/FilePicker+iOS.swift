@@ -27,17 +27,27 @@ struct iOSAttachButton: View {
         ) { result in
             guard case .success(let urls) = result else { return }
             for url in urls {
-                // UIDocumentPicker gives us a security-scoped URL —
-                // must call startAccessingSecurityScopedResource.
-                guard url.startAccessingSecurityScopedResource() else { continue }
-                defer { url.stopAccessingSecurityScopedResource() }
-                guard let data = try? Data(contentsOf: url) else { continue }
-                let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
-                           ?? "application/octet-stream"
-                vm.pendingAttachments.append(
-                    .fileData(name: url.lastPathComponent, data: data, mimeType: mime)
-                )
-                vm.stagedAttachmentNames.append(url.lastPathComponent)
+                // Security-scoped access must be started before the background
+                // read and stopped only after the read finishes.
+                guard url.startAccessingSecurityScopedResource() else {
+                    vm.errorMessage = "Could not access: \(url.lastPathComponent)"
+                    continue
+                }
+                Task.detached {
+                    defer { url.stopAccessingSecurityScopedResource() }
+                    if let data = try? Data(contentsOf: url) {
+                        let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
+                                   ?? "application/octet-stream"
+                        await MainActor.run {
+                            self.vm.pendingAttachments.append(.fileData(name: url.lastPathComponent, data: data, mimeType: mime))
+                            self.vm.stagedAttachmentNames.append(url.lastPathComponent)
+                        }
+                    } else {
+                        await MainActor.run {
+                            self.vm.errorMessage = "Could not load: \(url.lastPathComponent)"
+                        }
+                    }
+                }
             }
         }
     }

@@ -88,7 +88,8 @@ final class APIClient {
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
-        let boundary = "Boundary-\(UUID().uuidString)"
+        // 64-hex-char boundary makes accidental collision with file content statistically impossible.
+        let boundary = UUID().uuidString.replacingOccurrences(of: "-", with: "") + UUID().uuidString.replacingOccurrences(of: "-", with: "")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = multipartBody(
             message: message,
@@ -236,8 +237,9 @@ final class APIClient {
         for attachment in attachments {
             switch attachment {
             case .fileData(let name, let data, let mimeType):
+                let safeName = name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? name
                 append("--\(boundary)\(crlf)")
-                append("Content-Disposition: form-data; name=\"files\"; filename=\"\(name)\"\(crlf)")
+                append("Content-Disposition: form-data; name=\"files\"; filename=\"\(safeName)\"\(crlf)")
                 append("Content-Type: \(mimeType)\(crlf)\(crlf)")
                 body.append(data)
                 append(crlf)
