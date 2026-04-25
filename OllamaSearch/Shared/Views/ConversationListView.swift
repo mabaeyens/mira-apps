@@ -11,12 +11,13 @@ struct ConversationListView: View {
     @State private var renamingConv: Conversation? = nil
     @State private var renameText: String = ""
     @State private var searchText: String = ""
+    @State private var debouncedSearch: String = ""
     @State private var showAddProject = false
 
     private var filteredConversations: [Conversation] {
-        guard !searchText.isEmpty else { return vm.conversations }
+        guard !debouncedSearch.isEmpty else { return vm.conversations }
         return vm.conversations.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText)
+            $0.title.localizedCaseInsensitiveContains(debouncedSearch)
         }
     }
 
@@ -123,6 +124,10 @@ struct ConversationListView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .searchable(text: $searchText, prompt: "Search conversations")
+        .task(id: searchText) {
+            try? await Task.sleep(for: .milliseconds(200))
+            debouncedSearch = searchText
+        }
         .refreshable { await vm.loadConversations() }
         .alert("Rename conversation", isPresented: Binding(
             get: { renamingConv != nil },
@@ -327,11 +332,17 @@ struct AddProjectSheet: View {
     @State private var isSubmitting = false
     @State private var errorMessage: String? = nil
 
+    private var isValidGithubRepo: Bool {
+        let gh = githubRepo.trimmingCharacters(in: .whitespaces)
+        guard !gh.isEmpty else { return true }
+        return gh.range(of: #"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"#, options: .regularExpression) != nil
+    }
+
     private var canSubmit: Bool {
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let lp = localPath.trimmingCharacters(in: .whitespaces)
         let gh = githubRepo.trimmingCharacters(in: .whitespaces)
-        return !n.isEmpty && (!lp.isEmpty || !gh.isEmpty)
+        return !n.isEmpty && (!lp.isEmpty || !gh.isEmpty) && isValidGithubRepo
     }
 
     var body: some View {
@@ -362,8 +373,13 @@ struct AddProjectSheet: View {
                 } header: {
                     Text("GitHub repo")
                 } footer: {
-                    Text("At least one of local path or GitHub repo is required.")
-                        .foregroundStyle(Color.textSecondary)
+                    if !githubRepo.trimmingCharacters(in: .whitespaces).isEmpty && !isValidGithubRepo {
+                        Text("Must be in owner/repo format.")
+                            .foregroundStyle(.red)
+                    } else {
+                        Text("At least one of local path or GitHub repo is required.")
+                            .foregroundStyle(Color.textSecondary)
+                    }
                 }
                 if let err = errorMessage {
                     Section {

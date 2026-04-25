@@ -131,6 +131,13 @@ struct ConnectionView: View {
         .listRowBackground(Color.surfaceBg)
     }
 
+    private var isInsecureNonLocal: Bool {
+        guard let url = URL(string: addURL.trimmingCharacters(in: .whitespacesAndNewlines)),
+              url.scheme == "http" else { return false }
+        let host = url.host ?? ""
+        return host != "127.0.0.1" && host != "localhost"
+    }
+
     // ── Add connection sheet ───────────────────────────────────────────────
 
     private var addConnectionSheet: some View {
@@ -147,7 +154,14 @@ struct ConnectionView: View {
                             }
                             addError = nil
                         }
-                } header: { Text("URL") }
+                } header: {
+                    Text("URL")
+                } footer: {
+                    if isInsecureNonLocal {
+                        Text("HTTP traffic over the network is unencrypted. Consider enabling TLS on the server.")
+                            .foregroundStyle(.orange)
+                    }
+                }
 
                 Section {
                     TextField("e.g. Home WiFi, Tailscale", text: $addLabel)

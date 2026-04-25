@@ -1,4 +1,7 @@
 import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "com.mab.mira", category: "APIClient")
 
 /// Thin wrapper around all FastAPI endpoints.
 /// All methods are `async` and `@MainActor`-safe to call from view models.
@@ -8,6 +11,7 @@ final class APIClient {
     static let shared = APIClient()
     private init() {}
 
+    // Compile-time constant literal — URL(string:) only returns nil for malformed strings.
     var baseURL: URL = URL(string: "http://127.0.0.1:8000")!
 
     // ── Health ────────────────────────────────────────────────────────────────
@@ -104,7 +108,12 @@ final class APIClient {
         guard let url = URL(string: "/cancel", relativeTo: baseURL) else { return }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
-        _ = try? await URLSession.shared.data(for: req)
+        do {
+            _ = try await URLSession.shared.data(for: req)
+        } catch {
+            // Non-fatal: local streaming state is already stopped.
+            logger.debug("Cancel request failed: \(error)")
+        }
     }
 
     func reset() async throws -> (convId: String, title: String) {
