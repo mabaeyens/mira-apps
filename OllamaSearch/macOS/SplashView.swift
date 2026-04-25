@@ -2,21 +2,18 @@
 import SwiftUI
 
 struct SplashView: View {
-    let state: ServerManager.State
-    let onSetPath: () -> Void
+    let state: MacConnectionManager.State
+    let onRetry: () -> Void
 
-    private var isLoading: Bool {
-        switch state {
-        case .starting, .waitingForModel: true
-        default: false
-        }
+    private var isConnecting: Bool {
+        if case .connecting = state { return true }
+        return false
     }
 
     var body: some View {
         ZStack {
             Color.appBg.ignoresSafeArea()
 
-            // Warm radial halo behind the logo
             RadialGradient(
                 colors: [Color.accent.opacity(0.10), .clear],
                 center: .center,
@@ -28,7 +25,7 @@ struct SplashView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                MiraLogoView(size: 108, animated: isLoading)
+                MiraLogoView(size: 108, animated: isConnecting)
 
                 Spacer().frame(height: 26)
 
@@ -39,7 +36,7 @@ struct SplashView: View {
                 Spacer().frame(height: 18)
 
                 stateContent
-                    .animation(.easeInOut(duration: 0.35), value: isLoading)
+                    .animation(.easeInOut(duration: 0.35), value: isConnecting)
 
                 Spacer()
             }
@@ -51,30 +48,15 @@ struct SplashView: View {
     @ViewBuilder
     private var stateContent: some View {
         switch state {
-        case .idle:
-            Text("Local AI, always ready.")
-                .font(.subheadline)
-                .foregroundStyle(Color.textSecondary)
-
-        case .starting:
-            statusRow("Starting server…")
-
-        case .waitingForModel:
-            VStack(spacing: 10) {
-                statusRow("Loading model…")
-                Text("First launch takes 30–60 s while the model loads into memory.")
-                    .font(.caption)
-                    .foregroundStyle(Color.textSecondary.opacity(0.65))
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 300)
-            }
+        case .connecting:
+            statusRow("Connecting to server…")
 
         case .ready:
             EmptyView()
 
         case .failed(let msg):
             VStack(spacing: 14) {
-                Label("Could not start server", systemImage: "exclamationmark.triangle")
+                Label("Server not available", systemImage: "exclamationmark.triangle")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.red)
                 Text(msg)
@@ -82,7 +64,7 @@ struct SplashView: View {
                     .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 300)
-                Button("Set Project Path", action: onSetPath)
+                Button("Retry", action: onRetry)
                     .buttonStyle(.borderedProminent)
                     .tint(Color.accent)
             }
@@ -101,8 +83,6 @@ struct SplashView: View {
     }
 }
 
-#Preview("Idle")     { SplashView(state: .idle,           onSetPath: {}) }
-#Preview("Starting") { SplashView(state: .starting,       onSetPath: {}) }
-#Preview("Waiting")  { SplashView(state: .waitingForModel, onSetPath: {}) }
-#Preview("Failed")   { SplashView(state: .failed("Server binary not found at ~/MAI/server.py"), onSetPath: {}) }
+#Preview("Connecting") { SplashView(state: .connecting, onRetry: {}) }
+#Preview("Failed")     { SplashView(state: .failed("Server not found at localhost:8000."), onRetry: {}) }
 #endif
