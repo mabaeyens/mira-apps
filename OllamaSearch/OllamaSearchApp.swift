@@ -163,6 +163,7 @@ struct MacRootView: View {
                     )
                 }
                 .task {
+                    await chatVM.loadProjects()
                     await chatVM.loadConversations()
                     if chatVM.currentConvId.isEmpty,
                        let first = chatVM.conversations.first {
@@ -321,6 +322,7 @@ struct iOSConnectedView: View {
         }
         .task {
             APIClient.shared.baseURL = serverURL
+            await chatVM.loadProjects()
             await chatVM.loadConversations()
             if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
                 chatVM.selectConversation(first.id)

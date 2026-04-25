@@ -15,7 +15,16 @@ final class ChatViewModel {
 
     var messages: [Message] = []
     var conversations: [Conversation] = []
+    var projects: [Project] = []
     var currentConvId: String = ""
+
+    var activeProject: Project? {
+        guard !currentConvId.isEmpty,
+              let conv = conversations.first(where: { $0.id == currentConvId }),
+              let pid = conv.projectId
+        else { return nil }
+        return projects.first(where: { $0.id == pid })
+    }
     var isStreaming: Bool = false
     var inputText: String = ""
     var pendingAttachments: [AttachmentPayload] = []
@@ -115,15 +124,39 @@ final class ChatViewModel {
         isStreaming = false
     }
 
-    func newConversation() {
+    func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
         Task {
             do {
-                let convId = try await api.createConversation()
+                let convId = try await api.createConversation(projectId: projectId)
                 currentConvId = convId
                 messages = []
                 inputTokens = 0; outputTokens = 0; contextPct = 0
                 await loadConversations()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    func loadProjects() async {
+        do {
+            projects = try await api.listProjects()
+        } catch {
+            // Non-fatal — sidebar will just show empty projects section
+        }
+    }
+
+    func addProject(name: String, localPath: String?, githubRepo: String?) async throws {
+        let project = try await api.createProject(name: name, localPath: localPath, githubRepo: githubRepo)
+        projects.append(project)
+    }
+
+    func deleteProject(_ id: String) {
+        Task {
+            do {
+                try await api.deleteProject(id: id)
+                projects.removeAll { $0.id == id }
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -189,8 +222,8 @@ final class ChatViewModel {
                     conversations[idx] = Conversation(
                         id: old.id, title: trimmed,
                         createdAt: old.createdAt, updatedAt: old.updatedAt,
-                        modelName: old.modelName,
-                        messageCount: old.messageCount
+                        modelName: old.modelName, messageCount: old.messageCount,
+                        projectId: old.projectId
                     )
                 }
             } catch {
@@ -258,15 +291,14 @@ final class ChatViewModel {
             Task { await loadConversations() }
 
         case .title(let convId, let title):
-            // If we started the turn with no convId, adopt the server-assigned one
             if currentConvId.isEmpty { currentConvId = convId }
             if let idx = conversations.firstIndex(where: { $0.id == convId }) {
                 let old = conversations[idx]
                 conversations[idx] = Conversation(
                     id: old.id, title: title,
                     createdAt: old.createdAt, updatedAt: old.updatedAt,
-                    modelName: old.modelName,
-                    messageCount: old.messageCount
+                    modelName: old.modelName, messageCount: old.messageCount,
+                    projectId: old.projectId
                 )
             } else {
                 Task { await loadConversations() }

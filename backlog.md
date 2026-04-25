@@ -1,6 +1,9 @@
 # Backlog
 
 ## Done
+- [2026-04-25] Project picker UI — Projects section in sidebar, tap to start scoped chat, Add Project sheet (name + local path + GitHub repo), project badge on conversation rows, loadProjects on startup
+- [2026-04-25] TestFlight build — v0.1.4 (build 4) shipped to devices
+- [2026-04-25] Obsidian — confirmed keep as-is (free for local use; open vault pointing at ~/.claude/ or project dirs)
 - [2026-04-25] macOS: server startup UX — /health returns 503 during Ollama warm-up (up to 25s); macOS splash polls for 60s, shows "Starting Ollama…" on 503 vs "Connecting…" on unreachable; first chat can no longer silently fail before model is ready
 - [2026-04-25] iOS: new-chat button — square.and.pencil toolbar button in detail pane calls newConversation(); equivalent to macOS New Chat menu command
 - [2026-04-25] Both: inline image thumbnails — Message.imageAttachments: [Data] populated on send; MessageBubble renders 120×120 thumbnails above text in user bubbles on iOS and macOS
@@ -24,10 +27,15 @@
 - [2026-04-25] Bump version 0.1.2 (build 2) — macOS thin-client rearchitecture (launchd LaunchAgent)
 
 ## Pending
-- Obsidian: keep as-is (free for local use, no subscription needed; open vault pointing at ~/.claude/ or project dirs)
-- Next TestFlight build needed to ship this session's features to devices
+
+
+## Pending
+- Show active project in chat view header — a small pill above the input bar confirms which project is active; `vm.activeProject` is already computed and ready to use
+- Step 4: github_clone_repo tool + "Clone repo as project" action in AddProjectSheet
 
 ## Notes
+- Project model lives in Conversation.swift (not a separate file) to avoid project.pbxproj changes; same for AddProjectSheet in ConversationListView.swift
+- `vm.activeProject` is a computed property derived from currentConvId + conversations + projects — no extra state needed, automatically tracks conversation switches
 - iOS server connection: Bonjour removed in favour of saved connections + DHCP reservation on TP-Link AX73. Add Tailscale hostname as a second saved connection when remote access is needed.
 - mira-core shell_tools.py: `run_shell` sandbox now rejects absolute paths outside WORKSPACE_ROOT; also added prompt Rule 1 (capability questions answered from system prompt, no tool calls). Server must be restarted after these changes — use `/mira-server restart`.
 - SavedConnectionsStore migrates old `localURL` / `remoteURL` UserDefaults keys on first run; both keys are still written by legacy code paths but are no longer the source of truth for autoConnect().
