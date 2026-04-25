@@ -8,7 +8,10 @@
       "Bash(curl -s http://localhost:8000/health *)",
       "Bash(curl -s http://localhost:8000/projects *)",
       "Bash(curl -s http://localhost:8000/conversations *)",
-      "Bash(crontab -l *)"
+      "Bash(crontab -l *)",
+      "Bash(xcrun agvtool what-version *)",
+      "Bash(xcrun agvtool what-marketing-version *)",
+      "Bash(launchctl list *)"
     ]
   }
 }
