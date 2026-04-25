@@ -1,6 +1,7 @@
 # Backlog
 
 ## Done
+- [2026-04-25] iOS TestFlight upload aligned to v0.1.2 build 2 — matched macOS; fixed ExportOptions-iOS.plist and ExportOptions-macOS.plist to include `destination: upload` so future CLI releases upload directly without Xcode Organizer
 - [2026-04-25] iOS/macOS font sizes: chat body 16→20pt on iOS, markdown theme updated to match, status bar badges 11→13pt; macOS unchanged
 - [2026-04-25] iOS URL switcher: ConnectionView replaced with list-based UI — saved connections (tap to connect, swipe to delete), Bonjour row, Add sheet; SavedConnectionsStore persists to UserDefaults with migration from old localURL/remoteURL keys; autoConnect() updated to use saved connections
 - [2026-04-25] server shell sandbox: run_shell now rejects commands referencing absolute paths outside WORKSPACE_ROOT (e.g. ls /, cat /etc/passwd), closing gap where cwd was sandboxed but command arguments were not
