@@ -7,14 +7,10 @@ struct OllamaSearchApp: App {
     // ── macOS ─────────────────────────────────────────────────────────────────
     #if os(macOS)
     @State private var chatVM = ChatViewModel()
-    @State private var showPathPicker = false
 
     var body: some Scene {
         WindowGroup {
-            MacRootView(
-                chatVM: chatVM,
-                showPathPicker: $showPathPicker
-            )
+            MacRootView(chatVM: chatVM)
             .preferredColorScheme(.dark)
             .frame(minWidth: 700, minHeight: 500)
         }
@@ -36,7 +32,7 @@ struct OllamaSearchApp: App {
         .windowResizability(.contentSize)
 
         MenuBarExtra {
-            MenuBarContent(chatVM: chatVM, serverManager: ServerManager.shared)
+            MenuBarContent(chatVM: chatVM)
         } label: {
             Image(systemName: "sparkle")
                 .symbolRenderingMode(.hierarchical)
@@ -46,7 +42,7 @@ struct OllamaSearchApp: App {
     }
 
     init() {
-        ServerManager.shared.start()
+        MacConnectionManager.shared.start()
     }
     #endif
 
@@ -142,18 +138,17 @@ private struct AboutCommand: View {
 #if os(macOS)
 
 /// Root macOS view. Lives as a proper View (not inline in App.body) so that
-/// @Observable property access on ServerManager is correctly tracked and
+/// @Observable property access on MacConnectionManager is correctly tracked and
 /// triggers re-renders when state changes.
 struct MacRootView: View {
     var chatVM: ChatViewModel
-    @Binding var showPathPicker: Bool
 
-    private let serverManager = ServerManager.shared
+    private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
 
     var body: some View {
         Group {
-            if case .ready = serverManager.state, splashMinimumElapsed {
+            if case .ready = connection.state, splashMinimumElapsed {
                 NavigationSplitView {
                     ConversationListView(vm: chatVM)
                         .frame(minWidth: 200)
@@ -171,18 +166,8 @@ struct MacRootView: View {
                     }
                 }
             } else {
-                SplashView(state: serverManager.state) {
-                    showPathPicker = true
-                }
-                .fileImporter(
-                    isPresented: $showPathPicker,
-                    allowedContentTypes: [.folder]
-                ) { result in
-                    if case .success(let url) = result {
-                        serverManager.projectPath = url.path
-                        UserDefaults.standard.set(url.path, forKey: "projectPath")
-                        serverManager.start()
-                    }
+                SplashView(state: connection.state) {
+                    connection.retry()
                 }
             }
         }
@@ -195,7 +180,7 @@ struct MacRootView: View {
 
 struct MenuBarContent: View {
     let chatVM: ChatViewModel
-    let serverManager: ServerManager
+    private let connection = MacConnectionManager.shared
 
     var body: some View {
         Label(statusLabel, systemImage: statusIcon)
@@ -203,28 +188,29 @@ struct MenuBarContent: View {
         Divider()
         Button("New Chat") { chatVM.newConversation() }
         Button("Show Window") { NSApplication.shared.activate(ignoringOtherApps: true) }
+        if case .failed = connection.state {
+            Button("Retry Connection") { connection.retry() }
+        }
         Divider()
         Button("Quit") { NSApplication.shared.terminate(nil) }
     }
 
     private var statusLabel: String {
-        switch serverManager.state {
-        case .idle:            return "Server idle"
-        case .starting:        return "Starting…"
-        case .waitingForModel: return "Loading model…"
-        case .ready:           return "Ready"
-        case .failed:          return "Server error"
+        switch connection.state {
+        case .connecting: return "Connecting…"
+        case .ready:      return "Ready"
+        case .failed:     return "Server not running"
         }
     }
     private var statusIcon: String {
-        switch serverManager.state {
+        switch connection.state {
         case .ready:  return "circle.fill"
         case .failed: return "exclamationmark.circle.fill"
         default:      return "circle.dotted"
         }
     }
     private var statusColor: Color {
-        switch serverManager.state {
+        switch connection.state {
         case .ready:  return .green
         case .failed: return .red
         default:      return .secondary
