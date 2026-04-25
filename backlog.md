@@ -1,6 +1,8 @@
 # Backlog
 
 ## Done
+- [2026-04-25] Architecture docs — created docs/diagram.md (5 Mermaid diagrams: system overview, turn lifecycle, cancel flow, RAG pipeline, iOS/macOS connection flows); updated docs/architecture.md in mira-core with missing events (title, compress, heartbeat), context compression section, full endpoint reference table, and iOS/macOS client integration section
+- [2026-04-25] Code audit LOW fixes — force-unwrap comment (A9), cancel error logging via OSLog (A10), HTTP non-localhost warning in ConnectionView (A11), owner/repo regex validation in AddProjectSheet (A12), cursor blink replaced with TimelineView (A13), Swift package upper-bound pins (A14), search debounce 200ms (A15)
 - [2026-04-25] Claude Code allowlist expanded — added cd * && git status/diff/log/cat patterns to .claude/settings.json so wrap/status commands run without permission prompts
 - [2026-04-25] Code audit MEDIUM fixes — file I/O moved to background tasks (A2/A3), unknown SSE events logged (A5), multipart boundary hardened + filenames percent-encoded (A6), role string replaced with exhaustive switch (A8), token stats batched (A4)
 - [2026-04-25] Security hardening — resolved all HIGH issues identified in code audit
