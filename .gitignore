@@ -15,6 +15,12 @@ DerivedData/
 *.perspectivev3
 !default.perspectivev3
 
+# Generated design renders (SVG source is committed; PNG renders are artifacts)
+Design/*.svg.png
+
+# Nested stub xcodeproj (no project.pbxproj — not the real project)
+OllamaSearch/OllamaSearch.xcodeproj/
+
 # SPM build artifacts
 .build/
 .swiftpm/
