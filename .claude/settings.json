@@ -11,7 +11,8 @@
       "Bash(crontab -l *)",
       "Bash(xcrun agvtool what-version *)",
       "Bash(xcrun agvtool what-marketing-version *)",
-      "Bash(launchctl list *)"
+      "Bash(launchctl list *)",
+      "Bash(xcodebuild *)"
     ]
   }
 }
