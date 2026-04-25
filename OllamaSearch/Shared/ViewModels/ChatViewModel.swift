@@ -65,8 +65,14 @@ final class ChatViewModel {
         pendingAttachments = []
         stagedAttachmentNames = []
 
+        // Capture image data for inline thumbnails before clearing attachments
+        let imageData = attachments.compactMap { att -> Data? in
+            if case .fileData(_, let data, let mime) = att, mime.hasPrefix("image/") { return data }
+            return nil
+        }
+
         // Add user bubble immediately
-        messages.append(Message(role: .user, content: text))
+        messages.append(Message(role: .user, content: text, imageAttachments: imageData))
 
         // Add an empty streaming assistant bubble
         let assistantMsg = Message(role: .assistant)

@@ -21,19 +21,55 @@ struct MessageBubble: View {
     private var userBubble: some View {
         HStack {
             Spacer(minLength: 72)
-            Text(message.content)
-                .font(.chatBody)
-                .textSelection(.enabled)
-                .foregroundStyle(Color.textPrimary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(Color.userBubbleBg)
-                )
+            VStack(alignment: .trailing, spacing: 6) {
+                if !message.imageAttachments.isEmpty {
+                    thumbnailRow
+                }
+                if !message.content.isEmpty {
+                    Text(message.content)
+                        .font(.chatBody)
+                        .textSelection(.enabled)
+                        .foregroundStyle(Color.textPrimary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(Color.userBubbleBg)
+                        )
+                }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
+    }
+
+    private var thumbnailRow: some View {
+        HStack(spacing: 6) {
+            ForEach(message.imageAttachments.indices, id: \.self) { i in
+                thumbnailImage(message.imageAttachments[i])
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func thumbnailImage(_ data: Data) -> some View {
+        #if os(iOS)
+        if let img = UIImage(data: data) {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        #elseif os(macOS)
+        if let img = NSImage(data: data) {
+            Image(nsImage: img)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        #endif
     }
 
     // ── Assistant bubble ──────────────────────────────────────────────────────

@@ -10,12 +10,14 @@ struct Message: Identifiable {
     var fetchContext: [FetchInfo]    // web pages read this turn
     var ragContext: [RAGChunk]       // document chunks used this turn
     var isStreaming: Bool             // true while tokens are still arriving
+    var imageAttachments: [Data]     // raw image bytes attached to user messages
 
-    init(role: Role, content: String = "") {
+    init(role: Role, content: String = "", imageAttachments: [Data] = []) {
         self.role = role
         self.content = content
         self.fetchContext = []
         self.ragContext = []
         self.isStreaming = role == .assistant && content.isEmpty
+        self.imageAttachments = imageAttachments
     }
 }

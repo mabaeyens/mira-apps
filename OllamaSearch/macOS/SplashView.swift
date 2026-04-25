@@ -27,6 +27,11 @@ struct SplashView: View {
         return false
     }
 
+    private var connectingMessage: String {
+        if case .connecting(let msg) = state { return msg }
+        return "Connecting to server…"
+    }
+
     var body: some View {
         ZStack {
             // Radial gradient matches the app icon background (#272220 center → #1C1917 edge).
@@ -74,7 +79,7 @@ struct SplashView: View {
     private var stateContent: some View {
         switch state {
         case .connecting:
-            statusRow("Connecting to server…")
+            statusRow(connectingMessage)
 
         case .ready:
             EmptyView()
@@ -108,6 +113,7 @@ struct SplashView: View {
     }
 }
 
-#Preview("Connecting") { SplashView(state: .connecting, onRetry: {}) }
+#Preview("Connecting") { SplashView(state: .connecting("Connecting to server…"), onRetry: {}) }
+#Preview("Starting")   { SplashView(state: .connecting("Starting Ollama…"), onRetry: {}) }
 #Preview("Failed")     { SplashView(state: .failed("Server not found at localhost:8000."), onRetry: {}) }
 #endif
