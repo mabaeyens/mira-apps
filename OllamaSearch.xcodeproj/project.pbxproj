@@ -7,12 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		49A5E78E2F9CDB2500395E72 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 49A5E78D2F9CDB2500395E72 /* PrivacyInfo.xcprivacy */; };
 		49D199C82F82CAD4001897E6 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 49D199C72F82CAD4001897E6 /* MarkdownUI */; };
 		49D199CB2F82CAEB001897E6 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = 49D199CA2F82CAEB001897E6 /* Highlightr */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		497B07F72F82C7D90018933E /* Mira.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mira.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		49A5E7672F9CDA0B00395E72 /* OllamaSearch.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = OllamaSearch.xcodeproj; sourceTree = "<group>"; };
+		49A5E78D2F9CDB2500395E72 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = OllamaSearch/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -54,6 +57,7 @@
 			children = (
 				497B07F92F82C7D90018933E /* OllamaSearch */,
 				497B07F82F82C7D90018933E /* Products */,
+				49A5E78D2F9CDB2500395E72 /* PrivacyInfo.xcprivacy */,
 			);
 			sourceTree = "<group>";
 		};
@@ -62,6 +66,11 @@
 			children = (
 				497B07F72F82C7D90018933E /* Mira.app */,
 			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		49A5E76C2F9CDA0B00395E72 /* Products */ = {
+			isa = PBXGroup;
 			name = Products;
 			sourceTree = "<group>";
 		};
@@ -123,6 +132,12 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 497B07F82F82C7D90018933E /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 49A5E76C2F9CDA0B00395E72 /* Products */;
+					ProjectRef = 49A5E7672F9CDA0B00395E72 /* OllamaSearch.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				497B07F62F82C7D90018933E /* OllamaSearch */,
@@ -135,6 +150,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49A5E78E2F9CDB2500395E72 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
