@@ -26,15 +26,9 @@
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Mira uses the local network to discover and connect to the server running on your Mac.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_ollamasearch._tcp</string>
-	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Bookerly-Regular.ttf</string>
