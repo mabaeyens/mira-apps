@@ -1,6 +1,10 @@
 # Backlog
 
 ## Done
+- [2026-04-26] AboutView text revised — three paragraphs, added "Latin word for wonder" and "double stars", fixed second paragraph to open with "With Mira, inference runs entirely on your Mac"
+- [2026-04-26] Welcome screen logo enlarged from 88→120pt on iPad new-conversation screen
+- [2026-04-26] Chat body font reverted to system `.body` (17pt) on iOS — was hardcoded 20pt; markdown body also reverted to 17pt to match
+- [2026-04-26] Fallback title on stream timeout — if server never emits a `.title` event on the first message (timeout/network drop), ChatViewModel now uses the first 60 chars of the user's prompt as the conversation title so the sidebar always shows something identifiable
 - [2026-04-25] Claude Code allowlist expanded — added compound git command patterns (status+diff, pull+add+status, push+echo) so mira-core wrap/status commands run without permission prompts
 - [2026-04-25] Architecture docs — created docs/diagram.md (5 Mermaid diagrams: system overview, turn lifecycle, cancel flow, RAG pipeline, iOS/macOS connection flows); updated docs/architecture.md in mira-core with missing events (title, compress, heartbeat), context compression section, full endpoint reference table, and iOS/macOS client integration section
 - [2026-04-25] Code audit LOW fixes — force-unwrap comment (A9), cancel error logging via OSLog (A10), HTTP non-localhost warning in ConnectionView (A11), owner/repo regex validation in AddProjectSheet (A12), cursor blink replaced with TimelineView (A13), Swift package upper-bound pins (A14), search debounce 200ms (A15)
