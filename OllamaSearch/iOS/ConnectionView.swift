@@ -17,6 +17,9 @@ struct ConnectionView: View {
 
     @State private var showAbout = false
 
+    // nil = not yet probed, true = reachable, false = unreachable
+    @State private var reachability: [String: Bool] = [:]
+
     var body: some View {
         ZStack {
             Color.appBg.ignoresSafeArea()
@@ -90,6 +93,7 @@ struct ConnectionView: View {
         .sheet(isPresented: $showAddSheet) {
             addConnectionSheet
         }
+        .task { await probeAllConnections() }
     }
 
     // ── Saved connections section ──────────────────────────────────────────
@@ -106,8 +110,14 @@ struct ConnectionView: View {
     private func savedRow(_ conn: SavedConnection) -> some View {
         let isActive  = store.activeURLString == conn.urlString
         let isLoading = connectingURL == conn.urlString
+        let reached   = reachability[conn.urlString]
 
         return HStack(spacing: 12) {
+            // Reachability dot: green=up, red=down, gray=unknown
+            Circle()
+                .fill(reached == true ? Color.green : reached == false ? Color.red : Color.secondary.opacity(0.4))
+                .frame(width: 8, height: 8)
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(conn.label)
                     .font(.subheadline.weight(isActive ? .semibold : .regular))
@@ -215,6 +225,21 @@ struct ConnectionView: View {
                 } else {
                     rowError = "Could not reach \(urlString). Check the URL and your connection."
                 }
+            }
+        }
+    }
+
+    private func probeAllConnections() async {
+        await withTaskGroup(of: (String, Bool).self) { group in
+            for conn in store.connections {
+                guard let url = conn.url else { continue }
+                group.addTask {
+                    let ok = await APIClient.shared.probe(url, deadline: 3)
+                    return (conn.urlString, ok)
+                }
+            }
+            for await (urlString, ok) in group {
+                reachability[urlString] = ok
             }
         }
     }

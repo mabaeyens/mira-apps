@@ -257,7 +257,9 @@ final class ChatViewModel {
             } catch let urlError as URLError where urlError.code == .cancelled {
                 // URLSession cancelled (app lifecycle) — not an error.
             } catch {
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = Self.isNetworkError(error)
+                    ? "Connection lost — the server may be sleeping. Tap Resend when it's back."
+                    : error.localizedDescription
             }
             self.finishStreaming(msgId: assistantMsg.id)
         }
@@ -588,6 +590,18 @@ final class ChatViewModel {
         // Always refresh the conversation list — on success to pick up the server
         // title, on error/timeout so the sidebar reflects current server state.
         Task { await loadConversations() }
+    }
+
+    private static func isNetworkError(_ error: Error) -> Bool {
+        guard let urlError = error as? URLError else { return false }
+        switch urlError.code {
+        case .notConnectedToInternet, .networkConnectionLost, .timedOut,
+             .cannotConnectToHost, .cannotFindHost, .resourceUnavailable,
+             .dataNotAllowed, .internationalRoamingOff:
+            return true
+        default:
+            return false
+        }
     }
 
     private func updateMessage(id: UUID, transform: (inout Message) -> Void) {
