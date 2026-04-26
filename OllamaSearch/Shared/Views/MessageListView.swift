@@ -61,7 +61,7 @@ struct MessageListView: View {
     private var scrollingMessages: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 0) {
+                VStack(spacing: 0) {
                     ForEach(messages) { msg in
                         MessageBubble(message: msg)
                     }
