@@ -41,7 +41,7 @@ struct MessageListView: View {
     private var welcomeView: some View {
         VStack(spacing: 0) {
             Spacer()
-            MiraLogoView(size: 88)
+            MiraLogoView(size: 120)
             Spacer().frame(height: 22)
             Text("Mira")
                 .font(.bookerly(size: 28, weight: .semibold))

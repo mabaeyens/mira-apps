@@ -79,7 +79,7 @@ extension Font {
 
     /// Body size used in chat bubbles and streaming text.
     #if os(iOS)
-    static let chatBody: Font = .system(size: 20)
+    static let chatBody: Font = .body
     #else
     static let chatBody: Font = .system(size: 16)
     #endif
@@ -92,7 +92,7 @@ extension MarkdownUI.Theme {
     static let app: Self = .gitHub
         .text {
             #if os(iOS)
-            FontSize(20)
+            FontSize(17)
             #else
             FontSize(16)
             #endif
