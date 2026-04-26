@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ConversationListView: View {
     @Bindable var vm: ChatViewModel
+    var onTap: ((String) -> Void)? = nil
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
     #endif
@@ -109,7 +110,11 @@ struct ConversationListView: View {
                 ForEach(filteredConversations) { conv in
                     conversationRow(conv)
                         .tag(conv.id)
-                        .listRowBackground(Color.clear)
+                        .listRowBackground(
+                            conv.id == vm.currentConvId
+                                ? Color.appAccent.opacity(0.12)
+                                : Color.clear
+                        )
                         .listRowSeparator(.visible)
                         .listRowSeparatorTint(Color.borderSubtle.opacity(0.5))
                 }
@@ -169,7 +174,7 @@ struct ConversationListView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
-            .font(.caption.weight(.semibold))
+            .font(Font.sidebarMeta.weight(.semibold))
             .foregroundStyle(Color.textSecondary)
     }
 
@@ -185,11 +190,11 @@ struct ConversationListView: View {
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.name)
-                        .font(.subheadline.weight(.medium))
+                        .font(Font.sidebarTitle.weight(.medium))
                         .foregroundStyle(Color.textPrimary)
                     if let sub = project.subtitle {
                         Text(sub)
-                            .font(.caption)
+                            .font(Font.sidebarSubtitle)
                             .foregroundStyle(Color.textSecondary)
                             .lineLimit(1)
                     }
@@ -197,7 +202,7 @@ struct ConversationListView: View {
                 Spacer()
                 if project.conversationCount > 0 {
                     Text("\(project.conversationCount)")
-                        .font(.caption2.weight(.medium))
+                        .font(Font.sidebarMeta.weight(.medium))
                         .foregroundStyle(Color.textSecondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -223,7 +228,7 @@ struct ConversationListView: View {
             showAddProject = true
         } label: {
             Label("Add project", systemImage: "plus.circle")
-                .font(.subheadline)
+                .font(Font.sidebarTitle)
                 .foregroundStyle(Color.appAccent)
                 .padding(.vertical, 4)
                 .padding(.horizontal, 4)
@@ -236,6 +241,8 @@ struct ConversationListView: View {
     // ── About / New Chat (macOS) ──────────────────────────────────────────────
 
     #if os(macOS)
+    @AppStorage("sidebarPinned") private var sidebarPinned: Bool = true
+
     private var aboutButton: some View {
         Button(action: { openWindow(id: "about") }) {
             HStack(spacing: 6) {
@@ -245,31 +252,44 @@ struct ConversationListView: View {
                     .foregroundStyle(Color.textSecondary)
                 Spacer()
             }
-            .font(.subheadline)
+            .font(Font.sidebarTitle)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
+        .background(Color.sidebarBg)
+    }
+
+    private var newChatButton: some View {
+        HStack(spacing: 0) {
+            Button(action: { vm.newConversation() }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "square.and.pencil")
+                        .foregroundStyle(Color.appAccent)
+                    Text("New Chat")
+                        .foregroundStyle(Color.textPrimary)
+                    Spacer()
+                }
+                .font(Font.sidebarTitle.weight(.medium))
+                .padding(.leading, 14)
+                .padding(.trailing, 4)
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: { sidebarPinned.toggle() }) {
+                Image(systemName: sidebarPinned ? "pin.fill" : "pin")
+                    .foregroundStyle(sidebarPinned ? Color.appAccent : Color.textSecondary)
+                    .font(Font.sidebarMeta)
+                    .padding(.trailing, 14)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .help(sidebarPinned ? "Sidebar always visible — click to auto-hide" : "Sidebar auto-hides — click to keep visible")
+        }
         .background(Color.sidebarBg)
     }
     #endif
-
-    private var newChatButton: some View {
-        Button(action: { vm.newConversation() }) {
-            HStack(spacing: 6) {
-                Image(systemName: "square.and.pencil")
-                    .foregroundStyle(Color.appAccent)
-                Text("New Chat")
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
-            }
-            .font(.subheadline.weight(.medium))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.plain)
-        .background(Color.sidebarBg)
-    }
 
     // ── Conversation row ──────────────────────────────────────────────────────
 
@@ -279,17 +299,17 @@ struct ConversationListView: View {
         return HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(conv.title)
-                    .font(.subheadline)
+                    .font(Font.sidebarTitle)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 HStack(spacing: 6) {
                     Text(relativeDate(conv.updatedAt))
-                        .font(.caption)
+                        .font(Font.sidebarSubtitle)
                         .foregroundStyle(Color.textSecondary)
                     if let proj = project {
                         Text(proj.name)
-                            .font(.caption2.weight(.medium))
+                            .font(Font.sidebarMeta.weight(.medium))
                             .foregroundStyle(Color.appAccent.opacity(0.8))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -306,6 +326,7 @@ struct ConversationListView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 4)
+        .simultaneousGesture(TapGesture().onEnded { onTap?(conv.id) })
         .contextMenu {
             Button {
                 renameText = conv.title

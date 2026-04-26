@@ -77,13 +77,22 @@ extension Font {
         .custom("Bookerly", size: size).weight(weight)
     }
 
-    /// Body size used in chat bubbles and streaming text.
-    /// Fixed size on both platforms so it stays in sync with the Markdown
-    /// theme's FontSize(17) / FontSize(16), which are also absolute.
+    /// Body size used in chat bubbles, streaming text, and the input field.
+    /// iOS uses .body (Dynamic Type, 17pt at default) so SwiftUI–UIKit font
+    /// bridging is consistent across Text, TextField(axis:.vertical)/UITextView,
+    /// and MarkdownUI. macOS uses a fixed 16pt (macOS .body is 13pt, too small).
     #if os(iOS)
-    static let chatBody: Font = .system(size: 17)
+    static let chatBody: Font = .body
+    static let sidebarTitle: Font = .subheadline
+    static let sidebarSubtitle: Font = .caption
+    static let sidebarMeta: Font = .caption2
     #else
     static let chatBody: Font = .system(size: 16)
+    // macOS system semantic sizes are small (caption=11pt, caption2=10pt);
+    // use fixed sizes so sidebar feels proportionate to the 16pt chat body.
+    static let sidebarTitle: Font = .system(size: 14)
+    static let sidebarSubtitle: Font = .system(size: 12)
+    static let sidebarMeta: Font = .system(size: 11)
     #endif
 }
 
@@ -93,9 +102,7 @@ extension MarkdownUI.Theme {
     /// App-wide Markdown theme: system body font, adaptive warm palette.
     static let app: Self = .gitHub
         .text {
-            #if os(iOS)
-            FontSize(17)
-            #else
+            #if os(macOS)
             FontSize(16)
             #endif
             ForegroundColor(Color.textPrimary)

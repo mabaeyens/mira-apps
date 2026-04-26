@@ -6,6 +6,10 @@ struct ChatView: View {
     @Bindable var vm: ChatViewModel
     let attachPicker: AnyView
 
+    private var currentTitle: String {
+        vm.conversations.first(where: { $0.id == vm.currentConvId })?.title ?? ""
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // ── Status bar ────────────────────────────────────────────────
@@ -32,6 +36,7 @@ struct ChatView: View {
                 isFetching: vm.isFetching,
                 isLoadingMessages: vm.loadingConvId != nil,
                 failedUserMessageId: vm.lastFailedUserMessage?.id,
+                streamingWaitMessage: vm.streamingWaitMessage,
                 onResend: { vm.resendLast() },
                 onEdit: { vm.editLast() }
             )
@@ -71,6 +76,7 @@ struct ChatView: View {
             )
         }
         .background(Color.appBg)
+        .navigationTitle(currentTitle)
         // On iOS the error alert lives in iOSConnectedView so it's reachable
         // whether the sidebar or the detail column is currently visible.
         #if os(macOS)

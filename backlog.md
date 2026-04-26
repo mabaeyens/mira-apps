@@ -1,6 +1,22 @@
 # Backlog
 
 ## Done
+- [2026-04-26] Slow-connection patience messages — 100-message pool shown after 3 s of streaming with no first token; rotates every 6 s; clears instantly on first real token; displayed as italic caption below streaming bubble
+- [2026-04-26] Larger timeouts for local models — listConversations 8 s → 15 s, getMessages 20 s → 60 s (URLRequest + Task-level), matching realistic Tailscale/slow-LAN latencies
+- [2026-04-26] Inline code on own line — replaced custom InlineFlowLayout with VStack in InlineParagraphView so every backtick snippet breaks onto its own line as a copyable chip; flow layout code removed
+- [2026-04-26] Sidebar pin toggle — @AppStorage("sidebarPinned") defaults to true; custom Binding prevents NavigationSplitView from collapsing on conversation changes; pin.fill / pin icon in sidebar header
+- [2026-04-26] Sidebar font sizes — new sidebarTitle (14pt macOS/.subheadline iOS), sidebarSubtitle (12pt/.caption), sidebarMeta (11pt/.caption2) constants applied throughout ConversationListView
+- [2026-04-26] Conversation title in detail pane — ChatView now sets .navigationTitle from currentConvId; shows in macOS toolbar and iOS navigation bar
+- [2026-04-26] Sidebar highlights current conversation — listRowBackground is now conditional: appAccent.opacity(0.12) for active row, clear otherwise
+- [2026-04-26] Jump-to-bottom pill — moved from .overlay(alignment:.bottom) to .safeAreaInset(edge:.bottom) per Apple HIG; scroll view content no longer hides behind the pill
+- [2026-04-26] Stop-resend double response — stopStreaming() stores cancel Task in cancelTask; send() awaits cancelTask?.value before starting new SSE stream, guaranteeing server-side cancel lands first
+- [2026-04-26] Timeout/cancel error messages — CancellationError in loadConversations() now returns silently (background refresh failure); URLError.cancelled returns silently (iOS backgrounding); selectConversation shows "Request timed out" for CancellationError, ignores URLError.cancelled; SSE stream errors filter the same two non-errors
+- [2026-04-26] Font size consistency — sidebar conversation title `.body`→`.subheadline`, date `.footnote`→`.caption` (matches project row sizes); iOS chatBody fixed to `.system(size: 17)` so user bubble and Markdown assistant text always match regardless of Dynamic Type setting
+- [2026-04-26] Toolbar button separation (iOS) — compose + info were in a single ToolbarItem HStack(spacing:4); split into two separate ToolbarItems so iOS applies proper inter-item touch margins
+- [2026-04-26] Delete confirmation — conversations with messageCount > 0 show a confirmationDialog before deletion; empty conversations delete immediately; screen redraws to welcome state when last conversation is removed
+- [2026-04-26] Jump-to-bottom pill fix — removed DragGesture (fired on button tap, immediately re-showed the pill); onScrollGeometryChange is now the sole pin/unpin authority with 80/120 pt hysteresis to prevent flicker
+- [2026-04-26] Icon color harmonization — RAGPanel: hardcoded .green → Color.appAccent; swipe-to-rename tint: .orange → Color.appAccent; send/stop white icons on filled circles are intentional and unchanged
+- [2026-04-26] Resend/Edit buttons on failed messages — when streaming ends with empty assistant content (timeout, Ollama not loaded, user cancelled), Edit and Resend buttons appear below the user bubble; Edit restores text to input field, Resend re-sends immediately; both drop the failed exchange from local state first
 - [2026-04-26] fix: blank screen during inference — LazyVStack deferred height computation caused scrollTo(bottomAnchor) to overshoot past actual content when new messages were appended; replaced with VStack so heights are always known before scroll is attempted
 - [2026-04-26] Design/ cleanup — removed AppIcon.svg, AppIconTinted.svg, OptionA.svg, mira_icon_C.svg.png (obsolete/generated); added mira_icon_C_animated.svg (SMIL-animated, mirrors MiraLogo.swift: elliptical orbit, breathing glow, z-depth opacity)
 - [2026-04-26] Press kit — created press/ folder with app-icon.svg, app-icon-1024.png, app-icon-tinted-1024.png, logomark.svg (transparent bg, amber mark), and README.md with short/long descriptions, key facts, and asset guide
@@ -60,3 +76,6 @@
 - TransparentTitleBar uses NSViewRepresentable + DispatchQueue.main.async to access NSWindow after view is in hierarchy — standard macOS pattern, do not simplify away
 - iOS 26+ icon system: universal entry = light mode default; explicit `luminosity: dark` for dark mode; `luminosity: tinted` for tinted. All three needed for full coverage.
 - macOS icon PNGs are not adaptive (no light/dark variants) — expected macOS behavior
+- sidebarPinned: true is the default — sidebar never auto-hides unless user clicks the pin icon in the New Chat header row
+- waitingMessages pool: 100 entries in ChatViewModel. First shown after 3 s, rotates every 6 s, cancelled instantly on first token. Add/edit in `private static let waitingMessages`.
+- InlineParagraphView now uses VStack — the InlineFlowLayout is removed. Short keywords like `True`/`None` will also break to own lines; this is acceptable for the primary use case (commands, paths, one-liners)

@@ -27,7 +27,7 @@ struct OllamaSearchApp: App {
 
         Window("About Mira", id: "about") {
             AboutView()
-                .frame(width: 480, height: 400)
+                .frame(width: 480, height: 560)
         }
         .windowResizability(.contentSize)
 
@@ -149,11 +149,22 @@ struct MacRootView: View {
 
     private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @AppStorage("sidebarPinned") private var sidebarPinned: Bool = true
+
+    // When pinned, the binding always reports .all and ignores writes so
+    // SwiftUI navigation actions can't collapse the sidebar automatically.
+    private var visibilityBinding: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { sidebarPinned ? .all : columnVisibility },
+            set: { if !sidebarPinned { columnVisibility = $0 } }
+        )
+    }
 
     var body: some View {
         Group {
             if case .ready = connection.state, splashMinimumElapsed {
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: visibilityBinding) {
                     ConversationListView(vm: chatVM)
                         .frame(minWidth: 200)
                 } detail: {
@@ -280,7 +291,11 @@ struct iOSConnectedView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            ConversationListView(vm: chatVM)
+            ConversationListView(vm: chatVM, onTap: { _ in
+                if horizontalSizeClass == .compact {
+                    columnVisibility = .detailOnly
+                }
+            })
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button { onSettings() } label: {
@@ -297,13 +312,13 @@ struct iOSConnectedView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showAbout = true } label: {
-                        Image(systemName: "info.circle")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { chatVM.newConversation() } label: {
-                        Image(systemName: "square.and.pencil")
+                    HStack(spacing: 4) {
+                        Button { showAbout = true } label: {
+                            Image(systemName: "info.circle")
+                        }
+                        Button { chatVM.newConversation() } label: {
+                            Image(systemName: "square.and.pencil")
+                        }
                     }
                 }
             }
@@ -327,16 +342,21 @@ struct iOSConnectedView: View {
                 chatVM.selectConversation(first.id)
             }
         }
-        .onChange(of: chatVM.currentConvId) { _, newId in
-            if !newId.isEmpty {
-                // Dismiss keyboard when switching conversations.
+        .onChange(of: chatVM.loadingConvId) { _, newId in
+            // Navigate to detail immediately when a fetch starts so the user sees
+            // the loading spinner in the chat area instead of waiting on the sidebar.
+            if newId != nil && horizontalSizeClass == .compact {
                 UIApplication.shared.sendAction(
                     #selector(UIResponder.resignFirstResponder),
                     to: nil, from: nil, for: nil
                 )
-                if horizontalSizeClass != .compact {
-                    columnVisibility = .detailOnly
-                }
+                columnVisibility = .detailOnly
+            }
+        }
+        .onChange(of: chatVM.currentConvId) { _, newId in
+            if !newId.isEmpty && horizontalSizeClass != .compact {
+                // Non-compact: switch to detail-only when the conversation finishes loading.
+                columnVisibility = .detailOnly
             }
         }
     }
