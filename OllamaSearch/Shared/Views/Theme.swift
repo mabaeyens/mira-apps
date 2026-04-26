@@ -78,8 +78,10 @@ extension Font {
     }
 
     /// Body size used in chat bubbles and streaming text.
+    /// Fixed size on both platforms so it stays in sync with the Markdown
+    /// theme's FontSize(17) / FontSize(16), which are also absolute.
     #if os(iOS)
-    static let chatBody: Font = .body
+    static let chatBody: Font = .system(size: 17)
     #else
     static let chatBody: Font = .system(size: 16)
     #endif
@@ -106,5 +108,12 @@ extension MarkdownUI.Theme {
             FontSize(.em(0.875))
             BackgroundColor(Color.userBubbleBg)
             ForegroundColor(Color.textPrimary)
+        }
+        .codeBlock { cfg in
+            CopyableCodeBlock(
+                language: cfg.language,
+                content: cfg.content,
+                label: AnyView(cfg.label)
+            )
         }
 }

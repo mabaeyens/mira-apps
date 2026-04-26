@@ -297,13 +297,13 @@ struct iOSConnectedView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 4) {
-                        Button { chatVM.newConversation() } label: {
-                            Image(systemName: "square.and.pencil")
-                        }
-                        Button { showAbout = true } label: {
-                            Image(systemName: "info.circle")
-                        }
+                    Button { showAbout = true } label: {
+                        Image(systemName: "info.circle")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { chatVM.newConversation() } label: {
+                        Image(systemName: "square.and.pencil")
                     }
                 }
             }

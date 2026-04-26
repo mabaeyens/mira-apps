@@ -13,6 +13,7 @@ struct ConversationListView: View {
     @State private var searchText: String = ""
     @State private var debouncedSearch: String = ""
     @State private var showAddProject = false
+    @State private var deletingConv: Conversation? = nil
 
     private var filteredConversations: [Conversation] {
         guard !debouncedSearch.isEmpty else { return vm.conversations }
@@ -142,6 +143,28 @@ struct ConversationListView: View {
             }
             Button("Cancel", role: .cancel) { renamingConv = nil }
         }
+        .confirmationDialog(
+            "Delete \"\(deletingConv?.title ?? "")\"?",
+            isPresented: Binding(get: { deletingConv != nil }, set: { if !$0 { deletingConv = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let conv = deletingConv { vm.deleteConversation(conv.id) }
+                deletingConv = nil
+            }
+            Button("Cancel", role: .cancel) { deletingConv = nil }
+        } message: {
+            let count = deletingConv?.messageCount ?? 0
+            Text("This conversation has \(count) message\(count == 1 ? "" : "s") and cannot be recovered.")
+        }
+    }
+
+    private func requestDelete(_ conv: Conversation) {
+        if conv.messageCount > 0 {
+            deletingConv = conv
+        } else {
+            vm.deleteConversation(conv.id)
+        }
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -256,13 +279,13 @@ struct ConversationListView: View {
         return HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(conv.title)
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 HStack(spacing: 6) {
                     Text(relativeDate(conv.updatedAt))
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(Color.textSecondary)
                     if let proj = project {
                         Text(proj.name)
@@ -291,7 +314,7 @@ struct ConversationListView: View {
                 Label("Rename", systemImage: "pencil")
             }
             Button(role: .destructive) {
-                vm.deleteConversation(conv.id)
+                requestDelete(conv)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -303,11 +326,11 @@ struct ConversationListView: View {
             } label: {
                 Label("Rename", systemImage: "pencil")
             }
-            .tint(.orange)
+            .tint(Color.appAccent)
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
-                vm.deleteConversation(conv.id)
+                requestDelete(conv)
             } label: {
                 Label("Delete", systemImage: "trash")
             }

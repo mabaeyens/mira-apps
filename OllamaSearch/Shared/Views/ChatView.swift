@@ -30,7 +30,10 @@ struct ChatView: View {
                 isStreaming: vm.isStreaming,
                 currentSearchQuery: vm.currentSearchQuery,
                 isFetching: vm.isFetching,
-                isLoadingMessages: vm.loadingConvId != nil
+                isLoadingMessages: vm.loadingConvId != nil,
+                failedUserMessageId: vm.lastFailedUserMessage?.id,
+                onResend: { vm.resendLast() },
+                onEdit: { vm.editLast() }
             )
 
             Color.borderSubtle.frame(height: 1)
