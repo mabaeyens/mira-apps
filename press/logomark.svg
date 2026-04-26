@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 380">
+  <defs>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Eye shape -->
+  <path
+    d="M 0 190 Q 320 10 640 190 Q 320 370 0 190 Z"
+    fill="#D09268"
+    fill-opacity="0.22"
+    stroke="#D09268"
+    stroke-width="20"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#glow)"
+  />
+
+  <!-- Four-pointed star -->
+  <path
+    d="M 320 110
+       L 341 167  L 410 190
+       L 341 213  L 320 270
+       L 299 213  L 230 190
+       L 299 167  Z"
+    fill="#D09268"
+    filter="url(#glow)"
+  />
+
+  <!-- Tip accent dots -->
+  <circle cx="0"   cy="190" r="7" fill="#D09268" opacity="0.55"/>
+  <circle cx="640" cy="190" r="7" fill="#D09268" opacity="0.55"/>
+</svg>
