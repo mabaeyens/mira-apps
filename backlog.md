@@ -1,6 +1,12 @@
 # Backlog
 
 ## Done
+- [2026-04-26] Slow-connection server startup UX — thin spinner+message banner at top of chat during reconnect/startup; animated in/out; shows on foreground if probe fails; distinguishes 503 "Ollama loading" (stay on URL) from unreachable (try other saved connections); polls startupStatus() for 90 s; 103-message patience pool; auto-reloads conversations on reconnect
+- [2026-04-26] iOS scenePhase reconnect — on foreground, quick 2s probe first (no banner if already up); if fails, startReconnect() loop runs; falls back to other saved connections; cancels cleanly when user manually connects via gear sheet
+- [2026-04-26] ConnectionView reachability dots — green/red/gray 8pt circles per row probed in parallel on appear; no user action needed
+- [2026-04-26] Connection icon turns orange when unreachable — toolbar wifi/network icon switches from accent to .orange during reconnect; help text adds "— reconnecting…"
+- [2026-04-26] Network-loss error message — send() URLError classified as connection-lost; shows "Connection lost — the server may be sleeping. Tap Resend when it's back." instead of raw URLError string
+- [2026-04-26] APIClient timeouts increased — startupStatus() 1.5s → 5s; autoConnect probe deadline 2s → 5s; tolerates Tailscale VPN jitter and slow wake-from-sleep responses
 - [2026-04-26] Slow-connection patience messages — 100-message pool shown after 3 s of streaming with no first token; rotates every 6 s; clears instantly on first real token; displayed as italic caption below streaming bubble
 - [2026-04-26] Larger timeouts for local models — listConversations 8 s → 15 s, getMessages 20 s → 60 s (URLRequest + Task-level), matching realistic Tailscale/slow-LAN latencies
 - [2026-04-26] Inline code on own line — replaced custom InlineFlowLayout with VStack in InlineParagraphView so every backtick snippet breaks onto its own line as a copyable chip; flow layout code removed
@@ -78,4 +84,7 @@
 - macOS icon PNGs are not adaptive (no light/dark variants) — expected macOS behavior
 - sidebarPinned: true is the default — sidebar never auto-hides unless user clicks the pin icon in the New Chat header row
 - waitingMessages pool: 100 entries in ChatViewModel. First shown after 3 s, rotates every 6 s, cancelled instantly on first token. Add/edit in `private static let waitingMessages`.
+- reconnectMessages pool: 103 entries in OllamaSearchApp (iOS only). Shown during startReconnect() loop. Thematically split: server startup, Mac wake, network, local-AI framing, general patience, "connected but model loading". Add/edit in `private static let reconnectMessages`.
+- startReconnect() flow: quick 2s probe → if ok, silent; if fail → banner appears, polls startupStatus() every 2s for 90s. 503 = stay on same URL (Ollama loading). Unreachable = try autoConnect() on other saved connections. On success: isReachable=true, banner clears, loadConversations() called. On timeout: banner clears, icon stays orange.
+- macOS idle sleep prevention: server.py spawns `caffeinate -i -s -w <own_pid>` on startup (macOS only). `-i` prevents idle sleep on battery, `-s` on AC. `-w <pid>` ties the assertion to the server process — caffeinate exits automatically when server exits; no orphan process. Verified in pmset: "asserting on behalf of Process ID <N>".
 - InlineParagraphView now uses VStack — the InlineFlowLayout is removed. Short keywords like `True`/`None` will also break to own lines; this is acceptable for the primary use case (commands, paths, one-liners)
