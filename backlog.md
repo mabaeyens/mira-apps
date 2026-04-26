@@ -1,6 +1,7 @@
 # Backlog
 
 ## Done
+- [2026-04-26] Design/ cleanup — removed AppIcon.svg, AppIconTinted.svg, OptionA.svg, mira_icon_C.svg.png (obsolete/generated); added mira_icon_C_animated.svg (SMIL-animated, mirrors MiraLogo.swift: elliptical orbit, breathing glow, z-depth opacity)
 - [2026-04-26] Press kit — created press/ folder with app-icon.svg, app-icon-1024.png, app-icon-tinted-1024.png, logomark.svg (transparent bg, amber mark), and README.md with short/long descriptions, key facts, and asset guide
 - [2026-04-26] marketing.md — App Store metadata (promotional text, description, keywords, URLs), screenshot plan with caption overlays for iPhone/iPad/Mac, competitive analysis, short/medium/long-term feature backlog, and submission risk notes
 - [2026-04-26] AboutView text revised — three paragraphs, added "Latin word for wonder" and "double stars", fixed second paragraph to open with "With Mira, inference runs entirely on your Mac"
