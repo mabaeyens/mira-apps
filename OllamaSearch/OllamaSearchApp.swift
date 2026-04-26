@@ -54,6 +54,8 @@ struct OllamaSearchApp: App {
     @State private var splashDone = false
     @State private var showingConnectionSettings = false
     @State private var splashStatus: String = ""
+    @State private var isReachable = true
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -61,7 +63,7 @@ struct OllamaSearchApp: App {
                 if !splashDone {
                     iOSSplashView(status: splashStatus)
                 } else if let url = activeURL {
-                    iOSConnectedView(chatVM: chatVM, serverURL: url) {
+                    iOSConnectedView(chatVM: chatVM, serverURL: url, isReachable: isReachable) {
                         showingConnectionSettings = true
                     }
                     .sheet(isPresented: $showingConnectionSettings) {
@@ -93,6 +95,27 @@ struct OllamaSearchApp: App {
                     splashDone = true
                 }
             }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active, splashDone, activeURL != nil else { return }
+                Task { await refreshConnection() }
+            }
+        }
+    }
+
+    /// Called when the app returns to foreground. Re-probes the active URL;
+    /// if it's gone, runs the full autoConnect sequence so the app picks up
+    /// Tailscale after the Mac woke from sleep or the network changed.
+    private func refreshConnection() async {
+        guard let current = activeURL else { return }
+        if await APIClient.shared.probe(current, deadline: 3) {
+            isReachable = true
+            return
+        }
+        isReachable = false
+        if let found = await autoConnect() {
+            APIClient.shared.baseURL = found
+            activeURL = found
+            isReachable = true
         }
     }
 
@@ -273,6 +296,7 @@ struct iOSSplashView: View {
 struct iOSConnectedView: View {
     let chatVM: ChatViewModel
     let serverURL: URL
+    var isReachable: Bool = true
     let onSettings: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -300,9 +324,9 @@ struct iOSConnectedView: View {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button { onSettings() } label: {
                             Image(systemName: connectionIcon)
-                                .foregroundStyle(Color.accent)
+                                .foregroundStyle(isReachable ? Color.accent : .orange)
                         }
-                        .help(connectionLabel)
+                        .help(isReachable ? connectionLabel : "\(connectionLabel) — reconnecting…")
                     }
                 }
         } detail: {
