@@ -140,6 +140,34 @@ final class ChatViewModel {
         isStreaming = false
     }
 
+    /// Non-nil when the last exchange failed (empty assistant response, not streaming).
+    /// Used to show the Resend / Edit buttons on the last user bubble.
+    var lastFailedUserMessage: Message? {
+        guard !isStreaming,
+              let last = messages.last, last.role == .assistant, last.content.isEmpty,
+              messages.count >= 2,
+              messages[messages.count - 2].role == .user
+        else { return nil }
+        return messages[messages.count - 2]
+    }
+
+    /// Drops the failed exchange and re-sends the same question.
+    func resendLast() {
+        guard let userMsg = lastFailedUserMessage else { return }
+        let text = userMsg.content
+        if messages.count >= 2 { messages.removeLast(2) }
+        inputText = text
+        send()
+    }
+
+    /// Drops the failed exchange and restores the question to the input field.
+    func editLast() {
+        guard let userMsg = lastFailedUserMessage else { return }
+        let text = userMsg.content
+        if messages.count >= 2 { messages.removeLast(2) }
+        inputText = text
+    }
+
     func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
         Task {
@@ -222,6 +250,10 @@ final class ChatViewModel {
                 if id == currentConvId {
                     if let first = conversations.first {
                         selectConversation(first.id)
+                    } else {
+                        messages = []
+                        currentConvId = ""
+                        inputTokens = 0; outputTokens = 0; contextPct = 0
                     }
                 }
             } catch {

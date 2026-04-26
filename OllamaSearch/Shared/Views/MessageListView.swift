@@ -8,6 +8,9 @@ struct MessageListView: View {
     let currentSearchQuery: String?
     let isFetching: Bool
     var isLoadingMessages: Bool = false
+    var failedUserMessageId: UUID? = nil
+    var onResend: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
 
     @State private var scrollPinned = true
     private let bottomAnchor = "bottom"
@@ -63,7 +66,12 @@ struct MessageListView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(messages) { msg in
-                        MessageBubble(message: msg)
+                        MessageBubble(
+                            message: msg,
+                            showResendActions: msg.id == failedUserMessageId,
+                            onResend: onResend,
+                            onEdit: onEdit
+                        )
                     }
 
                     // Activity indicators shown while streaming
@@ -91,22 +99,22 @@ struct MessageListView: View {
                     scrollToBottom(proxy: proxy)
                 }
             }
-            // Unpin on any upward drag so the button appears immediately.
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 5)
-                    .onChanged { _ in scrollPinned = false }
-            )
-            // Re-pin (and hide the button) once the user scrolls back near the
-            // bottom. The 80 pt threshold makes it disappear before the very end
-            // so the transition feels instant rather than lagging behind the finger.
-            .onScrollGeometryChange(for: Bool.self) { geometry in
-                let distanceFromBottom = geometry.contentSize.height
+            // Sole source of truth for pin/unpin — no DragGesture needed.
+            // Hysteresis: pin at ≤80 pt from bottom, unpin at >120 pt.
+            // This prevents the button from flickering at the threshold and,
+            // crucially, stops the button from reappearing after it's tapped
+            // (the button tap itself no longer sets scrollPinned = false).
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentSize.height
                     - geometry.contentOffset.y
                     - geometry.containerSize.height
                     - geometry.contentInsets.bottom
-                return distanceFromBottom <= 80
-            } action: { _, isAtBottom in
-                if isAtBottom { scrollPinned = true }
+            } action: { _, distance in
+                if distance <= 80 {
+                    scrollPinned = true
+                } else if distance > 120 {
+                    scrollPinned = false
+                }
             }
             .overlay(alignment: .bottom) {
                 if !scrollPinned && !messages.isEmpty {

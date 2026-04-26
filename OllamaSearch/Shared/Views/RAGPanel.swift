@@ -1,7 +1,6 @@
 import SwiftUI
 
 /// Collapsible panel showing RAG chunks injected from attached documents.
-/// Green accent — mirrors the "Document sections used" panel in the web UI.
 struct RAGPanel: View {
     let chunks: [RAGChunk]
     @State private var isExpanded = true
@@ -12,22 +11,22 @@ struct RAGPanel: View {
                 ForEach(chunks) { chunk in
                     HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "doc.text")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.appAccent)
                             .font(.caption)
                             .frame(width: 14)
                         VStack(alignment: .leading, spacing: 1) {
                             HStack {
                                 Text(chunk.source)
                                     .font(.caption.weight(.medium))
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(Color.appAccent)
                                 Spacer()
                                 Text(String(format: "%.2f", chunk.score))
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.textSecondary)
                             }
                             Text(chunk.preview)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.textSecondary)
                                 .lineLimit(2)
                         }
                     }
@@ -37,13 +36,13 @@ struct RAGPanel: View {
         } label: {
             Label("Document sections used (\(chunks.count))", systemImage: "square.3.layers.3d")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.appAccent)
         }
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.green.opacity(0.07))
-                .stroke(Color.green.opacity(0.25), lineWidth: 1)
+                .fill(Color.appAccent.opacity(0.07))
+                .stroke(Color.appAccent.opacity(0.25), lineWidth: 1)
         )
     }
 }

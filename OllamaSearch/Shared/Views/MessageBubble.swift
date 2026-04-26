@@ -6,6 +6,9 @@ import MarkdownUI
 /// page background. During streaming a blinking DOS-style `_` cursor is shown.
 struct MessageBubble: View {
     let message: Message
+    var showResendActions: Bool = false
+    var onResend: (() -> Void)? = nil
+    var onEdit: (() -> Void)? = nil
 
     var body: some View {
         if message.role == .user {
@@ -36,10 +39,28 @@ struct MessageBubble: View {
                                 .fill(Color.userBubbleBg)
                         )
                 }
+                if showResendActions {
+                    resendActions
+                }
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 4)
+    }
+
+    private var resendActions: some View {
+        HStack(spacing: 10) {
+            Button(action: { onEdit?() }) {
+                Label("Edit", systemImage: "pencil")
+                    .font(.caption)
+            }
+            Button(action: { onResend?() }) {
+                Label("Resend", systemImage: "arrow.clockwise")
+                    .font(.caption)
+            }
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(Color.textSecondary)
     }
 
     private var thumbnailRow: some View {
@@ -89,6 +110,15 @@ struct MessageBubble: View {
             } else {
                 Markdown(message.content)
                     .markdownTheme(.app)
+                    .markdownBlockStyle(\.paragraph) { cfg in
+                        let raw = cfg.content.renderMarkdown()
+                        if raw.contains("`") {
+                            InlineParagraphView(raw: raw)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            cfg.label
+                        }
+                    }
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
