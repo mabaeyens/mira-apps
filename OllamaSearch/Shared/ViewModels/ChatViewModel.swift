@@ -52,6 +52,119 @@ final class ChatViewModel {
     // ── Internals ────────────────────────────────────────────────────────────
 
     private var streamTask: Task<Void, Never>?
+    // Tracks an in-flight POST /cancel so send() can await it before starting
+    // a new request, preventing a race where the new inference starts before
+    // the server-side cancel lands (which produced double responses).
+    private var cancelTask: Task<Void, Never>?
+
+    // ── Slow-connection patience messages ─────────────────────────────────────
+    // Shown after 3 s of streaming with no tokens yet. Rotates every 6 s.
+    var streamingWaitMessage: String? = nil
+    private var waitMessageTask: Task<Void, Never>?
+
+    private static let waitingMessages: [String] = [
+        "Local models take their time — hang tight",
+        "Good things come to those who wait…",
+        "Thinking hard about this one",
+        "The model is working on it…",
+        "Generating your response…",
+        "Almost there — local inference can be slow",
+        "Please be patient, this might take a moment",
+        "Crunching the tokens…",
+        "Your local AI is busy thinking",
+        "Processing… grab a coffee ☕",
+        "This is the price of privacy — worth it",
+        "100% local, 100% private, occasionally slow",
+        "No cloud, no rush — just your machine",
+        "Running entirely on your hardware",
+        "Patience, the model is doing its best",
+        "Still here, still thinking…",
+        "Large responses take a little longer",
+        "Working through your request…",
+        "Your data never left this machine",
+        "On-device AI — give it a moment",
+        "Thinking at the speed of silicon…",
+        "Warming up the weights…",
+        "One token at a time…",
+        "The wheels are turning",
+        "Complex questions deserve careful answers",
+        "Inference in progress — please wait",
+        "Not a cloud service — be patient",
+        "Locally run, locally slow at times",
+        "Your question is being processed",
+        "Hang tight while I think this through",
+        "Taking a moment to get this right",
+        "Almost ready — just a few more seconds",
+        "Patience is a virtue, especially with LLMs",
+        "The model is giving this its full attention",
+        "Your hardware is working overtime",
+        "Composing a thoughtful response…",
+        "Generating — this depends on your hardware",
+        "Local model, local pace",
+        "Slower than the cloud, more private than it too",
+        "Your GPU/CPU is hard at work",
+        "Still generating — complex tasks take longer",
+        "A response is being crafted for you",
+        "Thinking… don't go anywhere",
+        "Inference underway",
+        "This one might take a bit longer",
+        "On-device reasoning in progress",
+        "Your assistant is thinking carefully",
+        "The model hasn't given up — it's still going",
+        "Sometimes slow is just… thorough",
+        "Processing with full context…",
+        "No timeout here — take as long as you need",
+        "Running the full model, not a trimmed one",
+        "Locally hosted means no rate limits",
+        "Still generating — feel free to wait",
+        "The longer the wait, the more thorough the answer",
+        "Heating up the inference engine…",
+        "Your machine is doing the heavy lifting",
+        "Mira is thinking…",
+        "Generating tokens, one by one",
+        "This is local AI — patience rewarded",
+        "A good answer is worth waiting for",
+        "The model is fully engaged with your request",
+        "Working at full capacity…",
+        "Local inference: no throttling, no rush",
+        "Thinking at inference speed…",
+        "On your hardware, on your terms",
+        "Computation in progress…",
+        "Still crafting your response",
+        "Your context window is being processed",
+        "Don't worry — it hasn't crashed",
+        "Just a moment more…",
+        "The bigger the model, the longer the wait",
+        "Quality over speed",
+        "Hang in there — response incoming",
+        "Slower than ChatGPT, more private though",
+        "Your patience is appreciated",
+        "Running inference locally…",
+        "Almost done thinking…",
+        "Local AI is worth the wait",
+        "Still at it — complex queries take time",
+        "Your assistant is fully focused on this",
+        "Response generation in progress",
+        "Taking a deep breath and thinking…",
+        "Still working — check back in a moment",
+        "Inference can't be rushed — almost there",
+        "The model is doing its thing",
+        "Generating carefully…",
+        "No shortcuts — full generation in progress",
+        "A thoughtful response takes time",
+        "Running on local hardware — patience pays off",
+        "Busy generating your answer",
+        "Your request is in good hands",
+        "The model is still thinking",
+        "Processing at local inference speed",
+        "Generating — network not involved",
+        "Still here, still working",
+        "Taking longer than usual — still going",
+        "The response is on its way",
+        "Patience mode activated",
+        "Your local assistant is deep in thought",
+        "Still thinking — this is a good sign",
+    ]
 
     // Token throttle: accumulate tokens, flush every 100ms to avoid
     // re-rendering swift-markdown-ui on every individual token.
@@ -107,9 +220,28 @@ final class ChatViewModel {
         currentSearchQuery = nil
         isFetching = false
 
+        // Kick off the patience message loop: after 3 s with no token,
+        // show a rotating message so the user knows inference is running.
+        // The task is cancelled (and the message cleared) by handle(.token) as
+        // soon as the first real token arrives, or by stopStreaming()/finishStreaming().
+        waitMessageTask?.cancel()
+        waitMessageTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(3_000))
+            guard let self, !Task.isCancelled else { return }
+            while !Task.isCancelled {
+                self.streamingWaitMessage = Self.waitingMessages.randomElement()
+                try? await Task.sleep(for: .milliseconds(6_000))
+            }
+        }
+
         streamTask?.cancel()
         streamTask = Task { [weak self] in
             guard let self else { return }
+            // Await any pending server-side cancel from stopStreaming() so we
+            // don't race the new chat request against an outstanding cancel POST.
+            _ = await self.cancelTask?.value
+            self.cancelTask = nil
+            guard !Task.isCancelled else { return }
             let request = self.api.chatRequest(
                 message: text,
                 conversationId: self.currentConvId,
@@ -120,6 +252,10 @@ final class ChatViewModel {
                     guard !Task.isCancelled else { break }
                     self.handle(event: event, assistantMsgId: assistantMsg.id)
                 }
+            } catch is CancellationError {
+                // App backgrounded or user tapped Stop — not an error.
+            } catch let urlError as URLError where urlError.code == .cancelled {
+                // URLSession cancelled (app lifecycle) — not an error.
             } catch {
                 self.errorMessage = error.localizedDescription
             }
@@ -132,7 +268,14 @@ final class ChatViewModel {
         streamTask = nil
         flushTask?.cancel()
         flushTask = nil
-        Task { await api.cancel() }
+        waitMessageTask?.cancel()
+        waitMessageTask = nil
+        streamingWaitMessage = nil
+        // Store (don't fire-and-forget) so send() can await this before the next request.
+        cancelTask = Task { [weak self] in
+            guard let self else { return }
+            await self.api.cancel()
+        }
         flushPendingTokens()
         if let idx = messages.indices.last, messages[idx].role == .assistant {
             messages[idx].isStreaming = false
@@ -208,18 +351,18 @@ final class ChatViewModel {
     }
 
     func selectConversation(_ id: String) {
-        guard id != currentConvId, loadingConvId != id else { return }
+        guard (id != currentConvId || messages.isEmpty), loadingConvId != id else { return }
         streamTask?.cancel()
         loadingConvId = id
         Task {
             defer { loadingConvId = nil }
             // Task-based timeout: URLRequest.timeoutInterval is unreliable when
             // VPN routing silently drops packets (no TCP RST). Cancelling the
-            // inner Task guarantees work.value throws within 8 s regardless.
-            // Message history can be large — allow 20 s on slow 5G/Tailscale paths.
+            // inner Task guarantees work.value throws within the limit regardless.
+            // Large histories over Tailscale/5G can be slow — allow 60 s.
             let work = Task { try await api.getMessages(conversationId: id) }
             let timeout = Task {
-                try? await Task.sleep(for: .seconds(20))
+                try? await Task.sleep(for: .seconds(60))
                 work.cancel()
             }
             defer { timeout.cancel() }
@@ -236,6 +379,12 @@ final class ChatViewModel {
                     return Message(role: role, content: m.content)
                 }
                 inputTokens = 0; outputTokens = 0; contextPct = 0
+            } catch is CancellationError {
+                // 20-second timeout fired or app backgrounded — show a clear message.
+                errorMessage = "Request timed out. Check your connection and try again."
+            } catch let urlError as URLError where urlError.code == .cancelled {
+                // URLSession cancelled by iOS lifecycle — not an error worth surfacing.
+                return
             } catch {
                 errorMessage = "Could not load messages (\(error.localizedDescription)). Check your connection and try again."
             }
@@ -287,14 +436,24 @@ final class ChatViewModel {
         isLoadingConversations = true
         defer { isLoadingConversations = false }
         // Same Task-based timeout pattern as selectConversation — see comment there.
+        // 15 s gives the server room to respond even while inference is running.
         let work = Task { try await api.listConversations() }
         let timeout = Task {
-            try? await Task.sleep(for: .seconds(8))
+            try? await Task.sleep(for: .seconds(15))
             work.cancel()
         }
         defer { timeout.cancel() }
         do {
             conversations = try await work.value
+        } catch is CancellationError {
+            // 8-second timeout fired (server busy or network slow) — don't surface
+            // the raw "cancelled" description; show nothing so background refreshes
+            // (e.g. after streaming) fail silently and a user-triggered pull-to-refresh
+            // shows a friendlier message.
+            return
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // URLSession cancelled by iOS when app went to background — ignore.
+            return
         } catch {
             errorMessage = "Could not reach server (\(error.localizedDescription)). Check your connection and try again."
         }
@@ -309,6 +468,11 @@ final class ChatViewModel {
             break   // could show a "..." indicator; skip for now
 
         case .token(let t):
+            if streamingWaitMessage != nil {
+                streamingWaitMessage = nil
+                waitMessageTask?.cancel()
+                waitMessageTask = nil
+            }
             bufferToken(t, msgId: assistantMsgId)
 
         case .searchStart(let q):
@@ -407,6 +571,9 @@ final class ChatViewModel {
         flushPendingTokens()
         updateMessage(id: msgId) { $0.isStreaming = false }
         isStreaming = false
+        streamingWaitMessage = nil
+        waitMessageTask?.cancel()
+        waitMessageTask = nil
 
         // If the stream ended without a server .title event (timeout, network drop,
         // or error on the first message), use the user's prompt as a fallback title

@@ -9,6 +9,7 @@ struct MessageListView: View {
     let isFetching: Bool
     var isLoadingMessages: Bool = false
     var failedUserMessageId: UUID? = nil
+    var streamingWaitMessage: String? = nil
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
 
@@ -81,11 +82,22 @@ struct MessageListView: View {
                     if isFetching {
                         activityRow(icon: "arrow.down.circle", text: "Fetching page…")
                     }
+                    // Patience message: shown after ~3 s with no first token yet.
+                    if let waitMsg = streamingWaitMessage {
+                        waitRow(text: waitMsg)
+                    }
 
                     Color.clear.frame(height: 1).id(bottomAnchor)
                 }
             }
             .scrollDismissesKeyboard(.immediately)
+            .onAppear {
+                scrollToBottom(proxy: proxy)
+            }
+            .onChange(of: messages.first?.id) {
+                scrollPinned = true
+                scrollToBottom(proxy: proxy)
+            }
             .onChange(of: messages.count) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
             }
@@ -116,7 +128,10 @@ struct MessageListView: View {
                     scrollPinned = false
                 }
             }
-            .overlay(alignment: .bottom) {
+            // safeAreaInset shrinks the scroll view's visible area so the button
+            // never floats over message text — Apple-recommended pattern for
+            // "scroll to bottom" affordances per HIG.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
                 if !scrollPinned && !messages.isEmpty {
                     Button {
                         scrollPinned = true
@@ -127,7 +142,9 @@ struct MessageListView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(Color.accent)
-                    .padding(.bottom, 8)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .background(Color.appBg.opacity(0.01)) // zero-opacity hit area
                 }
             }
         }
@@ -138,6 +155,18 @@ struct MessageListView: View {
         withAnimation(.easeOut(duration: 0.15)) {
             proxy.scrollTo(bottomAnchor, anchor: .bottom)
         }
+    }
+
+    private func waitRow(text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .italic()
+            .foregroundStyle(Color.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 2)
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.4), value: text)
     }
 
     private func activityRow(icon: String, text: String) -> some View {

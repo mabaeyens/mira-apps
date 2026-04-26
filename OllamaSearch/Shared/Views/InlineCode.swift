@@ -146,72 +146,12 @@ struct CopyableCodeBlock: View {
     }
 }
 
-// MARK: - Flow layout key
-
-private struct InlineIsCodeKey: LayoutValueKey {
-    static let defaultValue: Bool = false
-}
-
-// MARK: - Flow layout for mixed text + code chips
-
-private struct InlineFlowLayout: Layout {
-    private let vSpacing: CGFloat = 3
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        compute(subviews: subviews, width: proposal.width ?? 300).size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = compute(subviews: subviews, width: bounds.width)
-        for (subview, frame) in zip(subviews, result.frames) {
-            subview.place(
-                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                proposal: ProposedViewSize(frame.size)
-            )
-        }
-    }
-
-    private struct Result {
-        var frames: [CGRect]
-        var size: CGSize
-    }
-
-    private func compute(subviews: Subviews, width cw: CGFloat) -> Result {
-        var frames: [CGRect] = []
-        var x: CGFloat = 0, y: CGFloat = 0, lineH: CGFloat = 0
-
-        for subview in subviews {
-            let isCode = subview[InlineIsCodeKey.self]
-
-            if isCode {
-                let sz = subview.sizeThatFits(.unspecified)
-                if x + sz.width > cw + 1 && x > 0 {
-                    y += lineH + vSpacing; lineH = 0; x = 0
-                }
-                frames.append(CGRect(x: x, y: y, width: sz.width, height: sz.height))
-                x += sz.width
-                lineH = max(lineH, sz.height)
-            } else {
-                let ideal = subview.sizeThatFits(.unspecified)
-                let rem = cw - x
-                if ideal.width <= rem + 1 {
-                    frames.append(CGRect(x: x, y: y, width: ideal.width, height: ideal.height))
-                    x += ideal.width
-                    lineH = max(lineH, ideal.height)
-                } else {
-                    if x > 0 { y += lineH + vSpacing; lineH = 0; x = 0 }
-                    let wrapped = subview.sizeThatFits(ProposedViewSize(width: cw, height: nil))
-                    frames.append(CGRect(x: 0, y: y, width: wrapped.width, height: wrapped.height))
-                    y += wrapped.height + vSpacing; x = 0; lineH = 0
-                }
-            }
-        }
-
-        return Result(frames: frames, size: CGSize(width: cw, height: y + lineH))
-    }
-}
-
 // MARK: - Inline paragraph renderer
+//
+// Each inline code segment breaks onto its own line so copy-pasteable
+// snippets are visually distinct. The flow layout is intentionally removed:
+// sentences like "Run `pip install X`" read better with the command below
+// the prose than squeezed inline.
 
 struct InlineParagraphView: View {
     let raw: String
@@ -219,18 +159,19 @@ struct InlineParagraphView: View {
     private var segments: [InlineSegment] { parseInlineSegments(raw) }
 
     var body: some View {
-        InlineFlowLayout {
+        VStack(alignment: .leading, spacing: 5) {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, seg in
                 switch seg {
                 case .text(let s):
-                    Text(attrString(s))
-                        .font(.chatBody)
-                        .foregroundStyle(Color.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .layoutValue(key: InlineIsCodeKey.self, value: false)
+                    let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        Text(attrString(s))
+                            .font(.chatBody)
+                            .foregroundStyle(Color.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 case .code(let c):
                     InlineCodeChip(code: c)
-                        .layoutValue(key: InlineIsCodeKey.self, value: true)
                 }
             }
         }
