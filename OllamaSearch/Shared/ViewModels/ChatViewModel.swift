@@ -60,6 +60,12 @@ final class ChatViewModel {
     private var pendingTokenBuffer: String = ""
     private var flushTask: Task<Void, Never>?
 
+    // Non-empty only when sending the first message of a conversation, so
+    // finishStreaming() can fall back to the user's prompt as the title if the
+    // server never emitted a .title event (e.g. the stream timed out).
+    private var pendingFirstMessage: String = ""
+    private var receivedTitleDuringStream: Bool = false
+
     private let api = APIClient.shared
     private let sse = SSEClient.shared
     // No deinit needed: streamTask/flushTask use [weak self] so self can be
@@ -82,6 +88,13 @@ final class ChatViewModel {
             if case .fileData(_, let data, let mime) = att, mime.hasPrefix("image/") { return data }
             return nil
         }
+
+        // Track before appending: if no user messages exist yet, this is the first.
+        // finishStreaming() uses this to auto-title the conversation when the server's
+        // .title event never arrives (e.g. stream timed out).
+        let isFirstMessage = !messages.contains(where: { $0.role == .user })
+        pendingFirstMessage = isFirstMessage ? text : ""
+        receivedTitleDuringStream = false
 
         // Add user bubble immediately
         messages.append(Message(role: .user, content: text, imageAttachments: imageData))
@@ -296,9 +309,11 @@ final class ChatViewModel {
             isStreaming = false
             currentSearchQuery = nil
             isFetching = false
-            Task { await loadConversations() }
+            // loadConversations() is called in finishStreaming() after the loop,
+            // which runs after .title and .compress events have also been processed.
 
         case .title(let convId, let title):
+            receivedTitleDuringStream = true
             if currentConvId.isEmpty { currentConvId = convId }
             if let idx = conversations.firstIndex(where: { $0.id == convId }) {
                 let old = conversations[idx]
@@ -360,6 +375,20 @@ final class ChatViewModel {
         flushPendingTokens()
         updateMessage(id: msgId) { $0.isStreaming = false }
         isStreaming = false
+
+        // If the stream ended without a server .title event (timeout, network drop,
+        // or error on the first message), use the user's prompt as a fallback title
+        // so the conversation is identifiable in the sidebar.
+        if !receivedTitleDuringStream, !pendingFirstMessage.isEmpty, !currentConvId.isEmpty {
+            let fallback = String(pendingFirstMessage.prefix(60))
+            renameConversation(currentConvId, title: fallback)
+        }
+        pendingFirstMessage = ""
+        receivedTitleDuringStream = false
+
+        // Always refresh the conversation list — on success to pick up the server
+        // title, on error/timeout so the sidebar reflects current server state.
+        Task { await loadConversations() }
     }
 
     private func updateMessage(id: UUID, transform: (inout Message) -> Void) {
