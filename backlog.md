@@ -1,90 +1,27 @@
 # Backlog
 
-## Done
-- [2026-04-26] Slow-connection server startup UX — thin spinner+message banner at top of chat during reconnect/startup; animated in/out; shows on foreground if probe fails; distinguishes 503 "Ollama loading" (stay on URL) from unreachable (try other saved connections); polls startupStatus() for 90 s; 103-message patience pool; auto-reloads conversations on reconnect
-- [2026-04-26] iOS scenePhase reconnect — on foreground, quick 2s probe first (no banner if already up); if fails, startReconnect() loop runs; falls back to other saved connections; cancels cleanly when user manually connects via gear sheet
-- [2026-04-26] ConnectionView reachability dots — green/red/gray 8pt circles per row probed in parallel on appear; no user action needed
-- [2026-04-26] Connection icon turns orange when unreachable — toolbar wifi/network icon switches from accent to .orange during reconnect; help text adds "— reconnecting…"
-- [2026-04-26] Network-loss error message — send() URLError classified as connection-lost; shows "Connection lost — the server may be sleeping. Tap Resend when it's back." instead of raw URLError string
-- [2026-04-26] APIClient timeouts increased — startupStatus() 1.5s → 5s; autoConnect probe deadline 2s → 5s; tolerates Tailscale VPN jitter and slow wake-from-sleep responses
-- [2026-04-26] Slow-connection patience messages — 100-message pool shown after 3 s of streaming with no first token; rotates every 6 s; clears instantly on first real token; displayed as italic caption below streaming bubble
-- [2026-04-26] Larger timeouts for local models — listConversations 8 s → 15 s, getMessages 20 s → 60 s (URLRequest + Task-level), matching realistic Tailscale/slow-LAN latencies
-- [2026-04-26] Inline code on own line — replaced custom InlineFlowLayout with VStack in InlineParagraphView so every backtick snippet breaks onto its own line as a copyable chip; flow layout code removed
-- [2026-04-26] Sidebar pin toggle — @AppStorage("sidebarPinned") defaults to true; custom Binding prevents NavigationSplitView from collapsing on conversation changes; pin.fill / pin icon in sidebar header
-- [2026-04-26] Sidebar font sizes — new sidebarTitle (14pt macOS/.subheadline iOS), sidebarSubtitle (12pt/.caption), sidebarMeta (11pt/.caption2) constants applied throughout ConversationListView
-- [2026-04-26] Conversation title in detail pane — ChatView now sets .navigationTitle from currentConvId; shows in macOS toolbar and iOS navigation bar
-- [2026-04-26] Sidebar highlights current conversation — listRowBackground is now conditional: appAccent.opacity(0.12) for active row, clear otherwise
-- [2026-04-26] Jump-to-bottom pill — moved from .overlay(alignment:.bottom) to .safeAreaInset(edge:.bottom) per Apple HIG; scroll view content no longer hides behind the pill
-- [2026-04-26] Stop-resend double response — stopStreaming() stores cancel Task in cancelTask; send() awaits cancelTask?.value before starting new SSE stream, guaranteeing server-side cancel lands first
-- [2026-04-26] Timeout/cancel error messages — CancellationError in loadConversations() now returns silently (background refresh failure); URLError.cancelled returns silently (iOS backgrounding); selectConversation shows "Request timed out" for CancellationError, ignores URLError.cancelled; SSE stream errors filter the same two non-errors
-- [2026-04-26] Font size consistency — sidebar conversation title `.body`→`.subheadline`, date `.footnote`→`.caption` (matches project row sizes); iOS chatBody fixed to `.system(size: 17)` so user bubble and Markdown assistant text always match regardless of Dynamic Type setting
-- [2026-04-26] Toolbar button separation (iOS) — compose + info were in a single ToolbarItem HStack(spacing:4); split into two separate ToolbarItems so iOS applies proper inter-item touch margins
-- [2026-04-26] Delete confirmation — conversations with messageCount > 0 show a confirmationDialog before deletion; empty conversations delete immediately; screen redraws to welcome state when last conversation is removed
-- [2026-04-26] Jump-to-bottom pill fix — removed DragGesture (fired on button tap, immediately re-showed the pill); onScrollGeometryChange is now the sole pin/unpin authority with 80/120 pt hysteresis to prevent flicker
-- [2026-04-26] Icon color harmonization — RAGPanel: hardcoded .green → Color.appAccent; swipe-to-rename tint: .orange → Color.appAccent; send/stop white icons on filled circles are intentional and unchanged
-- [2026-04-26] Resend/Edit buttons on failed messages — when streaming ends with empty assistant content (timeout, Ollama not loaded, user cancelled), Edit and Resend buttons appear below the user bubble; Edit restores text to input field, Resend re-sends immediately; both drop the failed exchange from local state first
-- [2026-04-26] fix: blank screen during inference — LazyVStack deferred height computation caused scrollTo(bottomAnchor) to overshoot past actual content when new messages were appended; replaced with VStack so heights are always known before scroll is attempted
-- [2026-04-26] Design/ cleanup — removed AppIcon.svg, AppIconTinted.svg, OptionA.svg, mira_icon_C.svg.png (obsolete/generated); added mira_icon_C_animated.svg (SMIL-animated, mirrors MiraLogo.swift: elliptical orbit, breathing glow, z-depth opacity)
-- [2026-04-26] Press kit — created press/ folder with app-icon.svg, app-icon-1024.png, app-icon-tinted-1024.png, logomark.svg (transparent bg, amber mark), and README.md with short/long descriptions, key facts, and asset guide
-- [2026-04-26] marketing.md — App Store metadata (promotional text, description, keywords, URLs), screenshot plan with caption overlays for iPhone/iPad/Mac, competitive analysis, short/medium/long-term feature backlog, and submission risk notes
-- [2026-04-26] AboutView text revised — three paragraphs, added "Latin word for wonder" and "double stars", fixed second paragraph to open with "With Mira, inference runs entirely on your Mac"
-- [2026-04-26] Welcome screen logo enlarged from 88→120pt on iPad new-conversation screen
-- [2026-04-26] Chat body font reverted to system `.body` (17pt) on iOS — was hardcoded 20pt; markdown body also reverted to 17pt to match
-- [2026-04-26] Fallback title on stream timeout — if server never emits a `.title` event on the first message (timeout/network drop), ChatViewModel now uses the first 60 chars of the user's prompt as the conversation title so the sidebar always shows something identifiable
-- [2026-04-25] Claude Code allowlist expanded — added compound git command patterns (status+diff, pull+add+status, push+echo) so mira-core wrap/status commands run without permission prompts
-- [2026-04-25] Architecture docs — created docs/diagram.md (5 Mermaid diagrams: system overview, turn lifecycle, cancel flow, RAG pipeline, iOS/macOS connection flows); updated docs/architecture.md in mira-core with missing events (title, compress, heartbeat), context compression section, full endpoint reference table, and iOS/macOS client integration section
-- [2026-04-25] Code audit LOW fixes — force-unwrap comment (A9), cancel error logging via OSLog (A10), HTTP non-localhost warning in ConnectionView (A11), owner/repo regex validation in AddProjectSheet (A12), cursor blink replaced with TimelineView (A13), Swift package upper-bound pins (A14), search debounce 200ms (A15)
-- [2026-04-25] Claude Code allowlist expanded — added cd * && git status/diff/log/cat patterns to .claude/settings.json so wrap/status commands run without permission prompts
-- [2026-04-25] Code audit MEDIUM fixes — file I/O moved to background tasks (A2/A3), unknown SSE events logged (A5), multipart boundary hardened + filenames percent-encoded (A6), role string replaced with exhaustive switch (A8), token stats batched (A4)
-- [2026-04-25] Security hardening — resolved all HIGH issues identified in code audit
-- [2026-04-25] Claude Code skills created and documented — mira-release (full TestFlight pipeline), mira-server (LaunchAgent management), mira-status (cross-project warm start); .claude/settings.json and settings.local.json committed
-- [2026-04-25] AboutView: always full-sheet with X close button — removed presentationDetents from both iOS sheet call sites; added xmark.circle.fill dismiss button via ZStack overlay
-- [2026-04-25] mira-core /ask endpoint — ephemeral one-shot POST to Gemma4/Ollama, no conversation saved, no tools, no DB writes; accepts optional system prompt; enables Claude Code orchestration delegation
-- [2026-04-25] Active project pill in chat header — amber capsule above input bar shows folder/network icon + project name; visible only when conversation has an active project; `vm.activeProject` drives it with no extra state
-- [2026-04-25] Project picker UI — Projects section in sidebar, tap to start scoped chat, Add Project sheet (name + local path + GitHub repo), project badge on conversation rows, loadProjects on startup
-- [2026-04-25] TestFlight build — v0.1.4 (build 4) shipped to devices
-- [2026-04-25] Obsidian — confirmed keep as-is (free for local use; open vault pointing at ~/.claude/ or project dirs)
-- [2026-04-25] macOS: server startup UX — /health returns 503 during Ollama warm-up (up to 25s); macOS splash polls for 60s, shows "Starting Ollama…" on 503 vs "Connecting…" on unreachable; first chat can no longer silently fail before model is ready
-- [2026-04-25] iOS: new-chat button — square.and.pencil toolbar button in detail pane calls newConversation(); equivalent to macOS New Chat menu command
-- [2026-04-25] Both: inline image thumbnails — Message.imageAttachments: [Data] populated on send; MessageBubble renders 120×120 thumbnails above text in user bubbles on iOS and macOS
-- [2026-04-25] Both: conversation search — .searchable() on sidebar list, client-side filter on title, works on iOS and macOS with no server changes
-- [2026-04-25] iOS: conversation rename — swipe-left reveals Rename action, context-menu also has Rename; alert pre-fills current title; PATCH /conversations/{id} endpoint added to server.py; renameConversation wired through APIClient → ChatViewModel → ConversationListView
-- [2026-04-25] Fix Ollama startup race condition — server.py lifespan pre-warm now retries up to 5× with 5s delay so model loads even when Ollama starts after the server on login
-- [2026-04-25] Removed © copyright notice from AboutView — app doesn't need it
-- [2026-04-25] GitHub repos already structured as local folders (mira-apps, mira-core) — no restructure needed
-- [2026-04-25] Removed Bonjour/mDNS discovery from iOS ConnectionView — replaced with saved connections only; fixed IP via DHCP reservation makes auto-discovery redundant; eliminates 12-second timeout and "No server found" failures
-- [2026-04-25] iOS TestFlight upload aligned to v0.1.2 build 2 — matched macOS; fixed ExportOptions-iOS.plist and ExportOptions-macOS.plist to include `destination: upload` so future CLI releases upload directly without Xcode Organizer
-- [2026-04-25] iOS/macOS font sizes: chat body 16→20pt on iOS, markdown theme updated to match, status bar badges 11→13pt; macOS unchanged
-- [2026-04-25] iOS URL switcher: ConnectionView replaced with list-based UI — saved connections (tap to connect, swipe to delete), Bonjour row, Add sheet; SavedConnectionsStore persists to UserDefaults with migration from old localURL/remoteURL keys; autoConnect() updated to use saved connections
-- [2026-04-25] server shell sandbox: run_shell now rejects commands referencing absolute paths outside WORKSPACE_ROOT (e.g. ls /, cat /etc/passwd), closing gap where cwd was sandboxed but command arguments were not
-- [2026-04-25] server prompt: added Rule 1 — model must answer capability questions from the system prompt without calling tools (fixes model calling list_files/run_shell when asked "what tools do you have?")
-- [2026-04-25] mira-release skill: rewritten to automate full TestFlight pipeline — xcodebuild clean archive + export/upload for iOS and macOS from the command line; ExportOptions-iOS.plist fixed (method: app-store → app-store-connect)
-- [2026-04-25] ITSAppUsesNonExemptEncryption = NO added to Info.plist — eliminates App Store Connect encryption compliance question permanently for both platforms
-- [2026-04-25] Color.accent renamed to Color.appAccent — fixes build failure on Xcode 26.4 where SwiftUI auto-generates Color.accent from the AccentColor asset, causing a redeclaration conflict
-- [2026-04-25] iOS app icon: explicit dark variant points to same PNG as universal — light and dark modes show identical icon; tinted stays separate
-- [2026-04-25] macOS SplashView: transparent title bar (no visible seam) + radial gradient background matching app icon (#272220 center → #1C1917 edge)
-- [2026-04-25] AccentColor.colorset filled with amber (#D09268 dark / #C07A4F light) — was empty, system controls were getting default blue tint
-- [2026-04-25] Bump version 0.1.2 (build 2) — macOS thin-client rearchitecture (launchd LaunchAgent)
+## Upcoming (prioritized)
 
-## Pending
+1. **iPad layout** — verify conversation list and detail pane on iPad-sized simulator
+2. **Project conversation count** — badge on project rows; verify accuracy after delete
 
+## Known bugs
+
+*(none open)*
 
 ## Notes
-- Claude Code ↔ Mira orchestration: Claude delegates simple tasks (summarization, classification, drafts) to Mira via `POST /ask`. Gemma4 handles easy work; Claude keeps multi-step reasoning and complex tool chains. Invoke: `curl -s -X POST http://localhost:8000/ask -H "Content-Type: application/json" -d '{"prompt":"...","system":"..."}'`
-- /ask is intentionally tool-free and stateless — do not add tool dispatch to it; use /chat for agentic turns
-- Project model lives in Conversation.swift (not a separate file) to avoid project.pbxproj changes; same for AddProjectSheet in ConversationListView.swift
-- `vm.activeProject` is a computed property derived from currentConvId + conversations + projects — no extra state needed, automatically tracks conversation switches
-- iOS server connection: Bonjour removed in favour of saved connections + DHCP reservation on TP-Link AX73. Add Tailscale hostname as a second saved connection when remote access is needed.
-- mira-core shell_tools.py: `run_shell` sandbox now rejects absolute paths outside WORKSPACE_ROOT; also added prompt Rule 1 (capability questions answered from system prompt, no tool calls). Server must be restarted after these changes — use `/mira-server restart`.
-- SavedConnectionsStore migrates old `localURL` / `remoteURL` UserDefaults keys on first run; both keys are still written by legacy code paths but are no longer the source of truth for autoConnect().
-- Color.appAccent is the canonical brand amber in Theme.swift — do not use Color.accent (now auto-generated by SwiftUI from AccentColor asset and will conflict).
-- App forces `.preferredColorScheme(.dark)` on both iOS and macOS — light mode palette exists in Theme.swift but is never shown; `Design/AppIconLight.svg` was deleted (was never used)
-- TransparentTitleBar uses NSViewRepresentable + DispatchQueue.main.async to access NSWindow after view is in hierarchy — standard macOS pattern, do not simplify away
-- iOS 26+ icon system: universal entry = light mode default; explicit `luminosity: dark` for dark mode; `luminosity: tinted` for tinted. All three needed for full coverage.
+
+- Full history of completed work: `git log --oneline`
+- Release history: `.claude/projects/.../memory/backlog_testflight.md`
+- Workflow and development practices: `WORKFLOW.md`
+- Color.appAccent is canonical amber — never use Color.accent (SwiftUI redeclaration conflict)
+- InlineParagraphView uses VStack — short keywords break to own lines; expected
+- waitingMessages: 100 entries in ChatViewModel, shown after 3s, rotates every 6s
+- reconnectMessages: 103 entries in OllamaSearchApp (iOS), shown during startReconnect()
+- sidebarPinned defaults to true — never auto-hides unless user clicks pin icon
+- caffeinate: server.py spawns `caffeinate -i -s -w <own_pid>` on startup; exits automatically with server
+- App forces `.preferredColorScheme(.dark)` on both platforms — light mode palette exists in Theme.swift but is never shown
+- startReconnect() flow: quick 2s probe → if ok, silent; if fail → banner polls startupStatus() every 2s for 90s; 503 = stay on URL (Ollama loading); unreachable = try other saved connections; on success: banner clears, loadConversations() called
+- TransparentTitleBar uses NSViewRepresentable + DispatchQueue.main.async to access NSWindow after view is in hierarchy — do not simplify away
+- iOS 26+ icon system: universal entry = light default; `luminosity: dark` for dark mode; `luminosity: tinted` for tinted; all three needed
 - macOS icon PNGs are not adaptive (no light/dark variants) — expected macOS behavior
-- sidebarPinned: true is the default — sidebar never auto-hides unless user clicks the pin icon in the New Chat header row
-- waitingMessages pool: 100 entries in ChatViewModel. First shown after 3 s, rotates every 6 s, cancelled instantly on first token. Add/edit in `private static let waitingMessages`.
-- reconnectMessages pool: 103 entries in OllamaSearchApp (iOS only). Shown during startReconnect() loop. Thematically split: server startup, Mac wake, network, local-AI framing, general patience, "connected but model loading". Add/edit in `private static let reconnectMessages`.
-- startReconnect() flow: quick 2s probe → if ok, silent; if fail → banner appears, polls startupStatus() every 2s for 90s. 503 = stay on same URL (Ollama loading). Unreachable = try autoConnect() on other saved connections. On success: isReachable=true, banner clears, loadConversations() called. On timeout: banner clears, icon stays orange.
-- macOS idle sleep prevention: server.py spawns `caffeinate -i -s -w <own_pid>` on startup (macOS only). `-i` prevents idle sleep on battery, `-s` on AC. `-w <pid>` ties the assertion to the server process — caffeinate exits automatically when server exits; no orphan process. Verified in pmset: "asserting on behalf of Process ID <N>".
-- InlineParagraphView now uses VStack — the InlineFlowLayout is removed. Short keywords like `True`/`None` will also break to own lines; this is acceptable for the primary use case (commands, paths, one-liners)
