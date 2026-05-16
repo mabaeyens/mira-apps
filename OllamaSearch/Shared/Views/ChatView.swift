@@ -90,16 +90,36 @@ struct ChatView: View {
                 Button {
                     vm.showModelPicker = true
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(modelStatusColor)
+                            .frame(width: 7, height: 7)
                         Image(systemName: vm.currentBackend == "omlx" ? "cpu" : "circle.hexagongrid")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13, weight: .medium))
                         Text(vm.currentBackend == "omlx" ? "Qwen3.6" : "Gemma4")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .opacity(0.6)
                     }
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(Color.textPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(Color.surfaceBg)
+                            .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.7), lineWidth: 1))
+                    )
                 }
+                #if os(macOS)
+                .buttonStyle(.borderless)
+                #else
                 .buttonStyle(.plain)
+                #endif
                 .disabled(vm.isSwitchingBackend)
+                #if os(macOS)
+                .help(modelStatusHelp)
+                #endif
             }
         }
         .sheet(isPresented: $vm.showModelPicker) {
@@ -130,6 +150,18 @@ struct ChatView: View {
         vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Gemma4 (Ollama)"
     }
 
+    private var modelStatusColor: Color {
+        if vm.errorMessage != nil { return .red }
+        if vm.backendReady && !vm.isSwitchingBackend && !vm.isStartingBackend { return .green }
+        return Color(white: 0.45)
+    }
+
+    private var modelStatusHelp: String {
+        if let err = vm.errorMessage { return "Error: \(err)" }
+        if vm.isSwitchingBackend || vm.isStartingBackend { return "Starting model…" }
+        return vm.backendReady ? "Online — tap to switch model" : "Offline — tap to start"
+    }
+
     private var backendOfflineBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -139,18 +171,12 @@ struct ChatView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textPrimary)
             Spacer()
-            #if os(macOS)
             Button("Start") {
                 Task { await vm.startBackend() }
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.appAccent)
             .controlSize(.small)
-            #else
-            Text("Start Mira on your Mac")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.textSecondary)
-            #endif
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
