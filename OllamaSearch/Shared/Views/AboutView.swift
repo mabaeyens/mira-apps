@@ -11,26 +11,24 @@ struct AboutView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-          VStack(spacing: 0) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 0) {
+                MiraLogoView(size: 120, playIntro: true)
+                    .padding(.top, 40)
 
-            MiraLogoView(size: 120, playIntro: true)
+                Spacer().frame(height: 20)
 
-            Spacer().frame(height: 20)
+                Text("Mira")
+                    .font(.bookerly(size: 28, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
 
-            Text("Mira")
-                .font(.bookerly(size: 28, weight: .semibold))
-                .foregroundStyle(Color.textPrimary)
+                Text("Version \(version)")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+                    .padding(.top, 4)
 
-            Text("Version \(version)")
-                .font(.subheadline)
-                .foregroundStyle(Color.textSecondary)
-                .padding(.top, 4)
+                Spacer().frame(height: 28)
 
-            Spacer().frame(height: 28)
-
-            VStack(spacing: 12) {
                 Text(
                     "The name Mira is the Spanish imperative of mirar (\u{201C}look!\u{201D}), " +
                     "the Latin word for \u{201C}wonder\u{201D} and the name of one of the oldest variable double stars " +
@@ -45,56 +43,55 @@ struct AboutView: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
                 .frame(maxWidth: 360)
-            }
 
-            Spacer().frame(height: 28)
+                Spacer().frame(height: 28)
 
-            // ── System info ───────────────────────────────────────────────
-            VStack(spacing: 0) {
-                if loadingInfo {
-                    ProgressView()
-                        .frame(height: 80)
-                } else {
-                    systemInfoGrid(rows: [
-                        ("Model",    serverInfo?.model    ?? "—"),
-                        ("Backend",  serverInfo?.backendDisplayName ?? "—"),
-                        ("Server",   serverInfo?.host     ?? "—"),
-                        ("Context",  serverInfo?.contextWindowFormatted ?? "—"),
-                        ("Hardware", serverInfo?.hardware ?? "—"),
-                    ])
+                // ── System info ───────────────────────────────────────────────
+                VStack(spacing: 0) {
+                    if loadingInfo {
+                        ProgressView()
+                            .frame(height: 80)
+                    } else {
+                        systemInfoGrid(rows: [
+                            ("Model",    serverInfo?.model    ?? "—"),
+                            ("Backend",  serverInfo?.backendDisplayName ?? "—"),
+                            ("Server",   serverInfo?.host     ?? "—"),
+                            ("Context",  serverInfo?.contextWindowFormatted ?? "—"),
+                            ("Hardware", serverInfo?.hardware ?? "—"),
+                        ])
+                    }
                 }
+                .frame(maxWidth: 360)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.surfaceBg)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1)
+                        )
+                )
+
+                Spacer().frame(height: 40)
             }
-            .frame(maxWidth: 360)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.surfaceBg)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1)
-                    )
-            )
-
-            Spacer()
-          }
-          .padding(.horizontal, 40)
-          .padding(.vertical, 24)
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .background(Color.appBg)
-
-          Button {
-              dismiss()
-          } label: {
-              Image(systemName: "xmark.circle.fill")
-                  .font(.system(size: 28))
-                  .symbolRenderingMode(.hierarchical)
-                  .foregroundStyle(Color.textSecondary)
-          }
-          .buttonStyle(.plain)
-          .padding(16)
+            .padding(.horizontal, 40)
+            .frame(maxWidth: .infinity)
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 28))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.textSecondary)
+            }
+            .buttonStyle(.plain)
+            .padding(16)
         }
         .background(Color.appBg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             do {
                 serverInfo = try await APIClient.shared.fetchServerInfo()
