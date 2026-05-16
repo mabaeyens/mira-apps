@@ -31,6 +31,9 @@ final class ChatViewModel {
     var isStreaming: Bool = false
     var inputText: String = ""
     var thinkingEnabled: Bool = true
+    var currentBackend: String = "ollama"
+    var isSwitchingBackend: Bool = false
+    var showModelPicker: Bool = false
     var pendingAttachments: [AttachmentPayload] = []
     var stagedAttachmentNames: [String] = []
 
@@ -328,6 +331,28 @@ final class ChatViewModel {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    func loadBackend() async {
+        do {
+            let info = try await APIClient.shared.getBackend()
+            currentBackend = info.backend
+        } catch {
+            // Non-fatal — UI defaults to "ollama"
+        }
+    }
+
+    func switchBackend(to backend: String) async {
+        guard !isSwitchingBackend else { return }
+        isSwitchingBackend = true
+        do {
+            let info = try await APIClient.shared.switchBackend(to: backend)
+            currentBackend = info.backend
+            showModelPicker = false
+        } catch {
+            errorMessage = "Failed to switch model: \(error.localizedDescription)"
+        }
+        isSwitchingBackend = false
     }
 
     func loadProjects() async {

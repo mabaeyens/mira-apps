@@ -141,6 +141,7 @@ struct OllamaSearchApp: App {
                 case .ready:
                     isReachable = true
                     reconnectMessage = nil
+                    await chatVM.loadBackend()
                     await chatVM.loadConversations()
                     return
                 case .starting:
@@ -154,6 +155,7 @@ struct OllamaSearchApp: App {
                         activeURL = found
                         isReachable = true
                         reconnectMessage = nil
+                        await chatVM.loadBackend()
                         await chatVM.loadConversations()
                         return
                     }
@@ -357,6 +359,7 @@ struct MacRootView: View {
                     )
                 }
                 .task {
+                    await chatVM.loadBackend()
                     await chatVM.loadProjects()
                     await chatVM.loadConversations()
                     if chatVM.currentConvId.isEmpty,
@@ -497,13 +500,13 @@ struct iOSConnectedView: View {
             )
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 4) {
-                        Button { showAbout = true } label: {
-                            Image(systemName: "info.circle")
-                        }
-                        Button { chatVM.newConversation() } label: {
-                            Image(systemName: "square.and.pencil")
-                        }
+                    Button { chatVM.newConversation() } label: {
+                        Image(systemName: "square.and.pencil")
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showAbout = true } label: {
+                        Image(systemName: "info.circle")
                     }
                 }
             }
@@ -521,6 +524,7 @@ struct iOSConnectedView: View {
         }
         .task {
             APIClient.shared.baseURL = serverURL
+            await chatVM.loadBackend()
             await chatVM.loadProjects()
             await chatVM.loadConversations()
             if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
