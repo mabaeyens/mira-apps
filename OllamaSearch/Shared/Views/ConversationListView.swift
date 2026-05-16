@@ -87,10 +87,7 @@ struct ConversationListView: View {
     // ── Main list ─────────────────────────────────────────────────────────────
 
     private var sidebarList: some View {
-        List(selection: Binding<String?>(
-            get: { vm.currentConvId.isEmpty ? nil : vm.currentConvId },
-            set: { if let id = $0 { vm.selectConversation(id) } }
-        )) {
+        List {
             // Projects section
             if !vm.projects.isEmpty {
                 Section {
@@ -304,9 +301,15 @@ struct ConversationListView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 HStack(spacing: 6) {
-                    Text(relativeDate(conv.updatedAt))
-                        .font(Font.sidebarSubtitle)
-                        .foregroundStyle(Color.textSecondary)
+                    if isLoading {
+                        Text("Opening…")
+                            .font(Font.sidebarSubtitle)
+                            .foregroundStyle(Color.appAccent.opacity(0.7))
+                    } else {
+                        Text(relativeDate(conv.updatedAt))
+                            .font(Font.sidebarSubtitle)
+                            .foregroundStyle(Color.textSecondary)
+                    }
                     if let proj = project {
                         Text(proj.name)
                             .font(Font.sidebarMeta.weight(.medium))
@@ -326,7 +329,11 @@ struct ConversationListView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 4)
-        .simultaneousGesture(TapGesture().onEnded { onTap?(conv.id) })
+        .contentShape(Rectangle())
+        .simultaneousGesture(TapGesture().onEnded {
+            vm.selectConversation(conv.id)
+            onTap?(conv.id)
+        })
         .contextMenu {
             Button {
                 renameText = conv.title
