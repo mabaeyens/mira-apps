@@ -34,6 +34,7 @@ final class ChatViewModel {
     var currentBackend: String = "ollama"
     var isSwitchingBackend: Bool = false
     var showModelPicker: Bool = false
+    var switchStatusMessage: String = ""
     var pendingAttachments: [AttachmentPayload] = []
     var stagedAttachmentNames: [String] = []
 
@@ -345,13 +346,33 @@ final class ChatViewModel {
     func switchBackend(to backend: String) async {
         guard !isSwitchingBackend else { return }
         isSwitchingBackend = true
+
+        let fromName = currentBackend == "omlx" ? "Qwen3.6" : "Gemma4"
+        let toName   = backend       == "omlx" ? "Qwen3.6" : "Gemma4"
+        switchStatusMessage = "Stopping \(fromName)…"
+
+        let statusTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled else { return }
+            switchStatusMessage = "Starting \(toName)…"
+            try? await Task.sleep(for: .seconds(18))
+            guard !Task.isCancelled else { return }
+            switchStatusMessage = "Loading model weights…"
+            try? await Task.sleep(for: .seconds(20))
+            guard !Task.isCancelled else { return }
+            switchStatusMessage = "Almost ready…"
+        }
+
         do {
             let info = try await APIClient.shared.switchBackend(to: backend)
+            statusTask.cancel()
             currentBackend = info.backend
             showModelPicker = false
         } catch {
+            statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"
         }
+        switchStatusMessage = ""
         isSwitchingBackend = false
     }
 
