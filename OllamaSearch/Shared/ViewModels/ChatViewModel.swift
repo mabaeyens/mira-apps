@@ -30,6 +30,7 @@ final class ChatViewModel {
     }
     var isStreaming: Bool = false
     var inputText: String = ""
+    var thinkingEnabled: Bool = true
     var pendingAttachments: [AttachmentPayload] = []
     var stagedAttachmentNames: [String] = []
 
@@ -245,7 +246,8 @@ final class ChatViewModel {
             let request = self.api.chatRequest(
                 message: text,
                 conversationId: self.currentConvId,
-                attachments: attachments
+                attachments: attachments,
+                thinkingEnabled: self.thinkingEnabled
             )
             do {
                 for try await event in self.sse.stream(request: request) {

@@ -64,6 +64,7 @@ struct ChatView: View {
             // ── Input bar ─────────────────────────────────────────────────
             InputBar(
                 text: $vm.inputText,
+                thinkingEnabled: $vm.thinkingEnabled,
                 stagedNames: vm.stagedAttachmentNames,
                 isStreaming: vm.isStreaming,
                 onSend: { vm.send() },

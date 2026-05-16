@@ -6,6 +6,7 @@ import SwiftUI
 /// - The attachment picker button is platform-specific (injected via closure).
 struct InputBar: View {
     @Binding var text: String
+    @Binding var thinkingEnabled: Bool
     let stagedNames: [String]
     let isStreaming: Bool
     let onSend: () -> Void
@@ -32,6 +33,15 @@ struct InputBar: View {
             // ── Input row inside a rounded bordered container ─────────────
             HStack(alignment: .center, spacing: 10) {
                 attachPicker
+
+                Button {
+                    thinkingEnabled.toggle()
+                } label: {
+                    Image(systemName: thinkingEnabled ? "brain.fill" : "brain")
+                        .foregroundStyle(thinkingEnabled ? Color.accent : Color.textSecondary)
+                        .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
 
                 TextField("Message…", text: $text, axis: .vertical)
                     .lineLimit(1...6)
