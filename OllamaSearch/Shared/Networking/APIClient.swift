@@ -81,6 +81,29 @@ final class APIClient {
         }
     }
 
+    // ── Backend switching ─────────────────────────────────────────────────────
+
+    func getBackend() async throws -> BackendInfo {
+        let url = baseURL.appendingPathComponent("backend")
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(BackendInfo.self, from: data)
+    }
+
+    /// POST /backend — blocks until the server has stopped the old backend and
+    /// started the new one (up to 120 s). Returns the updated BackendInfo.
+    func switchBackend(to backend: String) async throws -> BackendInfo {
+        let url = baseURL.appendingPathComponent("backend")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["backend": backend])
+        req.timeoutInterval = 120
+        _ = try await URLSession.shared.data(for: req)
+        return try await getBackend()
+    }
+
     // ── Server info ───────────────────────────────────────────────────────────
 
     func fetchServerInfo() async throws -> ServerInfo {

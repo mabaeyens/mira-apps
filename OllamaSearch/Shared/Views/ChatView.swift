@@ -78,6 +78,30 @@ struct ChatView: View {
         }
         .background(Color.appBg)
         .navigationTitle(currentTitle)
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    vm.showModelPicker = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: vm.currentBackend == "omlx" ? "cpu" : "circle.hexagongrid")
+                            .font(.system(size: 12))
+                        Text(vm.currentBackend == "omlx" ? "Qwen3.6" : "Gemma4")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundStyle(Color.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(vm.isSwitchingBackend)
+            }
+        }
+        .sheet(isPresented: $vm.showModelPicker) {
+            ModelPickerView(
+                currentBackend: vm.currentBackend,
+                isSwitching: vm.isSwitchingBackend,
+                onSwitch: { backend in await vm.switchBackend(to: backend) }
+            )
+        }
         // On iOS the error alert lives in iOSConnectedView so it's reachable
         // whether the sidebar or the detail column is currently visible.
         #if os(macOS)
