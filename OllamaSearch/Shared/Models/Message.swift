@@ -2,7 +2,7 @@ import Foundation
 
 /// A single chat bubble displayed in the UI.
 struct Message: Identifiable {
-    enum Role { case user, assistant }
+    enum Role { case user, assistant, info }
 
     let id = UUID()
     let role: Role
@@ -19,5 +19,9 @@ struct Message: Identifiable {
         self.ragContext = []
         self.isStreaming = role == .assistant && content.isEmpty
         self.imageAttachments = imageAttachments
+    }
+
+    static func info(_ text: String) -> Message {
+        Message(role: .info, content: text)
     }
 }

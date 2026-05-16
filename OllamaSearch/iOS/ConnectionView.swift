@@ -263,7 +263,7 @@ struct ConnectionView: View {
         .init(title: "Start Mira on your Mac",
               detail: "Mira runs as a Login Item. Open the Mira app once to register it."),
         .init(title: "Add the Tailscale address below",
-              detail: "Tap \"Add connection\" → enter https://<mac-hostname>:8000 (find hostname in Tailscale → your Mac)."),
+              detail: "Tap \"Add connection\" → enter https://<mac-hostname>:8443 (find hostname in Tailscale → your Mac)."),
     ]
 
     // ── Helpers ────────────────────────────────────────────────────────────

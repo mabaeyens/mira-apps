@@ -27,12 +27,32 @@ final class SavedConnectionsStore {
     private static let connectionsKey = "savedConnections_v2"
     private static let activeKey     = "activeConnectionURL"
 
+    // ── Known connections ──────────────────────────────────────────────────────
+    // Edit this array locally with your real IPs/hostnames.
+    // After editing, run once to prevent git from tracking your IPs:
+    //   git update-index --skip-worktree OllamaSearch/iOS/SavedConnections.swift
+    static let seeds: [(label: String, url: String)] = [
+        // ("Home WiFi",  "http://192.168.x.x:8000"),
+        // ("Tailscale",  "https://your-mac.ts.net:8443"),
+    ]
+
     var connections: [SavedConnection] = []
     var activeURLString: String? = nil
 
     init() {
         load()
         migrateIfNeeded()
+        seedKnownConnections()
+    }
+
+    private func seedKnownConnections() {
+        var changed = false
+        for (label, urlString) in Self.seeds {
+            guard !connections.contains(where: { $0.urlString == urlString }) else { continue }
+            connections.append(SavedConnection(label: label, urlString: urlString))
+            changed = true
+        }
+        if changed { persist() }
     }
 
     func add(_ connection: SavedConnection) {
