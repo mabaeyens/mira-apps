@@ -35,6 +35,8 @@ final class ChatViewModel {
     var isSwitchingBackend: Bool = false
     var showModelPicker: Bool = false
     var switchStatusMessage: String = ""
+    var backendReady: Bool = true      // optimistic; polling corrects it
+    var isStartingBackend: Bool = false
     var pendingAttachments: [AttachmentPayload] = []
     var stagedAttachmentNames: [String] = []
 
@@ -341,6 +343,46 @@ final class ChatViewModel {
         } catch {
             // Non-fatal — UI defaults to "ollama"
         }
+    }
+
+    /// Check Mira health and update backendReady. Call once on connect, then poll.
+    func refreshBackendHealth() async {
+        let h = await APIClient.shared.health()
+        if h.startupStatus == .ready {
+            backendReady = h.backendReady
+        }
+        // If Mira itself isn't up yet, leave backendReady unchanged.
+    }
+
+    /// Start periodic backend health polling every 10 s (cancels on next call).
+    private var healthPollTask: Task<Void, Never>?
+
+    func startHealthPolling() {
+        healthPollTask?.cancel()
+        healthPollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(10))
+                guard !Task.isCancelled else { break }
+                await self?.refreshBackendHealth()
+            }
+        }
+    }
+
+    /// Tell the server to start its configured inference backend.
+    func startBackend() async {
+        guard !isStartingBackend, !isSwitchingBackend else { return }
+        isStartingBackend = true
+        let fromName = currentBackend == "omlx" ? "Qwen3.6" : "Gemma4"
+        switchStatusMessage = "Starting \(fromName)…"
+        do {
+            let info = try await APIClient.shared.startCurrentBackend()
+            currentBackend = info.backend
+            backendReady = true
+        } catch {
+            errorMessage = "Could not start backend: \(error.localizedDescription)"
+        }
+        switchStatusMessage = ""
+        isStartingBackend = false
     }
 
     func switchBackend(to backend: String) async {

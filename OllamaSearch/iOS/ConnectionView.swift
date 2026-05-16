@@ -49,6 +49,7 @@ struct ConnectionView: View {
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
                 } else {
+                    tailscaleGuide
                     Spacer()
                 }
 
@@ -208,6 +209,62 @@ struct ConnectionView: View {
         }
         .presentationDetents([.medium])
     }
+
+    // ── Tailscale setup guide ──────────────────────────────────────────────
+
+    private var tailscaleGuide: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: "network")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.accent)
+                Text("Connect to your Mac")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.textPrimary)
+            }
+            .padding(.bottom, 10)
+
+            ForEach(Array(setupSteps.enumerated()), id: \.offset) { i, step in
+                HStack(alignment: .top, spacing: 10) {
+                    Text("\(i + 1)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.accent)
+                        .frame(width: 18, height: 18)
+                        .background(Color.accent.opacity(0.15), in: Circle())
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(step.title)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color.textPrimary)
+                        Text(step.detail)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    Spacer()
+                }
+                .padding(.bottom, i < setupSteps.count - 1 ? 10 : 0)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.surfaceBg)
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.borderSubtle, lineWidth: 1))
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+    }
+
+    private struct SetupStep { let title: String; let detail: String }
+    private let setupSteps: [SetupStep] = [
+        .init(title: "Install Tailscale on your Mac",
+              detail: "Download from tailscale.com and sign in with any account."),
+        .init(title: "Install Tailscale on this iPhone",
+              detail: "App Store → Tailscale. Sign in with the same account."),
+        .init(title: "Start Mira on your Mac",
+              detail: "Mira runs as a Login Item. Open the Mira app once to register it."),
+        .init(title: "Add the Tailscale address below",
+              detail: "Tap \"Add connection\" → enter https://<mac-hostname>:8000 (find hostname in Tailscale → your Mac)."),
+    ]
 
     // ── Helpers ────────────────────────────────────────────────────────────
 

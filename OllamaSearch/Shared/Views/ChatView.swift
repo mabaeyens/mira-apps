@@ -12,6 +12,13 @@ struct ChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // ── Backend offline banner ────────────────────────────────────
+            if !vm.backendReady && !vm.isSwitchingBackend && !vm.isStartingBackend {
+                backendOfflineBanner
+            } else if vm.isStartingBackend {
+                backendStartingBanner
+            }
+
             // ── Status bar ────────────────────────────────────────────────
             if vm.inputTokens > 0 || vm.outputTokens > 0 {
                 HStack {
@@ -115,5 +122,60 @@ struct ChatView: View {
             Text(vm.errorMessage ?? "")
         }
         #endif
+    }
+
+    // ── Backend banners ───────────────────────────────────────────────────────
+
+    private var modelLabel: String {
+        vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Gemma4 (Ollama)"
+    }
+
+    private var backendOfflineBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .font(.system(size: 13))
+            Text("\(modelLabel) is not running")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.textPrimary)
+            Spacer()
+            #if os(macOS)
+            Button("Start") {
+                Task { await vm.startBackend() }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.appAccent)
+            .controlSize(.small)
+            #else
+            Text("Start Mira on your Mac")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.textSecondary)
+            #endif
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(Color.orange.opacity(0.10))
+        .overlay(alignment: .bottom) {
+            Color.orange.opacity(0.25).frame(height: 1)
+        }
+    }
+
+    private var backendStartingBanner: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .tint(Color.appAccent)
+                .scaleEffect(0.75)
+            Text(vm.switchStatusMessage.isEmpty ? "Starting \(modelLabel)…" : vm.switchStatusMessage)
+                .font(.system(size: 13))
+                .foregroundStyle(Color.textSecondary)
+                .animation(.default, value: vm.switchStatusMessage)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(Color.appAccent.opacity(0.08))
+        .overlay(alignment: .bottom) {
+            Color.appAccent.opacity(0.20).frame(height: 1)
+        }
     }
 }
