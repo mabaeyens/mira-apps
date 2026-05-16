@@ -36,7 +36,7 @@ final class MacConnectionManager {
                     self?.state = .ready
                     return
                 case .starting:
-                    self?.state = .connecting("Starting Ollama…")
+                    self?.state = .connecting("Starting Mira…")
                 case .unavailable:
                     self?.state = .connecting("Connecting to server…")
                 }

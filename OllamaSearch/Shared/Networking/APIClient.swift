@@ -81,6 +81,16 @@ final class APIClient {
         }
     }
 
+    // ── Server info ───────────────────────────────────────────────────────────
+
+    func fetchServerInfo() async throws -> ServerInfo {
+        let url = baseURL.appendingPathComponent("info")
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 5
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(ServerInfo.self, from: data)
+    }
+
     // ── Chat ──────────────────────────────────────────────────────────────────
 
     /// Build the URLRequest for POST /chat (multipart).
@@ -88,7 +98,8 @@ final class APIClient {
     func chatRequest(
         message: String,
         conversationId: String,
-        attachments: [AttachmentPayload] = []
+        attachments: [AttachmentPayload] = [],
+        thinkingEnabled: Bool = true
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
@@ -99,6 +110,7 @@ final class APIClient {
             message: message,
             conversationId: conversationId,
             attachments: attachments,
+            thinkingEnabled: thinkingEnabled,
             boundary: boundary
         )
         return request
@@ -224,6 +236,7 @@ final class APIClient {
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload],
+        thinkingEnabled: Bool = true,
         boundary: String
     ) -> Data {
         var body = Data()
@@ -242,6 +255,7 @@ final class APIClient {
 
         field("message", message)
         field("conversation_id", conversationId)
+        field("thinking_enabled", thinkingEnabled ? "true" : "false")
 
         for attachment in attachments {
             switch attachment {
