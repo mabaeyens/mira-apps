@@ -4,7 +4,10 @@ struct ModelPickerView: View {
     @Environment(\.dismiss) private var dismiss
     let currentBackend: String
     let isSwitching: Bool
+    let switchStatusMessage: String
     let onSwitch: (String) async -> Void
+
+    @State private var pendingBackend: String? = nil
 
     private struct ModelOption {
         let backend: String
@@ -31,6 +34,7 @@ struct ModelPickerView: View {
                         .foregroundStyle(Color.textSecondary)
                 }
                 .buttonStyle(.plain)
+                .disabled(isSwitching)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -39,30 +43,95 @@ struct ModelPickerView: View {
                 .background(Color.borderSubtle)
 
             if isSwitching {
-                VStack(spacing: 14) {
-                    ProgressView()
-                        .tint(Color.appAccent)
-                    Text("Switching model…")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.textSecondary)
-                    Text("Stopping old server and starting the new one.\nThis takes about 30–60 seconds.")
-                        .font(.caption)
-                        .foregroundStyle(Color.textSecondary.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(24)
+                switchingView
+            } else if let pending = pendingBackend {
+                confirmationView(for: pending)
             } else {
-                VStack(spacing: 10) {
-                    ForEach(options, id: \.backend) { option in
-                        modelRow(option)
-                    }
-                }
-                .padding(16)
+                modelListView
             }
         }
         .frame(width: 320)
         .background(Color.appBg)
+        // Clear pending selection if the sheet is dismissed externally
+        .onChange(of: isSwitching) { _, switching in
+            if switching { pendingBackend = nil }
+        }
+    }
+
+    // ── Progress view ─────────────────────────────────────────────────────────
+
+    private var switchingView: some View {
+        VStack(spacing: 14) {
+            ProgressView()
+                .tint(Color.appAccent)
+            Text(switchStatusMessage.isEmpty ? "Switching model…" : switchStatusMessage)
+                .font(.subheadline)
+                .foregroundStyle(Color.textSecondary)
+                .animation(.default, value: switchStatusMessage)
+            Text("Chat is paused during the switch.")
+                .font(.caption)
+                .foregroundStyle(Color.textSecondary.opacity(0.7))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(28)
+    }
+
+    // ── Confirmation view ─────────────────────────────────────────────────────
+
+    private func confirmationView(for backend: String) -> some View {
+        let option = options.first { $0.backend == backend }!
+        return VStack(spacing: 16) {
+            VStack(spacing: 6) {
+                Text("Switch to \(option.displayName)?")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text("The current model will stop and \(option.displayName) will start. Chat is paused for 30–60 seconds during the switch.")
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            HStack(spacing: 10) {
+                Button("Cancel") {
+                    pendingBackend = nil
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 14))
+                .foregroundStyle(Color.textSecondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.surfaceBg)
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.borderSubtle, lineWidth: 1))
+                )
+
+                Button("Switch") {
+                    let b = backend
+                    pendingBackend = nil
+                    Task { await onSwitch(b) }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.appAccent))
+            }
+        }
+        .padding(20)
+    }
+
+    // ── Model list ────────────────────────────────────────────────────────────
+
+    private var modelListView: some View {
+        VStack(spacing: 10) {
+            ForEach(options, id: \.backend) { option in
+                modelRow(option)
+            }
+        }
+        .padding(16)
     }
 
     @ViewBuilder
@@ -70,7 +139,7 @@ struct ModelPickerView: View {
         let isActive = option.backend == currentBackend
         Button {
             guard !isActive else { return }
-            Task { await onSwitch(option.backend) }
+            pendingBackend = option.backend
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -107,6 +176,6 @@ struct ModelPickerView: View {
 }
 
 #Preview {
-    ModelPickerView(currentBackend: "ollama", isSwitching: false, onSwitch: { _ in })
-        .frame(height: 220)
+    ModelPickerView(currentBackend: "ollama", isSwitching: false, switchStatusMessage: "", onSwitch: { _ in })
+        .frame(height: 240)
 }

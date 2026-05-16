@@ -99,6 +99,7 @@ struct ChatView: View {
             ModelPickerView(
                 currentBackend: vm.currentBackend,
                 isSwitching: vm.isSwitchingBackend,
+                switchStatusMessage: vm.switchStatusMessage,
                 onSwitch: { backend in await vm.switchBackend(to: backend) }
             )
         }
