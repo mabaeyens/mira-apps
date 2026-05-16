@@ -410,6 +410,8 @@ final class ChatViewModel {
             statusTask.cancel()
             currentBackend = info.backend
             showModelPicker = false
+            let modelLabel = info.backend == "omlx" ? "Qwen3.6-35B-A3B (oMLX)" : "Gemma4:26b (Ollama)"
+            messages.append(.info("— Switched to \(modelLabel). Conversation history is preserved. —"))
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"

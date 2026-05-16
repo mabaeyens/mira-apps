@@ -11,11 +11,21 @@ struct MessageBubble: View {
     var onEdit: (() -> Void)? = nil
 
     var body: some View {
-        if message.role == .user {
-            userBubble
-        } else {
-            assistantBubble
+        switch message.role {
+        case .user:      userBubble
+        case .assistant: assistantBubble
+        case .info:      infoBanner
         }
+    }
+
+    // ── Info banner (model switch, etc.) ──────────────────────────────────────
+
+    private var infoBanner: some View {
+        Text(message.content)
+            .font(.caption)
+            .foregroundStyle(Color.textSecondary)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
     }
 
     // ── User bubble ───────────────────────────────────────────────────────────
