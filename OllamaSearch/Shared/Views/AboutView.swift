@@ -52,13 +52,18 @@ struct AboutView: View {
                         ProgressView()
                             .frame(height: 80)
                     } else {
-                        systemInfoGrid(rows: [
+                        let baseRows: [(String, String)] = [
                             ("Model",    serverInfo?.model    ?? "—"),
                             ("Backend",  serverInfo?.backendDisplayName ?? "—"),
                             ("Server",   serverInfo?.host     ?? "—"),
                             ("Context",  serverInfo?.contextWindowFormatted ?? "—"),
                             ("Hardware", serverInfo?.hardware ?? "—"),
-                        ])
+                        ]
+                        let cacheRows: [(String, String)] = serverInfo?.ssdCacheDir != nil ? [
+                            ("SSD Cache", serverInfo!.ssdCacheDirShortened + " · " + serverInfo!.ssdCacheMaxSizeFormatted),
+                            ("Hot Cache", serverInfo!.hotCacheSizeFormatted),
+                        ] : []
+                        systemInfoGrid(rows: baseRows + cacheRows)
                     }
                 }
                 .frame(maxWidth: 360)
