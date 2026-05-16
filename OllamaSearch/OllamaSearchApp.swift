@@ -142,6 +142,8 @@ struct OllamaSearchApp: App {
                     isReachable = true
                     reconnectMessage = nil
                     await chatVM.loadBackend()
+                    await chatVM.refreshBackendHealth()
+                    chatVM.startHealthPolling()
                     await chatVM.loadConversations()
                     return
                 case .starting:
@@ -156,6 +158,8 @@ struct OllamaSearchApp: App {
                         isReachable = true
                         reconnectMessage = nil
                         await chatVM.loadBackend()
+                        await chatVM.refreshBackendHealth()
+                        chatVM.startHealthPolling()
                         await chatVM.loadConversations()
                         return
                     }
@@ -360,6 +364,8 @@ struct MacRootView: View {
                 }
                 .task {
                     await chatVM.loadBackend()
+                    await chatVM.refreshBackendHealth()
+                    chatVM.startHealthPolling()
                     await chatVM.loadProjects()
                     await chatVM.loadConversations()
                     if chatVM.currentConvId.isEmpty,
@@ -525,6 +531,8 @@ struct iOSConnectedView: View {
         .task {
             APIClient.shared.baseURL = serverURL
             await chatVM.loadBackend()
+            await chatVM.refreshBackendHealth()
+            chatVM.startHealthPolling()
             await chatVM.loadProjects()
             await chatVM.loadConversations()
             if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {

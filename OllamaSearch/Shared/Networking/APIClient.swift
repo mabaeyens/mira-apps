@@ -18,26 +18,51 @@ final class APIClient {
 
     enum StartupStatus { case ready, starting, unavailable }
 
-    /// Returns the server's startup state: ready (200), starting (503), or unreachable.
-    func startupStatus() async -> StartupStatus {
-        guard let healthURL = URL(string: "/health", relativeTo: baseURL) else { return .unavailable }
+    struct HealthResponse {
+        let startupStatus: StartupStatus
+        /// True when Mira is up AND the inference backend (oMLX/Ollama) is reachable with its model.
+        let backendReady: Bool
+    }
+
+    /// Returns full health info — startup state + whether the inference backend is ready.
+    func health() async -> HealthResponse {
+        guard let healthURL = URL(string: "/health", relativeTo: baseURL) else {
+            return HealthResponse(startupStatus: .unavailable, backendReady: false)
+        }
         var req = URLRequest(url: healthURL)
         req.timeoutInterval = 5.0
         do {
-            let (_, response) = try await URLSession.shared.data(for: req)
-            switch (response as? HTTPURLResponse)?.statusCode {
-            case 200: return .ready
-            case 503: return .starting
-            default:  return .unavailable
+            let (data, response) = try await URLSession.shared.data(for: req)
+            let code = (response as? HTTPURLResponse)?.statusCode
+            switch code {
+            case 200:
+                let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+                let backendReady = json?["backend_ready"] as? Bool ?? true
+                return HealthResponse(startupStatus: .ready, backendReady: backendReady)
+            case 503:
+                return HealthResponse(startupStatus: .starting, backendReady: false)
+            default:
+                return HealthResponse(startupStatus: .unavailable, backendReady: false)
             }
         } catch {
-            return .unavailable
+            return HealthResponse(startupStatus: .unavailable, backendReady: false)
         }
+    }
+
+    /// Returns the server's startup state: ready (200), starting (503), or unreachable.
+    func startupStatus() async -> StartupStatus {
+        await health().startupStatus
     }
 
     /// Returns true when the server at `baseURL` is up and ready.
     func isHealthy() async -> Bool {
         await startupStatus() == .ready
+    }
+
+    /// Trigger the server to start the inference backend (POST /backend with current backend).
+    /// Uses a 120 s timeout — inference servers can take a while to start.
+    func startCurrentBackend() async throws -> BackendInfo {
+        try await switchBackend(to: await getBackend().backend)
     }
 
     /// Returns true when the server at the given URL responds within `timeout` seconds.
