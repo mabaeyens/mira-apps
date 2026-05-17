@@ -34,6 +34,8 @@ final class ChatViewModel {
     var thinkingContent: String? = nil
     var isThinkingActive: Bool = false
     var currentBackend: String = "ollama"
+    var modelName: String = ""
+    var contextWindow: Int = 0
     var isSwitchingBackend: Bool = false
     var showModelPicker: Bool = false
     var switchStatusMessage: String = ""
@@ -349,6 +351,8 @@ final class ChatViewModel {
         do {
             let info = try await APIClient.shared.getBackend()
             currentBackend = info.backend
+            modelName = info.model
+            contextWindow = info.contextWindow
         } catch {
             // Non-fatal — UI defaults to "ollama"
         }
@@ -381,11 +385,12 @@ final class ChatViewModel {
     func startBackend() async {
         guard !isStartingBackend, !isSwitchingBackend else { return }
         isStartingBackend = true
-        let fromName = currentBackend == "omlx" ? "Qwen3.6" : "Gemma4"
-        switchStatusMessage = "Starting \(fromName)…"
+        switchStatusMessage = "Starting \(modelName.isEmpty ? currentBackend : modelName)…"
         do {
             let info = try await APIClient.shared.startCurrentBackend()
             currentBackend = info.backend
+            modelName = info.model
+            contextWindow = info.contextWindow
             backendReady = true
         } catch {
             errorMessage = "Could not start backend: \(error.localizedDescription)"
@@ -398,14 +403,14 @@ final class ChatViewModel {
         guard !isSwitchingBackend else { return }
         isSwitchingBackend = true
 
-        let fromName = currentBackend == "omlx" ? "Qwen3.6" : "Gemma4"
-        let toName   = backend       == "omlx" ? "Qwen3.6" : "Gemma4"
+        let fromName = modelName.isEmpty ? currentBackend : modelName
+        let toBackendLabel = backend == "omlx" ? "oMLX" : "Ollama"
         switchStatusMessage = "Stopping \(fromName)…"
 
         let statusTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(8))
             guard !Task.isCancelled else { return }
-            switchStatusMessage = "Starting \(toName)…"
+            switchStatusMessage = "Starting \(toBackendLabel)…"
             try? await Task.sleep(for: .seconds(18))
             guard !Task.isCancelled else { return }
             switchStatusMessage = "Loading model weights…"
@@ -418,9 +423,11 @@ final class ChatViewModel {
             let info = try await APIClient.shared.switchBackend(to: backend)
             statusTask.cancel()
             currentBackend = info.backend
+            modelName = info.model
+            contextWindow = info.contextWindow
             showModelPicker = false
-            let modelLabel = info.backend == "omlx" ? "Qwen3.6-35B-A3B (oMLX)" : "Gemma4:26b (Ollama)"
-            messages.append(.info("— Switched to \(modelLabel). Conversation history is preserved. —"))
+            let backendLabel = info.backend == "omlx" ? "oMLX" : "Ollama"
+            messages.append(.info("— Switched to \(info.model) (\(backendLabel)). Conversation history is preserved. —"))
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"

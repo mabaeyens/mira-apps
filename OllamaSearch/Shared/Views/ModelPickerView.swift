@@ -5,6 +5,8 @@ struct ModelPickerView: View {
     let currentBackend: String
     let isSwitching: Bool
     let switchStatusMessage: String
+    let liveModelName: String
+    let liveContextWindow: Int
     let onSwitch: (String) async -> Void
 
     @State private var pendingBackend: String? = nil
@@ -17,7 +19,7 @@ struct ModelPickerView: View {
 
     private let options: [ModelOption] = [
         .init(backend: "omlx",   displayName: "Qwen3.6-35B-A3B", subtitle: "oMLX · 262k context"),
-        .init(backend: "ollama", displayName: "Gemma4:26b",       subtitle: "Ollama · 65k context"),
+        .init(backend: "ollama", displayName: "Qwen3.6-35B-A3B", subtitle: "Ollama · 262k context"),
     ]
 
     var body: some View {
@@ -63,7 +65,7 @@ struct ModelPickerView: View {
     private var switchingView: some View {
         VStack(spacing: 14) {
             ProgressView()
-                .tint(Color.appAccent)
+                .tint(.yellow)
             Text(switchStatusMessage.isEmpty ? "Switching model…" : switchStatusMessage)
                 .font(.subheadline)
                 .foregroundStyle(Color.textSecondary)
@@ -80,14 +82,15 @@ struct ModelPickerView: View {
     // ── Confirmation view ─────────────────────────────────────────────────────
 
     private func confirmationView(for backend: String) -> some View {
-        let option = options.first { $0.backend == backend }!
+        let option = options.first { $0.backend == backend }
+        let displayName = option?.displayName ?? backend
         return VStack(spacing: 16) {
             VStack(spacing: 6) {
-                Text("Switch to \(option.displayName)?")
+                Text("Switch to \(displayName)?")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
-                Text("The current model will stop and \(option.displayName) will start. Chat is paused for 30–60 seconds during the switch.")
+                Text("The current model will stop and \(displayName) will start. Chat is paused for 30–60 seconds during the switch.")
                     .font(.caption)
                     .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
@@ -137,16 +140,25 @@ struct ModelPickerView: View {
     @ViewBuilder
     private func modelRow(_ option: ModelOption) -> some View {
         let isActive = option.backend == currentBackend
+        let displayName = isActive && !liveModelName.isEmpty ? liveModelName : option.displayName
+        let backendLabel = option.backend == "omlx" ? "oMLX" : "Ollama"
+        let subtitle: String = {
+            if isActive && liveContextWindow > 0 {
+                let ctxK = liveContextWindow / 1024
+                return "\(backendLabel) · \(ctxK)k context"
+            }
+            return option.subtitle
+        }()
         Button {
             guard !isActive else { return }
             pendingBackend = option.backend
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(option.displayName)
+                    Text(displayName)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Color.textPrimary)
-                    Text(option.subtitle)
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
                 }
@@ -176,6 +188,6 @@ struct ModelPickerView: View {
 }
 
 #Preview {
-    ModelPickerView(currentBackend: "ollama", isSwitching: false, switchStatusMessage: "", onSwitch: { _ in })
+    ModelPickerView(currentBackend: "ollama", isSwitching: false, switchStatusMessage: "", liveModelName: "Qwen3.6-35B-A3B", liveContextWindow: 262144, onSwitch: { _ in })
         .frame(height: 240)
 }
