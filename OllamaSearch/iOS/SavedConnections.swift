@@ -32,6 +32,7 @@ final class SavedConnectionsStore {
     // After editing, run once to prevent git from tracking your IPs:
     //   git update-index --skip-worktree OllamaSearch/iOS/SavedConnections.swift
     static let seeds: [(label: String, url: String)] = [
+        ("Local", "http://192.168.0.188:8000"),
         // ("Home WiFi",  "http://192.168.x.x:8000"),
         // ("Tailscale",  "https://your-mac.ts.net:8443"),
     ]
