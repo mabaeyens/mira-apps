@@ -119,8 +119,7 @@ extension MarkdownUI.Theme {
         .codeBlock { cfg in
             CopyableCodeBlock(
                 language: cfg.language,
-                content: cfg.content,
-                label: AnyView(cfg.label)
+                content: cfg.content
             )
         }
 }

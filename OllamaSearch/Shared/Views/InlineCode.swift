@@ -1,4 +1,5 @@
 import SwiftUI
+import Highlightr
 
 // MARK: - Segment model
 
@@ -74,12 +75,75 @@ struct InlineCodeChip: View {
     }
 }
 
+// MARK: - Syntax-highlighted code view
+
+struct HighlightedCodeView: View {
+    let code: String
+    let language: String?
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var highlighted: AttributedString? = nil
+
+    // Aliases mapped to their Highlight.js canonical name.
+    private static let languageMap: [String: String] = [
+        "py": "python", "python": "python",
+        "html": "html", "xml": "xml",
+        "powershell": "powershell", "ps1": "powershell",
+        "bash": "bash", "sh": "bash", "zsh": "bash",
+        "swift": "swift",
+        "js": "javascript", "javascript": "javascript",
+        "ts": "typescript", "typescript": "typescript",
+        "yaml": "yaml", "yml": "yaml",
+        "json": "json",
+        "sql": "sql",
+        "md": "markdown", "markdown": "markdown",
+    ]
+
+    var body: some View {
+        Group {
+            if let attr = highlighted {
+                Text(attr)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            } else {
+                Text(code)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(Color.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+        }
+        .task(id: colorScheme) { highlighted = computeHighlighted() }
+    }
+
+    private func computeHighlighted() -> AttributedString? {
+        guard let lang = language.flatMap({ Self.languageMap[$0.lowercased()] }) else { return nil }
+        let h = Highlightr()
+        h?.setTheme(to: colorScheme == .dark ? "atom-one-dark" : "atom-one-light")
+        #if os(macOS)
+        h?.theme.setCodeFont(NSFont(name: "Menlo", size: 13)
+            ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular))
+        #else
+        h?.theme.setCodeFont(UIFont(name: "Menlo", size: 13)
+            ?? UIFont.monospacedSystemFont(ofSize: 13, weight: .regular))
+        #endif
+        guard let ns = h?.highlight(code, as: lang) else { return nil }
+        let mutable = NSMutableAttributedString(attributedString: ns)
+        mutable.removeAttribute(.backgroundColor,
+                                range: NSRange(location: 0, length: mutable.length))
+        #if os(macOS)
+        return try? AttributedString(mutable, including: \.appKit)
+        #else
+        return try? AttributedString(mutable, including: \.uiKit)
+        #endif
+    }
+}
+
 // MARK: - Copy button for code blocks
 
 struct CopyableCodeBlock: View {
     let language: String?
     let content: String
-    let label: AnyView
     @State private var copied = false
 
     var body: some View {
@@ -117,7 +181,7 @@ struct CopyableCodeBlock: View {
                 .frame(height: 1)
                 .opacity(0.5)
 
-            label
+            HighlightedCodeView(code: content, language: language)
                 .padding(12)
         }
         .background(
