@@ -41,12 +41,12 @@ struct ChatView: View {
                 isStreaming: vm.isStreaming,
                 currentSearchQuery: vm.currentSearchQuery,
                 isFetching: vm.isFetching,
-                currentToolLabel: vm.currentToolLabel,
                 isLoadingMessages: vm.loadingConvId != nil,
                 failedUserMessageId: vm.lastFailedUserMessage?.id,
                 streamingWaitMessage: vm.streamingWaitMessage,
                 thinkingContent: vm.thinkingContent,
                 isThinkingActive: vm.isThinkingActive,
+                currentToolLabel: vm.currentToolLabel,
                 onResend: { vm.resendLast() },
                 onEdit: { vm.editLast() }
             )
@@ -99,7 +99,9 @@ struct ChatView: View {
                             .frame(width: 7, height: 7)
                         Image(systemName: vm.currentBackend == "omlx" ? "cpu" : "circle.hexagongrid")
                             .font(.system(size: 13, weight: .medium))
-                        Text(vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Qwen3.6")
+                        Text(vm.modelName.isEmpty
+                            ? (vm.currentBackend == "omlx" ? "oMLX" : "Ollama")
+                            : vm.modelName)
                             .font(.system(size: 13, weight: .medium))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 9, weight: .semibold))
@@ -117,6 +119,7 @@ struct ChatView: View {
                 .buttonStyle(.plain)
                 .disabled(vm.isSwitchingBackend)
                 #if os(macOS)
+                .focusEffectDisabled()
                 .help(modelStatusHelp)
                 #endif
             }
@@ -126,6 +129,8 @@ struct ChatView: View {
                 currentBackend: vm.currentBackend,
                 isSwitching: vm.isSwitchingBackend,
                 switchStatusMessage: vm.switchStatusMessage,
+                liveModelName: vm.modelName,
+                liveContextWindow: vm.contextWindow,
                 onSwitch: { backend in await vm.switchBackend(to: backend) }
             )
         }
