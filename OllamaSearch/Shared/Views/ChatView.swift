@@ -44,6 +44,8 @@ struct ChatView: View {
                 isLoadingMessages: vm.loadingConvId != nil,
                 failedUserMessageId: vm.lastFailedUserMessage?.id,
                 streamingWaitMessage: vm.streamingWaitMessage,
+                thinkingContent: vm.thinkingContent,
+                isThinkingActive: vm.isThinkingActive,
                 onResend: { vm.resendLast() },
                 onEdit: { vm.editLast() }
             )
@@ -86,7 +88,7 @@ struct ChatView: View {
         .background(Color.appBg)
         .navigationTitle(currentTitle)
         .toolbar {
-            ToolbarItem(placement: .automatic) {
+            ToolbarItem(placement: .principal) {
                 Button {
                     vm.showModelPicker = true
                 } label: {
@@ -96,7 +98,7 @@ struct ChatView: View {
                             .frame(width: 7, height: 7)
                         Image(systemName: vm.currentBackend == "omlx" ? "cpu" : "circle.hexagongrid")
                             .font(.system(size: 13, weight: .medium))
-                        Text(vm.currentBackend == "omlx" ? "Qwen3.6" : "Gemma4")
+                        Text(vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Qwen3.6")
                             .font(.system(size: 13, weight: .medium))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 9, weight: .semibold))
@@ -147,12 +149,13 @@ struct ChatView: View {
     // ── Backend banners ───────────────────────────────────────────────────────
 
     private var modelLabel: String {
-        vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Gemma4 (Ollama)"
+        vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Qwen3.6 (Ollama)"
     }
 
     private var modelStatusColor: Color {
         if vm.errorMessage != nil { return .red }
-        if vm.backendReady && !vm.isSwitchingBackend && !vm.isStartingBackend { return .green }
+        if vm.isSwitchingBackend || vm.isStartingBackend { return .yellow }
+        if vm.backendReady { return .green }
         return Color(white: 0.45)
     }
 
@@ -189,7 +192,7 @@ struct ChatView: View {
     private var backendStartingBanner: some View {
         HStack(spacing: 10) {
             ProgressView()
-                .tint(Color.appAccent)
+                .tint(.yellow)
                 .scaleEffect(0.75)
             Text(vm.switchStatusMessage.isEmpty ? "Starting \(modelLabel)…" : vm.switchStatusMessage)
                 .font(.system(size: 13))
@@ -199,9 +202,9 @@ struct ChatView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
-        .background(Color.appAccent.opacity(0.08))
+        .background(Color.yellow.opacity(0.08))
         .overlay(alignment: .bottom) {
-            Color.appAccent.opacity(0.20).frame(height: 1)
+            Color.yellow.opacity(0.25).frame(height: 1)
         }
     }
 }
