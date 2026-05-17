@@ -233,6 +233,7 @@ struct InlineParagraphView: View {
                             .font(.chatBody)
                             .foregroundStyle(Color.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
                     }
                 case .code(let c):
                     InlineCodeChip(code: c)

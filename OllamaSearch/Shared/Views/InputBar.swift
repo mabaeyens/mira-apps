@@ -203,9 +203,10 @@ struct InputBar: View {
             Button {
                 showAddToChat = false
                 #if os(macOS)
-                attachFilesMacOS()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    attachFilesMacOS()
+                }
                 #elseif os(iOS)
-                // Small delay so the sheet dismiss animation completes first
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     showFilePicker = true
                 }
@@ -222,7 +223,10 @@ struct InputBar: View {
             Divider().background(Color.borderSubtle.opacity(0.5))
 
             // Thinking row
-            Button { vm.thinkingEnabled.toggle() } label: {
+            Button {
+                showAddToChat = false
+                vm.thinkingEnabled.toggle()
+            } label: {
                 addToChatRow(
                     icon: vm.thinkingEnabled ? "brain.fill" : "brain",
                     label: "Thinking",
