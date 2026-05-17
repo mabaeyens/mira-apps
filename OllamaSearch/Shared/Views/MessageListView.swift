@@ -12,6 +12,7 @@ struct MessageListView: View {
     var streamingWaitMessage: String? = nil
     var thinkingContent: String? = nil
     var isThinkingActive: Bool = false
+    var currentToolLabel: String? = nil
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
 
@@ -119,6 +120,9 @@ struct MessageListView: View {
                     }
                     if isFetching {
                         activityRow(icon: "arrow.down.circle", text: "Fetching page…")
+                    }
+                    if let label = currentToolLabel {
+                        activityRow(icon: "gear", text: label)
                     }
                     // Patience message: shown after ~3 s with no first token yet.
                     if let waitMsg = streamingWaitMessage {

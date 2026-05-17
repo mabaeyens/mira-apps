@@ -403,12 +403,33 @@ struct AddProjectSheet: View {
                     TextField("e.g. my-app", text: $name)
                 }
                 Section {
-                    TextField("/Users/you/Projects/my-app", text: $localPath)
+                    #if os(macOS)
+                    HStack(spacing: 8) {
+                        Text(localPath.isEmpty ? "No folder selected" : localPath)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(localPath.isEmpty ? Color.textSecondary : Color.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button("Choose…") {
+                            let panel = NSOpenPanel()
+                            panel.canChooseFiles = false
+                            panel.canChooseDirectories = true
+                            panel.allowsMultipleSelection = false
+                            panel.prompt = "Select Workspace"
+                            if panel.runModal() == .OK {
+                                localPath = panel.url?.path ?? ""
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                    #else
+                    TextField("/path/on/server", text: $localPath)
                         .autocorrectionDisabled()
-                        #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
-                        #endif
+                    #endif
                 } header: {
                     Text("Local path")
                 } footer: {
