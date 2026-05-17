@@ -6,8 +6,8 @@ Mira is a native iOS and macOS app for running AI conversations entirely on your
 
 The name comes from two sources: the Spanish imperative of *mirar* — "look" — and Mira Ceti, one of the oldest variable stars observed by astronomers, a red giant whose brightness pulses on a 332-day cycle. Together they capture the spirit of the project: a quiet, local intelligence that looks with you.
 
-**Version:** 1.0  
-**Platforms:** iOS 18+, macOS 15+  
+**Version:** 0.1.25 (beta)  
+**Platforms:** iOS 26+, macOS 26+  
 **Developer:** Miguel Angel Baeyens  
 **Contact:** https://linkedin.com/in/mabaeyens  
 

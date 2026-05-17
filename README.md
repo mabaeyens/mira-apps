@@ -53,7 +53,7 @@ iPhone (Mira iOS)
                                                             └── Ollama (LLM)
 ```
 
-The macOS app spawns and supervises the Python server as a subprocess. The iOS app discovers it via Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale IP.
+The macOS app connects to the Python server, which runs as a macOS LaunchAgent (`com.mab.mira`) installed separately from the app. The iOS app discovers the Mac over Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale IP.
 
 **The app requires the Mac server to run.** There is no standalone offline mode — inference happens on the Mac. For access outside your home network, install [Tailscale](https://tailscale.com) on both devices and use the **Manual URL** option with your Tailscale IP.
 
@@ -69,9 +69,9 @@ See [XCODE_SETUP.md](XCODE_SETUP.md) for the full step-by-step Xcode setup.
 
 Quick start for an already-configured project:
 
-1. Open `OllamaSearch.xcodeproj` in Xcode
-2. Select the **macOS** destination → **⌘R**
-3. On first launch, choose the Python server project folder when prompted
+1. Ensure the Mira server LaunchAgent is installed and running (see [mira-core](https://github.com/mabaeyens/mira-core))
+2. Open `OllamaSearch.xcodeproj` in Xcode
+3. Select the **macOS** destination → **⌘R**
 4. For iOS, connect your iPhone and select it as the destination → **⌘R**
 
 ## Name

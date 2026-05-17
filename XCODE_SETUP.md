@@ -55,10 +55,11 @@ This is a **single multiplatform target** (not separate macOS/iOS targets).
 
 ### macOS
 
+Before running, make sure the Mira server LaunchAgent is installed and running — see [mira-core setup](https://github.com/mabaeyens/mira-core). The app connects to `localhost:8000`; it does not launch the server itself.
+
 1. Select the **My Mac** destination → **⌘R**
-2. First run: a file picker opens — choose the Python server project folder
-3. The Mira splash screen appears while the server subprocess starts and the model loads
-4. Once ready (up to 60 s on first launch), the splash dismisses and the chat window appears
+2. The Mira splash screen appears while the app connects and waits for the model to load
+3. Once ready (up to 60 s if the model is cold), the splash dismisses and the chat window appears
 
 ### iOS
 
