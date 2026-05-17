@@ -514,9 +514,7 @@ struct iOSConnectedView: View {
             if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
                 chatVM.selectConversation(first.id)
             }
-            if horizontalSizeClass == .compact {
-                columnVisibility = .detailOnly
-            }
+            columnVisibility = (horizontalSizeClass == .regular) ? .all : .detailOnly
         }
         .onChange(of: chatVM.loadingConvId) { _, newId in
             // Navigate to detail immediately when a fetch starts so the user sees
@@ -535,9 +533,10 @@ struct iOSConnectedView: View {
             }
         }
         .onAppear {
-            if horizontalSizeClass == .compact {
-                columnVisibility = .detailOnly
-            }
+            columnVisibility = (horizontalSizeClass == .regular) ? .all : .detailOnly
+        }
+        .onChange(of: horizontalSizeClass) { _, newClass in
+            columnVisibility = (newClass == .regular) ? .all : .detailOnly
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             reconnectBanner
