@@ -10,10 +10,13 @@ struct MessageListView: View {
     var isLoadingMessages: Bool = false
     var failedUserMessageId: UUID? = nil
     var streamingWaitMessage: String? = nil
+    var thinkingContent: String? = nil
+    var isThinkingActive: Bool = false
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
 
     @State private var scrollPinned = true
+    @State private var thinkingExpanded = true
     private let bottomAnchor = "bottom"
 
     var body: some View {
@@ -75,6 +78,41 @@ struct MessageListView: View {
                         )
                     }
 
+                    // Collapsible thinking block — open while streaming, collapses on first token
+                    if let content = thinkingContent {
+                        DisclosureGroup(isExpanded: $thinkingExpanded) {
+                            ScrollView {
+                                Text(content)
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .foregroundStyle(Color.textSecondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(12)
+                            }
+                            .frame(maxHeight: 220)
+                        } label: {
+                            HStack(spacing: 6) {
+                                if isThinkingActive {
+                                    ProgressView().scaleEffect(0.65)
+                                } else {
+                                    Image(systemName: "brain")
+                                        .font(.system(size: 11))
+                                        .opacity(0.6)
+                                }
+                                Text(isThinkingActive ? "Thinking…" : "Thinking")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.textSecondary)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 4)
+                        .onChange(of: isThinkingActive) { _, active in
+                            if !active { thinkingExpanded = false }
+                        }
+                        .onChange(of: thinkingContent) { _, c in
+                            if c != nil { thinkingExpanded = true }
+                        }
+                    }
+
                     // Activity indicators shown while streaming
                     if let query = currentSearchQuery {
                         activityRow(icon: "magnifyingglass", text: "Searching: \(query)")
@@ -102,6 +140,9 @@ struct MessageListView: View {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
             }
             .onChange(of: messages.last?.content) {
+                if scrollPinned { scrollToBottom(proxy: proxy) }
+            }
+            .onChange(of: thinkingContent) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
             }
             // When streaming starts (user just sent a message) always snap to bottom.

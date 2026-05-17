@@ -28,7 +28,7 @@ struct SearchResult: Decodable, Identifiable {
 // ── Typed SSE event ───────────────────────────────────────────────────────────
 
 enum ServerEvent {
-    case thinking
+    case thinking(String)
     case token(String)
     case searchStart(String)
     case searchDone(query: String, count: Int, results: [SearchResult])
@@ -60,7 +60,7 @@ extension ServerEvent {
 
         switch type_ {
         case "thinking":
-            return .thinking
+            return .thinking(obj["content"] as? String ?? "")
 
         case "token":
             return .token(obj["content"] as? String ?? "")

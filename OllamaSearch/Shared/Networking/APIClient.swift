@@ -147,7 +147,7 @@ final class APIClient {
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload] = [],
-        thinkingEnabled: Bool = true
+        thinkingEnabled: Bool = false
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
@@ -284,7 +284,7 @@ final class APIClient {
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload],
-        thinkingEnabled: Bool = true,
+        thinkingEnabled: Bool = false,
         boundary: String
     ) -> Data {
         var body = Data()

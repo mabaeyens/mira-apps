@@ -30,7 +30,9 @@ final class ChatViewModel {
     }
     var isStreaming: Bool = false
     var inputText: String = ""
-    var thinkingEnabled: Bool = true
+    var thinkingEnabled: Bool = false
+    var thinkingContent: String? = nil
+    var isThinkingActive: Bool = false
     var currentBackend: String = "ollama"
     var isSwitchingBackend: Bool = false
     var showModelPicker: Bool = false
@@ -226,6 +228,8 @@ final class ChatViewModel {
         isStreaming = true
         currentSearchQuery = nil
         isFetching = false
+        thinkingContent = nil
+        isThinkingActive = false
 
         // Kick off the patience message loop: after 3 s with no token,
         // show a rotating message so the user knows inference is running.
@@ -281,6 +285,7 @@ final class ChatViewModel {
         waitMessageTask?.cancel()
         waitMessageTask = nil
         streamingWaitMessage = nil
+        isThinkingActive = false
         // Store (don't fire-and-forget) so send() can await this before the next request.
         cancelTask = Task { [weak self] in
             guard let self else { return }
@@ -323,6 +328,7 @@ final class ChatViewModel {
 
     func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
+        thinkingEnabled = false
         Task {
             do {
                 let convId = try await api.createConversation(projectId: projectId)
@@ -558,10 +564,13 @@ final class ChatViewModel {
     private func handle(event: ServerEvent, assistantMsgId: UUID) {
         switch event {
 
-        case .thinking:
-            break   // could show a "..." indicator; skip for now
+        case .thinking(let content):
+            if thinkingContent == nil { thinkingContent = "" }
+            thinkingContent? += content
+            isThinkingActive = true
 
         case .token(let t):
+            isThinkingActive = false
             if streamingWaitMessage != nil {
                 streamingWaitMessage = nil
                 waitMessageTask?.cancel()
@@ -665,6 +674,7 @@ final class ChatViewModel {
         flushPendingTokens()
         updateMessage(id: msgId) { $0.isStreaming = false }
         isStreaming = false
+        isThinkingActive = false
         streamingWaitMessage = nil
         waitMessageTask?.cancel()
         waitMessageTask = nil
