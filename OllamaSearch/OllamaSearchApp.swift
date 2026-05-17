@@ -465,7 +465,7 @@ struct iOSConnectedView: View {
     let onSettings: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
+    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
 
     /// "Tailscale" for 100.x addresses or *.ts.net hostnames, "Local" otherwise.
     private var connectionLabel: String {
@@ -478,23 +478,45 @@ struct iOSConnectedView: View {
     }
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            ConversationListView(vm: chatVM, onTap: { _ in
-                if horizontalSizeClass == .compact {
-                    columnVisibility = .detailOnly
-                }
-            })
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button { onSettings() } label: {
-                            Image(systemName: connectionIcon)
-                                .foregroundStyle(isReachable ? Color.accent : .orange)
+        Group {
+            if horizontalSizeClass == .regular {
+                // iPad: use NavigationSplitView
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    ConversationListView(vm: chatVM, onTap: { _ in
+                        columnVisibility = .all
+                    })
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                Button { onSettings() } label: {
+                                    Image(systemName: connectionIcon)
+                                        .foregroundStyle(isReachable ? Color.accent : .orange)
+                                }
+                                .help(isReachable ? connectionLabel : "\(connectionLabel) — reconnecting…")
+                            }
                         }
-                        .help(isReachable ? connectionLabel : "\(connectionLabel) — reconnecting…")
+                } detail: {
+                    ChatView(vm: chatVM)
+                }
+            } else {
+                // iPhone: use NavigationStack
+                NavigationStack {
+                    ConversationListView(vm: chatVM, onTap: { convId in
+                        chatVM.selectConversation(convId)
+                    })
+                    .navigationDestination(isPresented: .constant(true)) {
+                        ChatView(vm: chatVM)
+                            .toolbar {
+                                ToolbarItem(placement: .navigationBarLeading) {
+                                    Button { onSettings() } label: {
+                                        Image(systemName: connectionIcon)
+                                            .foregroundStyle(isReachable ? Color.accent : .orange)
+                                    }
+                                    .help(isReachable ? connectionLabel : "\(connectionLabel) — reconnecting…")
+                                }
+                            }
                     }
                 }
-        } detail: {
-            ChatView(vm: chatVM)
+            }
         }
         .alert("Error", isPresented: Binding(
             get: { chatVM.errorMessage != nil },
@@ -533,7 +555,9 @@ struct iOSConnectedView: View {
             }
         }
         .onAppear {
-            columnVisibility = (horizontalSizeClass == .regular) ? .all : .detailOnly
+            if horizontalSizeClass == .regular {
+                columnVisibility = .all
+            }
         }
         .onChange(of: horizontalSizeClass) { _, newClass in
             columnVisibility = (newClass == .regular) ? .all : .detailOnly
