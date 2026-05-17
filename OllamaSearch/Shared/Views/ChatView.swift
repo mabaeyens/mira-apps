@@ -113,11 +113,7 @@ struct ChatView: View {
                             .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.7), lineWidth: 1))
                     )
                 }
-                #if os(macOS)
-                .buttonStyle(.borderless)
-                #else
                 .buttonStyle(.plain)
-                #endif
                 .disabled(vm.isSwitchingBackend)
                 #if os(macOS)
                 .help(modelStatusHelp)
