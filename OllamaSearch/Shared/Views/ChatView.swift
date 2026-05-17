@@ -1,10 +1,8 @@
 import SwiftUI
 
 /// Main chat content view — message list + input bar.
-/// Platform-specific: `attachPicker` is injected by macOS/iOS app entry points.
 struct ChatView: View {
     @Bindable var vm: ChatViewModel
-    let attachPicker: AnyView
 
     private var currentTitle: String {
         vm.conversations.first(where: { $0.id == vm.currentConvId })?.title ?? ""
@@ -32,7 +30,6 @@ struct ChatView: View {
                     .padding(.vertical, 4)
                 }
                 .background(Color.appBg)
-                Color.borderSubtle.frame(height: 1)
             }
 
             // ── Messages ──────────────────────────────────────────────────
@@ -51,79 +48,11 @@ struct ChatView: View {
                 onEdit: { vm.editLast() }
             )
 
-            Color.borderSubtle.frame(height: 1)
-
-            // ── Active project pill ───────────────────────────────────────
-            if let project = vm.activeProject {
-                HStack(spacing: 4) {
-                    Image(systemName: project.localPath != nil ? "folder" : "network")
-                        .font(.system(size: 11, weight: .medium))
-                    Text(project.name)
-                        .font(.system(size: 12, weight: .medium))
-                }
-                .foregroundStyle(Color.appAccent)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.appAccent.opacity(0.12), in: Capsule())
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 5)
-                .padding(.bottom, 1)
-                .background(Color.appBg)
-            }
-
             // ── Input bar ─────────────────────────────────────────────────
-            InputBar(
-                text: $vm.inputText,
-                thinkingEnabled: $vm.thinkingEnabled,
-                stagedNames: vm.stagedAttachmentNames,
-                isStreaming: vm.isStreaming,
-                onSend: { vm.send() },
-                onStop: { vm.stopStreaming() },
-                onRemoveAttachment: { idx in
-                    vm.pendingAttachments.remove(at: idx)
-                    vm.stagedAttachmentNames.remove(at: idx)
-                },
-                attachPicker: attachPicker
-            )
+            InputBar(vm: vm)
         }
         .background(Color.appBg)
         .navigationTitle(currentTitle)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Button {
-                    vm.showModelPicker = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(modelStatusColor)
-                            .frame(width: 7, height: 7)
-                        Image(systemName: vm.currentBackend == "omlx" ? "cpu" : "circle.hexagongrid")
-                            .font(.system(size: 13, weight: .medium))
-                        Text(vm.modelName.isEmpty
-                            ? (vm.currentBackend == "omlx" ? "oMLX" : "Ollama")
-                            : vm.modelName)
-                            .font(.system(size: 13, weight: .medium))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 9, weight: .semibold))
-                            .opacity(0.6)
-                    }
-                    .foregroundStyle(Color.textPrimary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(Color.surfaceBg)
-                            .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.7), lineWidth: 1))
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(vm.isSwitchingBackend)
-                #if os(macOS)
-                .focusEffectDisabled()
-                .help(modelStatusHelp)
-                #endif
-            }
-        }
         .sheet(isPresented: $vm.showModelPicker) {
             ModelPickerView(
                 currentBackend: vm.currentBackend,
@@ -152,19 +81,6 @@ struct ChatView: View {
 
     private var modelLabel: String {
         vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Qwen3.6 (Ollama)"
-    }
-
-    private var modelStatusColor: Color {
-        if vm.errorMessage != nil { return .red }
-        if vm.isSwitchingBackend || vm.isStartingBackend { return .yellow }
-        if vm.backendReady { return .green }
-        return Color(white: 0.45)
-    }
-
-    private var modelStatusHelp: String {
-        if let err = vm.errorMessage { return "Error: \(err)" }
-        if vm.isSwitchingBackend || vm.isStartingBackend { return "Starting model…" }
-        return vm.backendReady ? "Online — tap to switch model" : "Offline — tap to start"
     }
 
     private var backendOfflineBanner: some View {

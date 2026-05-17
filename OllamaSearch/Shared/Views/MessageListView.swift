@@ -71,8 +71,11 @@ struct MessageListView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(messages) { msg in
+                        let isLastStreamingEmpty = msg.id == messages.last?.id
+                            && msg.isStreaming && msg.content.isEmpty
                         MessageBubble(
                             message: msg,
+                            waitMessage: isLastStreamingEmpty ? streamingWaitMessage : nil,
                             showResendActions: msg.id == failedUserMessageId,
                             onResend: onResend,
                             onEdit: onEdit
@@ -124,11 +127,6 @@ struct MessageListView: View {
                     if let label = currentToolLabel {
                         activityRow(icon: "gear", text: label)
                     }
-                    // Patience message: shown after ~3 s with no first token yet.
-                    if let waitMsg = streamingWaitMessage {
-                        waitRow(text: waitMsg)
-                    }
-
                     Color.clear.frame(height: 1).id(bottomAnchor)
                 }
             }
@@ -200,18 +198,6 @@ struct MessageListView: View {
         withAnimation(.easeOut(duration: 0.15)) {
             proxy.scrollTo(bottomAnchor, anchor: .bottom)
         }
-    }
-
-    private func waitRow(text: String) -> some View {
-        Text(text)
-            .font(.caption)
-            .italic()
-            .foregroundStyle(Color.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 2)
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 0.4), value: text)
     }
 
     private func activityRow(icon: String, text: String) -> some View {

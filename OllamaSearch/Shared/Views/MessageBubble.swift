@@ -6,6 +6,7 @@ import MarkdownUI
 /// page background. During streaming a blinking DOS-style `_` cursor is shown.
 struct MessageBubble: View {
     let message: Message
+    var waitMessage: String? = nil
     var showResendActions: Bool = false
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
@@ -111,7 +112,8 @@ struct MessageBubble: View {
             if message.isStreaming {
                 TimelineView(.periodic(from: .now, by: 0.53)) { tl in
                     let showCursor = Int(tl.date.timeIntervalSinceReferenceDate / 0.53) % 2 == 0
-                    Text("\(message.content)\(Text(showCursor ? "_" : " ").foregroundStyle(Color.accent))")
+                    let displayText = message.content.isEmpty ? (waitMessage ?? "") : message.content
+                    Text("\(displayText)\(Text(showCursor ? "_" : " ").foregroundStyle(Color.accent))")
                         .font(.chatBody)
                         .foregroundStyle(Color.textPrimary)
                         .textSelection(.enabled)
