@@ -203,6 +203,15 @@ final class ChatViewModel {
         guard !text.isEmpty || !pendingAttachments.isEmpty else { return }
         guard !isStreaming else { return }
 
+        if text.hasPrefix("/rename ") {
+            let newTitle = String(text.dropFirst(8)).trimmingCharacters(in: .whitespacesAndNewlines)
+            inputText = ""
+            if !newTitle.isEmpty, !currentConvId.isEmpty {
+                renameConversation(currentConvId, title: newTitle)
+            }
+            return
+        }
+
         inputText = ""
         let attachments = pendingAttachments
         pendingAttachments = []

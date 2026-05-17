@@ -11,7 +11,6 @@ struct OllamaSearchApp: App {
     var body: some Scene {
         WindowGroup {
             MacRootView(chatVM: chatVM)
-            .preferredColorScheme(.dark)
             .frame(minWidth: 700, minHeight: 500)
         }
         .defaultSize(width: 960, height: 680)
@@ -89,7 +88,6 @@ struct OllamaSearchApp: App {
                     .environment(connectionsStore)
                 }
             }
-            .preferredColorScheme(.dark)
             .task {
                 async let found = autoConnect()
                 try? await Task.sleep(for: .milliseconds(1_400))
@@ -357,10 +355,7 @@ struct MacRootView: View {
                     ConversationListView(vm: chatVM)
                         .frame(minWidth: 200)
                 } detail: {
-                    ChatView(
-                        vm: chatVM,
-                        attachPicker: AnyView(MacAttachButton(vm: chatVM))
-                    )
+                    ChatView(vm: chatVM)
                 }
                 .task {
                     await chatVM.loadBackend()
@@ -471,7 +466,6 @@ struct iOSConnectedView: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
-    @State private var showAbout = false
 
     /// "Tailscale" for 100.x addresses or *.ts.net hostnames, "Local" otherwise.
     private var connectionLabel: String {
@@ -500,22 +494,7 @@ struct iOSConnectedView: View {
                     }
                 }
         } detail: {
-            ChatView(
-                vm: chatVM,
-                attachPicker: AnyView(iOSAttachButton(vm: chatVM))
-            )
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { chatVM.newConversation() } label: {
-                        Image(systemName: "square.and.pencil")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showAbout = true } label: {
-                        Image(systemName: "info.circle")
-                    }
-                }
-            }
+            ChatView(vm: chatVM)
         }
         .alert("Error", isPresented: Binding(
             get: { chatVM.errorMessage != nil },
@@ -524,9 +503,6 @@ struct iOSConnectedView: View {
             Button("OK") { chatVM.errorMessage = nil }
         } message: {
             Text(chatVM.errorMessage ?? "")
-        }
-        .sheet(isPresented: $showAbout) {
-            AboutView()
         }
         .task {
             APIClient.shared.baseURL = serverURL

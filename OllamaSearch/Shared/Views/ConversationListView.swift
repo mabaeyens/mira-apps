@@ -39,18 +39,10 @@ struct ConversationListView: View {
         .safeAreaInset(edge: .top) {
             newChatButton
         }
-        .safeAreaInset(edge: .bottom) {
-            aboutButton
-        }
         #endif
         #if os(iOS)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { vm.newConversation() } label: {
-                    Image(systemName: "square.and.pencil")
-                        .foregroundStyle(Color.appAccent)
-                }
-            }
+        .safeAreaInset(edge: .bottom) {
+            newChatBottomBar
         }
         #endif
         .sheet(isPresented: $showAddProject) {
@@ -240,23 +232,6 @@ struct ConversationListView: View {
     #if os(macOS)
     @AppStorage("sidebarPinned") private var sidebarPinned: Bool = true
 
-    private var aboutButton: some View {
-        Button(action: { openWindow(id: "about") }) {
-            HStack(spacing: 6) {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(Color.textSecondary)
-                Text("About Mira")
-                    .foregroundStyle(Color.textSecondary)
-                Spacer()
-            }
-            .font(Font.sidebarTitle)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.plain)
-        .background(Color.sidebarBg)
-    }
-
     private var newChatButton: some View {
         HStack(spacing: 0) {
             Button(action: { vm.newConversation() }) {
@@ -285,6 +260,31 @@ struct ConversationListView: View {
             .help(sidebarPinned ? "Sidebar always visible — click to auto-hide" : "Sidebar auto-hides — click to keep visible")
         }
         .background(Color.sidebarBg)
+    }
+    #endif
+
+    // ── iOS new chat bar ──────────────────────────────────────────────────────
+
+    #if os(iOS)
+    private var newChatBottomBar: some View {
+        Button(action: { vm.newConversation() }) {
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(Color.appAccent)
+                Text("New Chat")
+                    .font(Font.sidebarTitle.weight(.medium))
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 13)
+        }
+        .buttonStyle(.plain)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Color.borderSubtle.opacity(0.5).frame(height: 0.5)
+        }
     }
     #endif
 
