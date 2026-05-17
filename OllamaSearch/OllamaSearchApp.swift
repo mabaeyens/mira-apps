@@ -513,6 +513,9 @@ struct iOSConnectedView: View {
             await chatVM.loadConversations()
             if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
                 chatVM.selectConversation(first.id)
+                if horizontalSizeClass == .compact {
+                    columnVisibility = .detailOnly
+                }
             }
         }
         .onChange(of: chatVM.loadingConvId) { _, newId in
@@ -527,8 +530,7 @@ struct iOSConnectedView: View {
             }
         }
         .onChange(of: chatVM.currentConvId) { _, newId in
-            if !newId.isEmpty && horizontalSizeClass != .compact {
-                // Non-compact: switch to detail-only when the conversation finishes loading.
+            if !newId.isEmpty && horizontalSizeClass == .compact {
                 columnVisibility = .detailOnly
             }
         }

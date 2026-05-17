@@ -65,6 +65,10 @@ extension Color {
         light: Color(hex: 0x78716C),
         dark:  Color(hex: 0xA8A29E)
     )
+    static let splashCenter = Color(
+        light: Color(hex: 0xF0EDE8),
+        dark:  Color(hex: 0x272220)
+    )
 }
 
 // ── App font ──────────────────────────────────────────────────────────────────

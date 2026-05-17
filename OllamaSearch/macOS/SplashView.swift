@@ -34,9 +34,8 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            // Radial gradient matches the app icon background (#272220 center → #1C1917 edge).
             RadialGradient(
-                colors: [Color(hex: 0x272220), Color.appBg],
+                colors: [Color.splashCenter, Color.appBg],
                 center: .center,
                 startRadius: 0,
                 endRadius: 280

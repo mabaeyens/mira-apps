@@ -145,5 +145,19 @@ struct MessageBubble: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
+        .contextMenu {
+            if !message.isStreaming {
+                Button {
+                    #if os(macOS)
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(message.content, forType: .string)
+                    #else
+                    UIPasteboard.general.string = message.content
+                    #endif
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+            }
+        }
     }
 }
