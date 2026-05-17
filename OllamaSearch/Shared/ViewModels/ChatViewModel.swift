@@ -47,9 +47,10 @@ final class ChatViewModel {
     var outputTokens: Int = 0
     var contextPct: Double = 0
 
-    // In-progress search/fetch indicators (cleared when done)
+    // In-progress search/fetch/tool indicators (cleared when done)
     var currentSearchQuery: String? = nil
     var isFetching: Bool = false
+    var currentToolLabel: String? = nil
 
     var errorMessage: String? = nil
     /// Non-nil while a conversation's message history is being fetched.
@@ -228,6 +229,7 @@ final class ChatViewModel {
         isStreaming = true
         currentSearchQuery = nil
         isFetching = false
+        currentToolLabel = nil
         thinkingContent = nil
         isThinkingActive = false
 
@@ -286,6 +288,7 @@ final class ChatViewModel {
         waitMessageTask = nil
         streamingWaitMessage = nil
         isThinkingActive = false
+        currentToolLabel = nil
         // Store (don't fire-and-forget) so send() can await this before the next request.
         cancelTask = Task { [weak self] in
             guard let self else { return }
@@ -590,6 +593,12 @@ final class ChatViewModel {
         case .fetchDone:
             break
 
+        case .toolStart(_, let label):
+            currentToolLabel = label
+
+        case .toolDone:
+            currentToolLabel = nil
+
         case .fetchContext(let fetches):
             isFetching = false
             updateMessage(id: assistantMsgId) { $0.fetchContext = fetches }
@@ -675,6 +684,7 @@ final class ChatViewModel {
         updateMessage(id: msgId) { $0.isStreaming = false }
         isStreaming = false
         isThinkingActive = false
+        currentToolLabel = nil
         streamingWaitMessage = nil
         waitMessageTask?.cancel()
         waitMessageTask = nil

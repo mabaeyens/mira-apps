@@ -41,6 +41,8 @@ enum ServerEvent {
     case stats(inputTokens: Int, outputTokens: Int, contextPct: Double)
     case done(String)
     case title(convId: String, title: String)
+    case toolStart(name: String, label: String)
+    case toolDone(name: String, label: String)
     case compress(String)
     case warning(String)
     case error(String)
@@ -132,6 +134,16 @@ extension ServerEvent {
                 convId: obj["conv_id"] as? String ?? "",
                 title: obj["title"] as? String ?? ""
             )
+
+        case "tool_start":
+            let name = obj["tool"] as? String ?? ""
+            let label = obj["label"] as? String ?? name
+            return .toolStart(name: name, label: label)
+
+        case "tool_done":
+            let name = obj["tool"] as? String ?? ""
+            let label = obj["label"] as? String ?? name
+            return .toolDone(name: name, label: label)
 
         case "compress":
             return .compress(obj["message"] as? String ?? "")

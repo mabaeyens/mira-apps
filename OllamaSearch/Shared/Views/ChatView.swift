@@ -41,6 +41,7 @@ struct ChatView: View {
                 isStreaming: vm.isStreaming,
                 currentSearchQuery: vm.currentSearchQuery,
                 isFetching: vm.isFetching,
+                currentToolLabel: vm.currentToolLabel,
                 isLoadingMessages: vm.loadingConvId != nil,
                 failedUserMessageId: vm.lastFailedUserMessage?.id,
                 streamingWaitMessage: vm.streamingWaitMessage,
