@@ -18,9 +18,9 @@
 > No account. No API key. No telemetry. Your messages are processed by a model running on your own machine and stored in a local database on your Mac. Mira cannot access your conversations because they never leave your home network.
 >
 > **What you need**
-> • A Mac running macOS 15 or later with Ollama installed
+> • A Mac running macOS 26 or later with Ollama installed
 > • The Mira server (free, open source) installed as a login item on that Mac
-> • iPhone on iOS 18 or later on the same Wi-Fi network, or Tailscale for remote access
+> • iPhone on iOS 26 or later on the same Wi-Fi network, or Tailscale for remote access
 >
 > **Features**
 > • Streaming responses with markdown rendering and code highlighting
@@ -131,7 +131,6 @@ Mira's current moat: **native SwiftUI + Bonjour zero-config + genuine privacy st
 - **Conversation export** — export any thread as a clean `.md` or `.txt` file via the iOS Share Sheet. Simple, no competitor does it well on mobile. Power users want this.
 - **Full-text conversation search** — search across all conversation history. Missing from most local apps. High perceived value for returning users.
 - **System prompt per conversation** — save a custom persona or instruction set with each thread. "Always reply in Spanish", "Act as a senior engineer reviewing my code."
-- **Model switcher** — choose which Ollama model to use per conversation. Show model name in the conversation header.
 - **Haptic feedback** — subtle haptic on stream start and end. Tiny touch, memorable on iPhone. No competitor bothers.
 - **Spotlight indexing** — index conversation titles so users can find old chats from the iOS home screen search. Feels deeply native.
 
