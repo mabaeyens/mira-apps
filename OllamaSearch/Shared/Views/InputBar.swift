@@ -9,9 +9,14 @@ struct InputBar: View {
     @Binding var thinkingEnabled: Bool
     let stagedNames: [String]
     let isStreaming: Bool
+    let modelStatusColor: Color
+    let modelName: String
+    let currentBackend: String
+    let isSwitchingBackend: Bool
     let onSend: () -> Void
     let onStop: () -> Void
     let onRemoveAttachment: (Int) -> Void
+    let onShowModelPicker: () -> Void
     let attachPicker: AnyView
 
     @FocusState private var isFocused: Bool
@@ -42,6 +47,38 @@ struct InputBar: View {
                         .frame(width: 22, height: 22)
                 }
                 .buttonStyle(.plain)
+
+                // ── Model switcher ──────────────────────────────────────
+                Button {
+                    onShowModelPicker()
+                } label: {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(modelStatusColor)
+                            .frame(width: 6, height: 6)
+                        Text(modelName.isEmpty
+                            ? (currentBackend == "omlx" ? "oMLX" : "Ollama")
+                            : modelName)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.textPrimary)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 8))
+                            .foregroundStyle(Color.textSecondary)
+                            .opacity(0.7)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.surfaceBg)
+                            .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isSwitchingBackend)
+                #if os(macOS)
+                .focusEffectDisabled()
+                #endif
 
                 TextField("Message…", text: $text, axis: .vertical)
                     .lineLimit(1...6)
