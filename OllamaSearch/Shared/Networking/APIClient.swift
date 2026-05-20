@@ -187,6 +187,18 @@ final class APIClient {
         return (obj.convId, obj.title)
     }
 
+    /// Returns the banner message from the server ("Nothing to compact yet." or the summary notice).
+    func compact() async throws -> String {
+        guard let url = URL(string: "/compact", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        let (data, _) = try await URLSession.shared.data(for: req)
+        let obj = try JSONDecoder().decode(CompactResponse.self, from: data)
+        return obj.message
+    }
+
     // ── Conversations ─────────────────────────────────────────────────────────
 
     func listConversations() async throws -> [Conversation] {
@@ -354,6 +366,10 @@ private struct ResetResponse: Decodable {
         case convId = "conv_id"
         case title
     }
+}
+
+private struct CompactResponse: Decodable {
+    let message: String
 }
 
 private struct ConversationList: Decodable {
