@@ -216,7 +216,7 @@ final class ChatViewModel {
             inputText = ""
             Task {
                 do {
-                    let msg = try await client.compact()
+                    let msg = try await api.compact()
                     messages.append(.info(msg))
                 } catch {
                     errorMessage = "Compact failed: \(error.localizedDescription)"
