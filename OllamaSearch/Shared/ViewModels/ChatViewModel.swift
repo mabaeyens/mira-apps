@@ -212,6 +212,19 @@ final class ChatViewModel {
             return
         }
 
+        if text.lowercased() == "/compact" {
+            inputText = ""
+            Task {
+                do {
+                    let msg = try await client.compact()
+                    messages.append(.info(msg))
+                } catch {
+                    errorMessage = "Compact failed: \(error.localizedDescription)"
+                }
+            }
+            return
+        }
+
         inputText = ""
         let attachments = pendingAttachments
         pendingAttachments = []
