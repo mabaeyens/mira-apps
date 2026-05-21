@@ -40,6 +40,7 @@ final class ChatViewModel {
     var showModelPicker: Bool = false
     var switchStatusMessage: String = ""
     var backendReady: Bool = true      // optimistic; polling corrects it
+    var backendLoadingSince: Date? = nil  // set when backend_ready is first false after connect
     var isStartingBackend: Bool = false
     var pendingAttachments: [AttachmentPayload] = []
     var stagedAttachmentNames: [String] = []
@@ -68,6 +69,10 @@ final class ChatViewModel {
     // a new request, preventing a race where the new inference starts before
     // the server-side cancel lands (which produced double responses).
     private var cancelTask: Task<Void, Never>?
+    // Stale-connection watchdog: fires if no SSE event (including heartbeat)
+    // arrives for >15 s during active streaming.
+    private var staleConnectionTask: Task<Void, Never>?
+    private var lastEventDate = Date.distantPast
 
     // ── Slow-connection patience messages ─────────────────────────────────────
     // Shown after 3 s of streaming with no tokens yet. Rotates every 6 s.
@@ -257,17 +262,33 @@ final class ChatViewModel {
         thinkingContent = nil
         isThinkingActive = false
 
-        // Kick off the patience message loop: after 3 s with no token,
-        // show a rotating message so the user knows inference is running.
-        // The task is cancelled (and the message cleared) by handle(.token) as
-        // soon as the first real token arrives, or by stopStreaming()/finishStreaming().
+        // Show "Sending…" immediately so the user sees feedback within 100 ms.
+        // After 5 s with no tokens, rotate through patience messages until the
+        // first token arrives (or streaming stops).
+        streamingWaitMessage = "Sending…"
         waitMessageTask?.cancel()
         waitMessageTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(3_000))
+            try? await Task.sleep(for: .milliseconds(5_000))
             guard let self, !Task.isCancelled else { return }
             while !Task.isCancelled {
                 self.streamingWaitMessage = Self.waitingMessages.randomElement()
                 try? await Task.sleep(for: .milliseconds(6_000))
+            }
+        }
+
+        // Reset heartbeat clock then start watchdog: if no event arrives for >15 s
+        // (including heartbeats, which come every 5 s), treat as dropped connection.
+        lastEventDate = Date()
+        staleConnectionTask?.cancel()
+        staleConnectionTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, !Task.isCancelled, self.isStreaming else { break }
+                if Date().timeIntervalSince(self.lastEventDate) > 15 {
+                    self.errorMessage = "Connection lost — the server may be sleeping. Tap Resend when it's back."
+                    self.stopStreaming()
+                    break
+                }
             }
         }
 
@@ -310,6 +331,8 @@ final class ChatViewModel {
         flushTask = nil
         waitMessageTask?.cancel()
         waitMessageTask = nil
+        staleConnectionTask?.cancel()
+        staleConnectionTask = nil
         streamingWaitMessage = nil
         isThinkingActive = false
         currentToolLabel = nil
@@ -384,6 +407,11 @@ final class ChatViewModel {
     func refreshBackendHealth() async {
         let h = await APIClient.shared.health()
         if h.startupStatus == .ready {
+            if h.backendReady {
+                backendLoadingSince = nil
+            } else if backendLoadingSince == nil {
+                backendLoadingSince = Date()
+            }
             backendReady = h.backendReady
         }
         // If Mira itself isn't up yet, leave backendReady unchanged.
@@ -396,7 +424,10 @@ final class ChatViewModel {
         healthPollTask?.cancel()
         healthPollTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(10))
+                // Poll faster during startup so the loading banner clears promptly.
+                let isReady = await self?.backendReady ?? true
+                let interval: Duration = isReady ? .seconds(10) : .seconds(3)
+                try? await Task.sleep(for: interval)
                 guard !Task.isCancelled else { break }
                 await self?.refreshBackendHealth()
             }
@@ -594,12 +625,15 @@ final class ChatViewModel {
     // ── Event handler ─────────────────────────────────────────────────────────
 
     private func handle(event: ServerEvent, assistantMsgId: UUID) {
+        lastEventDate = Date()  // any event (incl. heartbeat) resets the stale-connection clock
+
         switch event {
 
         case .thinking(let content):
             if thinkingContent == nil { thinkingContent = "" }
             thinkingContent? += content
             isThinkingActive = true
+            if streamingWaitMessage != nil { streamingWaitMessage = "Thinking…" }
 
         case .token(let t):
             isThinkingActive = false
@@ -717,6 +751,8 @@ final class ChatViewModel {
         streamingWaitMessage = nil
         waitMessageTask?.cancel()
         waitMessageTask = nil
+        staleConnectionTask?.cancel()
+        staleConnectionTask = nil
 
         // If the stream ended without a server .title event (timeout, network drop,
         // or error on the first message), use the user's prompt as a fallback title

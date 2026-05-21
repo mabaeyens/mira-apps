@@ -11,13 +11,23 @@ struct SSEClient {
     static let shared = SSEClient()
     private init() {}
 
+    // Dedicated session for SSE: 300 s per-packet timeout (heartbeats arrive every 5 s,
+    // so 60 s default would only drop on genuine connection loss — but 300 s makes the
+    // intent explicit). 1-hour resource ceiling for the full stream.
+    private static let sseSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 300
+        config.timeoutIntervalForResource = 3600
+        return URLSession(configuration: config)
+    }()
+
     /// Opens an SSE stream for a POST /chat request.
     /// Yields typed `ServerEvent` values as they arrive.
     func stream(request: URLRequest) -> AsyncThrowingStream<ServerEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    let (bytes, response) = try await SSEClient.sseSession.bytes(for: request)
 
                     // Surface non-200 as an error immediately
                     if let http = response as? HTTPURLResponse, http.statusCode != 200 {
