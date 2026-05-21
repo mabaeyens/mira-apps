@@ -178,7 +178,20 @@ struct MessageBubble: View {
         .padding(.vertical, 8)
     }
 
+    // On iOS, SwiftUI Text with .textSelection only offers "Copy all" — no cursor
+    // or drag handles. UITextView with isEditable=false gives real selection.
+    // On macOS, Text(AttributedString) supports full drag-to-select natively.
+    @ViewBuilder
     private var renderedMessageText: some View {
+        #if os(iOS)
+        SelectableText(content: message.content)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        #else
+        macOSMessageText
+        #endif
+    }
+
+    private var macOSMessageText: some View {
         let attrStr = (try? AttributedString(
             markdown: message.content,
             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
@@ -190,3 +203,41 @@ struct MessageBubble: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+
+// ── iOS-only selectable text wrapper ─────────────────────────────────────────
+
+#if os(iOS)
+/// UITextView bridge that allows cursor placement and drag-handle selection.
+/// SwiftUI Text with .textSelection only offers "Copy all" on iOS; this gives
+/// the full selection UX matching native UIKit text views.
+private struct SelectableText: UIViewRepresentable {
+    let content: String
+
+    func makeUIView(context: Context) -> UITextView {
+        let tv = UITextView()
+        tv.isEditable = false
+        tv.isSelectable = true
+        tv.isScrollEnabled = false
+        tv.backgroundColor = .clear
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
+        tv.font = .preferredFont(forTextStyle: .body)
+        tv.textColor = UIColor { tc in
+            tc.userInterfaceStyle == .dark
+                ? UIColor(red: 0xFA/255, green: 0xFA/255, blue: 0xF9/255, alpha: 1)
+                : UIColor(red: 0x1C/255, green: 0x19/255, blue: 0x17/255, alpha: 1)
+        }
+        tv.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return tv
+    }
+
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        uiView.text = content
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        let width = proposal.width ?? UIScreen.main.bounds.width
+        return uiView.sizeThatFits(CGSize(width: width, height: .infinity))
+    }
+}
+#endif
