@@ -1,5 +1,4 @@
 import SwiftUI
-import MarkdownUI
 
 /// A single chat turn. User messages are right-aligned warm bubbles.
 /// Assistant messages are full-width with no bubble — text sits directly on the
@@ -104,11 +103,37 @@ struct MessageBubble: View {
     }
 
     // ── Assistant bubble ──────────────────────────────────────────────────────
+    //
+    // Content is rendered as a single Text(AttributedString) so SwiftUI's text
+    // selection spans the entire message rather than stopping at block boundaries.
+    // Trade-off: block-level markdown (headings, code fences, blockquotes) renders
+    // as plain text; inline formatting (bold, italic, code spans) is preserved.
+    //
+    // macOS: right-click context menu provides "Copy all" as a fast path.
+    // iOS: .contextMenu is omitted entirely so the long-press gesture is free for
+    //      system text selection; a persistent Copy button serves as the fast path.
 
+    @ViewBuilder
     private var assistantBubble: some View {
+        #if os(macOS)
+        assistantContent
+            .contextMenu {
+                if !message.isStreaming {
+                    Button {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(message.content, forType: .string)
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                }
+            }
+        #else
+        assistantContent
+        #endif
+    }
+
+    private var assistantContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Content — plain Text while streaming (fast, no re-parse),
-            // full Markdown once done.
             if message.isStreaming {
                 TimelineView(.periodic(from: .now, by: 0.53)) { tl in
                     let showCursor = Int(tl.date.timeIntervalSinceReferenceDate / 0.53) % 2 == 0
@@ -120,44 +145,45 @@ struct MessageBubble: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
-                Markdown(message.content)
-                    .markdownTheme(.app)
-                    .markdownBlockStyle(\.paragraph) { cfg in
-                        let raw = cfg.content.renderMarkdown()
-                        if raw.contains("`") {
-                            InlineParagraphView(raw: raw)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            cfg.label
-                        }
-                    }
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                renderedMessageText
             }
 
-            // Sources and RAG panels (appear below the answer)
             if !message.fetchContext.isEmpty {
                 SourcesPanel(fetches: message.fetchContext)
             }
             if !message.ragContext.isEmpty {
                 RAGPanel(chunks: message.ragContext)
             }
+
+            #if os(iOS)
+            if !message.isStreaming {
+                HStack {
+                    Spacer()
+                    Button {
+                        UIPasteboard.general.string = message.content
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                            .font(.caption)
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+            #endif
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
-        .contextMenu {
-            if !message.isStreaming {
-                Button {
-                    #if os(macOS)
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(message.content, forType: .string)
-                    #else
-                    UIPasteboard.general.string = message.content
-                    #endif
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-            }
-        }
+    }
+
+    private var renderedMessageText: some View {
+        let attrStr = (try? AttributedString(
+            markdown: message.content,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(message.content)
+        return Text(attrStr)
+            .font(.chatBody)
+            .foregroundStyle(Color.textPrimary)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
