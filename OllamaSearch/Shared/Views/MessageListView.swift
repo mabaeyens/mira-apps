@@ -89,6 +89,7 @@ struct MessageListView: View {
                                 Text(content)
                                     .font(.system(size: 13, design: .monospaced))
                                     .foregroundStyle(Color.textSecondary)
+                                    .textSelection(.enabled)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(12)
                             }
