@@ -272,6 +272,20 @@ private struct SelectableText: UIViewRepresentable {
 
         mutable.addAttribute(.foregroundColor, value: fg, range: fullRange)
         uiView.attributedText = mutable
+
+        // SwiftUI ScrollView wraps a UIScrollView that delays content touches by
+        // default, which prevents UITextView's long-press selection gesture from
+        // firing. Walk up once after layout to disable the delay.
+        DispatchQueue.main.async {
+            var v: UIView? = uiView.superview
+            while let node = v {
+                if let sv = node as? UIScrollView {
+                    sv.delaysContentTouches = false
+                    break
+                }
+                v = node.superview
+            }
+        }
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
