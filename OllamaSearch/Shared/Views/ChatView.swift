@@ -12,7 +12,14 @@ struct ChatView: View {
         VStack(spacing: 0) {
             // ── Backend offline banner ────────────────────────────────────
             if !vm.backendReady && !vm.isSwitchingBackend && !vm.isStartingBackend {
-                backendOfflineBanner
+                // Within first 120 s of detecting backend_ready: false, show a gentle
+                // spinner banner (model is loading). After that, show the manual-start banner.
+                if let since = vm.backendLoadingSince,
+                   Date().timeIntervalSince(since) < 120 {
+                    backendLoadingBanner
+                } else {
+                    backendOfflineBanner
+                }
             } else if vm.isStartingBackend {
                 backendStartingBanner
             }
@@ -81,6 +88,24 @@ struct ChatView: View {
 
     private var modelLabel: String {
         vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Qwen3.6 (Ollama)"
+    }
+
+    private var backendLoadingBanner: some View {
+        HStack(spacing: 10) {
+            ProgressView()
+                .tint(Color.accent)
+                .scaleEffect(0.75)
+            Text("Model loading…")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.textSecondary)
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(Color.accent.opacity(0.06))
+        .overlay(alignment: .bottom) {
+            Color.accent.opacity(0.2).frame(height: 1)
+        }
     }
 
     private var backendOfflineBanner: some View {
