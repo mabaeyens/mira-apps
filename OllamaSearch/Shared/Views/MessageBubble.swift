@@ -120,8 +120,11 @@ struct MessageBubble: View {
             .contextMenu {
                 if !message.isStreaming {
                     Button {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(message.content, forType: .string)
+                        let content = message.content
+                        DispatchQueue.main.async {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(content, forType: .string)
+                        }
                     } label: {
                         Label("Copy", systemImage: "doc.on.doc")
                     }
