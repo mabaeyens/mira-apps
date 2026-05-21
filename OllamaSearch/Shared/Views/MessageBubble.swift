@@ -232,7 +232,46 @@ private struct SelectableText: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        uiView.text = content
+        let body = UIFont.preferredFont(forTextStyle: .body)
+        let mono = UIFont.monospacedSystemFont(ofSize: body.pointSize, weight: .regular)
+        let codeBg = UIColor.systemGray6
+        let fg = uiView.textColor ?? UIColor.label
+
+        guard let ns = try? NSAttributedString(
+            markdown: content,
+            options: .init(interpretedSyntax: .full)
+        ) else {
+            uiView.font = body
+            uiView.text = content
+            return
+        }
+
+        let mutable = NSMutableAttributedString(attributedString: ns)
+        let fullRange = NSRange(location: 0, length: mutable.length)
+
+        // Remap every font run to body size, preserving bold/italic traits.
+        // Monospace runs (inline code + code block content) keep mono font and get
+        // a subtle background so they're visually distinct.
+        mutable.enumerateAttribute(.font, in: fullRange) { value, range, _ in
+            guard let f = value as? UIFont else {
+                mutable.addAttribute(.font, value: body, range: range)
+                return
+            }
+            let traits = f.fontDescriptor.symbolicTraits
+            if traits.contains(.traitMonoSpace) {
+                mutable.addAttribute(.font, value: mono, range: range)
+                mutable.addAttribute(.backgroundColor, value: codeBg, range: range)
+            } else {
+                var keep: UIFontDescriptor.SymbolicTraits = []
+                if traits.contains(.traitBold)   { keep.insert(.traitBold) }
+                if traits.contains(.traitItalic) { keep.insert(.traitItalic) }
+                let desc = body.fontDescriptor.withSymbolicTraits(keep) ?? body.fontDescriptor
+                mutable.addAttribute(.font, value: UIFont(descriptor: desc, size: body.pointSize), range: range)
+            }
+        }
+
+        mutable.addAttribute(.foregroundColor, value: fg, range: fullRange)
+        uiView.attributedText = mutable
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
