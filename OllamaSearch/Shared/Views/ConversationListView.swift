@@ -7,6 +7,12 @@ struct ConversationListView: View {
     var onTap: ((String) -> Void)? = nil
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
+    #else
+    var onSettings: (() -> Void)? = nil
+    var isReachable: Bool = true
+    var connectionIcon: String = "wifi"
+    var onChats: (() -> Void)? = nil
+    var onNewChat: (() -> Void)? = nil
     #endif
 
     @State private var renamingConv: Conversation? = nil
@@ -15,6 +21,7 @@ struct ConversationListView: View {
     @State private var debouncedSearch: String = ""
     @State private var showAddProject = false
     @State private var deletingConv: Conversation? = nil
+    @AppStorage("projectsExpanded") private var projectsExpanded = true
 
     private var filteredConversations: [Conversation] {
         guard !debouncedSearch.isEmpty else { return vm.conversations }
@@ -33,16 +40,22 @@ struct ConversationListView: View {
                 sidebarList
             }
         }
-        .background(Color.sidebarBg)
-        .navigationTitle("Mira")
         #if os(macOS)
+        .background(.clear)
+        #else
+        .background(Color.sidebarBg)
+        #endif
+        #if os(macOS)
+        .navigationTitle("Mira")
         .safeAreaInset(edge: .top) {
             newChatButton
         }
-        #endif
-        #if os(iOS)
+        #else
+        .safeAreaInset(edge: .top) {
+            iosHeader
+        }
         .safeAreaInset(edge: .bottom) {
-            newChatBottomBar
+            iosNewChatPill
         }
         #endif
         .sheet(isPresented: $showAddProject) {
@@ -80,32 +93,79 @@ struct ConversationListView: View {
 
     private var sidebarList: some View {
         List {
-            // Projects section
+            #if os(iOS)
+            if onChats != nil {
+                Section {
+                    Button(action: { onChats?() }) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "bubble.left.and.bubble.right")
+                                .foregroundStyle(Color.textPrimary)
+                                .frame(width: 20)
+                            Text("Chats")
+                                .font(Font.sidebarTitle.weight(.medium))
+                                .foregroundStyle(Color.textPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 4)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 2, leading: 10, bottom: 2, trailing: 10))
+                }
+            }
+            #endif
+
+            // Projects section — collapsible
             if !vm.projects.isEmpty {
                 Section {
-                    ForEach(vm.projects) { project in
-                        projectRow(project)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                    if projectsExpanded {
+                        ForEach(vm.projects) { project in
+                            projectRow(project)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+                        addProjectButton
                     }
-                    addProjectButton
                 } header: {
-                    sectionHeader("Projects")
+                    Button {
+                        withAnimation(.spring(duration: 0.2)) {
+                            projectsExpanded.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            sectionHeader("Projects")
+                            Spacer()
+                            Image(systemName: projectsExpanded ? "chevron.down" : "chevron.right")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
             // Conversations section
             Section {
-                ForEach(filteredConversations) { conv in
-                    conversationRow(conv)
+                #if os(iOS)
+                let displayConvs = onChats != nil
+                    ? Array(filteredConversations.prefix(20))
+                    : filteredConversations
+                let titleOnly = onChats != nil
+                #else
+                let displayConvs = filteredConversations
+                let titleOnly = false
+                #endif
+                ForEach(displayConvs) { conv in
+                    conversationRow(conv, isSelected: conv.id == vm.currentConvId, titleOnly: titleOnly)
                         .tag(conv.id)
-                        .listRowBackground(
-                            conv.id == vm.currentConvId
-                                ? Color.appAccent.opacity(0.12)
-                                : Color.clear
-                        )
-                        .listRowSeparator(.visible)
-                        .listRowSeparatorTint(Color.borderSubtle.opacity(0.5))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 2, leading: 10, bottom: 2, trailing: 10))
                 }
                 if vm.projects.isEmpty {
                     addProjectButton
@@ -113,7 +173,15 @@ struct ConversationListView: View {
                         .listRowSeparator(.hidden)
                 }
             } header: {
+                #if os(iOS)
+                if onChats != nil {
+                    sectionHeader("Recent")
+                } else {
+                    sectionHeader("Conversations")
+                }
+                #else
                 sectionHeader("Conversations")
+                #endif
             }
         }
         .listStyle(.sidebar)
@@ -237,7 +305,7 @@ struct ConversationListView: View {
             Button(action: { vm.newConversation() }) {
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.pencil")
-                        .foregroundStyle(Color.appAccent)
+                        .foregroundStyle(Color.textSecondary)
                     Text("New Chat")
                         .foregroundStyle(Color.textPrimary)
                     Spacer()
@@ -259,40 +327,75 @@ struct ConversationListView: View {
             .buttonStyle(.plain)
             .help(sidebarPinned ? "Sidebar always visible — click to auto-hide" : "Sidebar auto-hides — click to keep visible")
         }
-        .background(Color.sidebarBg)
+        .background(.clear)
     }
     #endif
 
-    // ── iOS new chat bar ──────────────────────────────────────────────────────
+    // ── iOS header + new chat pill ────────────────────────────────────────────
 
     #if os(iOS)
-    private var newChatBottomBar: some View {
-        Button(action: { vm.newConversation() }) {
-            HStack(spacing: 8) {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.appAccent)
-                Text("New Chat")
-                    .font(Font.sidebarTitle.weight(.medium))
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
+    private var iosHeader: some View {
+        HStack {
+            Text("Mira")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(Color.textPrimary)
+            Spacer()
+            if let onSettings {
+                Button(action: onSettings) {
+                    Image(systemName: connectionIcon)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(isReachable ? Color.appAccent : .orange)
+                        .frame(width: 38, height: 38)
+                        .background(Color(uiColor: .systemFill), in: Circle())
+                }
+                .buttonStyle(.plain)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
         }
-        .buttonStyle(.plain)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) {
-            Color.borderSubtle.opacity(0.5).frame(height: 0.5)
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 8)
+        .background(Color.sidebarBg)
+    }
+
+    private var iosNewChatPill: some View {
+        HStack {
+            Spacer()
+            Button(action: {
+                if let onNewChat { onNewChat() } else { vm.newConversation() }
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("New Chat")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .foregroundStyle(Color.black)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Color.white)
+                .clipShape(Capsule())
+                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
+            }
+            .buttonStyle(.plain)
+            Spacer()
         }
+        .padding(.vertical, 16)
+        .background(Color.sidebarBg)
     }
     #endif
 
     // ── Conversation row ──────────────────────────────────────────────────────
 
-    private func conversationRow(_ conv: Conversation) -> some View {
+    private func conversationRow(_ conv: Conversation, isSelected: Bool = false, titleOnly: Bool = false) -> some View {
         let isLoading = vm.loadingConvId == conv.id
+        #if os(iOS)
         let project = conv.projectId.flatMap { pid in vm.projects.first(where: { $0.id == pid }) }
+        #endif
+        #if os(macOS)
+        let rowFill: Color = isSelected ? Color.primary.opacity(0.08) : .clear
+        #else
+        let rowFill: Color = isSelected ? Color.appAccent.opacity(0.14) : Color.surfaceBg.opacity(0.45)
+        #endif
         return HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(conv.title)
@@ -300,24 +403,28 @@ struct ConversationListView: View {
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                HStack(spacing: 6) {
-                    if isLoading {
-                        Text("Opening…")
-                            .font(Font.sidebarSubtitle)
-                            .foregroundStyle(Color.appAccent.opacity(0.7))
-                    } else {
-                        Text(relativeDate(conv.updatedAt))
-                            .font(Font.sidebarSubtitle)
-                            .foregroundStyle(Color.textSecondary)
-                    }
-                    if let proj = project {
-                        Text(proj.name)
-                            .font(Font.sidebarMeta.weight(.medium))
-                            .foregroundStyle(Color.appAccent.opacity(0.8))
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Color.appAccent.opacity(0.12))
-                            .clipShape(Capsule())
+                if !titleOnly {
+                    HStack(spacing: 6) {
+                        if isLoading {
+                            Text("Opening…")
+                                .font(Font.sidebarSubtitle)
+                                .foregroundStyle(Color.appAccent.opacity(0.7))
+                        } else {
+                            Text(relativeDate(conv.updatedAt))
+                                .font(Font.sidebarSubtitle)
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                        #if os(iOS)
+                        if let proj = project {
+                            Text(proj.name)
+                                .font(Font.sidebarMeta.weight(.medium))
+                                .foregroundStyle(Color.appAccent.opacity(0.8))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Color.appAccent.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                        #endif
                     }
                 }
             }
@@ -328,7 +435,11 @@ struct ConversationListView: View {
             }
         }
         .padding(.vertical, 10)
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(rowFill)
+        )
         .contentShape(Rectangle())
         .simultaneousGesture(TapGesture().onEnded {
             vm.selectConversation(conv.id)

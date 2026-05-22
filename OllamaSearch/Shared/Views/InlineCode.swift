@@ -1,7 +1,144 @@
 import SwiftUI
 import Highlightr
 
-// MARK: - Segment model
+// MARK: - Message segment model (code fences vs prose)
+
+enum MessageSegment {
+    case text(String)
+    case codeBlock(language: String?, content: String)
+    case table(headers: [String], rows: [[String]])
+}
+
+func parseMessageSegments(_ raw: String) -> [MessageSegment] {
+    guard let regex = try? NSRegularExpression(
+        pattern: #"```([^\n]*)\n([\s\S]*?)```"#
+    ) else { return splitTables(raw) }
+
+    let ns = raw as NSString
+    var segments: [MessageSegment] = []
+    var lastEnd = 0
+
+    for match in regex.matches(in: raw, range: NSRange(location: 0, length: ns.length)) {
+        let before = NSRange(location: lastEnd, length: match.range.location - lastEnd)
+        if before.length > 0 {
+            segments.append(contentsOf: splitTables(ns.substring(with: before)))
+        }
+        let langStr = match.range(at: 1).location != NSNotFound
+            ? ns.substring(with: match.range(at: 1)).trimmingCharacters(in: .whitespaces)
+            : ""
+        let codeStr = match.range(at: 2).location != NSNotFound
+            ? ns.substring(with: match.range(at: 2))
+            : ""
+        segments.append(.codeBlock(language: langStr.isEmpty ? nil : langStr, content: codeStr))
+        lastEnd = match.range.location + match.range.length
+    }
+    if lastEnd < ns.length {
+        segments.append(contentsOf: splitTables(ns.substring(from: lastEnd)))
+    }
+    return segments.isEmpty ? [.text(raw)] : segments
+}
+
+// Scans a prose string for GFM table blocks and splits them into .table segments.
+// Apple's NSAttributedString markdown parser does not support GFM tables — it
+// discards the pipe structure and flows cell content as inline runs. We must
+// detect and extract tables before any markdown parsing occurs.
+private func splitTables(_ text: String) -> [MessageSegment] {
+    let lines = text.components(separatedBy: "\n")
+    var result: [MessageSegment] = []
+    var buffer: [String] = []
+    var i = 0
+
+    while i < lines.count {
+        if i + 1 < lines.count,
+           isTableRow(lines[i]),
+           isTableSeparator(lines[i + 1]) {
+            let prose = buffer.joined(separator: "\n")
+            if !prose.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                result.append(.text(prose))
+            }
+            buffer = []
+
+            let headers = tableRowCells(lines[i])
+            i += 2
+            var rows: [[String]] = []
+            while i < lines.count && isTableRow(lines[i]) {
+                rows.append(tableRowCells(lines[i]))
+                i += 1
+            }
+            if !headers.isEmpty {
+                result.append(.table(headers: headers, rows: rows))
+            }
+        } else {
+            buffer.append(lines[i])
+            i += 1
+        }
+    }
+
+    let remaining = buffer.joined(separator: "\n")
+    if !remaining.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        result.append(.text(remaining))
+    }
+    return result.isEmpty ? [.text(text)] : result
+}
+
+private func isTableRow(_ line: String) -> Bool {
+    line.trimmingCharacters(in: .whitespaces).contains("|")
+}
+
+private func isTableSeparator(_ line: String) -> Bool {
+    let t = line.trimmingCharacters(in: .whitespaces)
+    guard t.contains("|"), t.contains("-") else { return false }
+    let stripped = t
+        .replacingOccurrences(of: "|", with: "")
+        .replacingOccurrences(of: "-", with: "")
+        .replacingOccurrences(of: ":", with: "")
+        .replacingOccurrences(of: " ", with: "")
+    return stripped.isEmpty
+}
+
+private func tableRowCells(_ line: String) -> [String] {
+    var cells = line.trimmingCharacters(in: .whitespaces).components(separatedBy: "|")
+    if cells.first?.trimmingCharacters(in: .whitespaces).isEmpty == true { cells.removeFirst() }
+    if cells.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { cells.removeLast() }
+    return cells.map { $0.trimmingCharacters(in: .whitespaces) }
+}
+
+// MARK: - LaTeX symbol → Unicode preprocessing
+
+func preprocessLatex(_ text: String) -> String {
+    let replacements: [(String, String)] = [
+        ("$\\rightarrow$", "→"), ("$\\leftarrow$", "←"),
+        ("$\\Rightarrow$", "⇒"), ("$\\Leftarrow$", "⇐"),
+        ("$\\leftrightarrow$", "↔"), ("$\\Leftrightarrow$", "⇔"),
+        ("$\\uparrow$", "↑"), ("$\\downarrow$", "↓"),
+        ("$\\leq$", "≤"), ("$\\geq$", "≥"), ("$\\neq$", "≠"),
+        ("$\\approx$", "≈"), ("$\\equiv$", "≡"), ("$\\propto$", "∝"),
+        ("$\\pm$", "±"), ("$\\times$", "×"), ("$\\div$", "÷"),
+        ("$\\cdot$", "·"), ("$\\infty$", "∞"),
+        ("$\\sum$", "∑"), ("$\\prod$", "∏"), ("$\\int$", "∫"),
+        ("$\\partial$", "∂"), ("$\\nabla$", "∇"), ("$\\sqrt{}$", "√"),
+        ("$\\in$", "∈"), ("$\\notin$", "∉"), ("$\\subset$", "⊂"),
+        ("$\\supset$", "⊃"), ("$\\cup$", "∪"), ("$\\cap$", "∩"),
+        ("$\\forall$", "∀"), ("$\\exists$", "∃"), ("$\\neg$", "¬"),
+        ("$\\alpha$", "α"), ("$\\beta$", "β"), ("$\\gamma$", "γ"),
+        ("$\\delta$", "δ"), ("$\\epsilon$", "ε"), ("$\\eta$", "η"),
+        ("$\\theta$", "θ"), ("$\\lambda$", "λ"), ("$\\mu$", "μ"),
+        ("$\\nu$", "ν"), ("$\\xi$", "ξ"), ("$\\pi$", "π"),
+        ("$\\rho$", "ρ"), ("$\\sigma$", "σ"), ("$\\tau$", "τ"),
+        ("$\\phi$", "φ"), ("$\\chi$", "χ"), ("$\\psi$", "ψ"),
+        ("$\\omega$", "ω"), ("$\\Gamma$", "Γ"), ("$\\Delta$", "Δ"),
+        ("$\\Theta$", "Θ"), ("$\\Lambda$", "Λ"), ("$\\Pi$", "Π"),
+        ("$\\Sigma$", "Σ"), ("$\\Phi$", "Φ"), ("$\\Psi$", "Ψ"),
+        ("$\\Omega$", "Ω"),
+    ]
+    var result = text
+    for (latex, unicode) in replacements {
+        result = result.replacingOccurrences(of: latex, with: unicode)
+    }
+    return result
+}
+
+// MARK: - Inline segment model
 
 private enum InlineSegment {
     case text(String)
@@ -207,6 +344,69 @@ struct CopyableCodeBlock: View {
             try? await Task.sleep(for: .seconds(1.5))
             withAnimation { copied = false }
         }
+    }
+}
+
+// MARK: - Markdown table renderer
+
+struct MarkdownTableBlock: View {
+    let headers: [String]
+    let rows: [[String]]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            tableRow(cells: headers, isHeader: true)
+            divider(opacity: 0.2)
+            ForEach(Array(rows.enumerated()), id: \.offset) { r, row in
+                tableRow(cells: padded(row), isHeader: false)
+                    .background(r % 2 == 1 ? Color.primary.opacity(0.03) : Color.clear)
+                divider(opacity: 0.08)
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func tableRow(cells: [String], isHeader: Bool) -> some View {
+        HStack(spacing: 0) {
+            ForEach(Array(cells.enumerated()), id: \.offset) { i, cell in
+                Text(attrCell(cell))
+                    .font(isHeader ? .system(size: 13, weight: .semibold) : .system(size: 13))
+                    .foregroundStyle(Color.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .textSelection(.enabled)
+                if i < cells.count - 1 {
+                    Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .background(isHeader ? Color.primary.opacity(0.07) : Color.clear)
+    }
+
+    private func divider(opacity: Double) -> some View {
+        Rectangle().fill(Color.primary.opacity(opacity)).frame(height: 1)
+    }
+
+    private func padded(_ row: [String]) -> [String] {
+        var r = row
+        while r.count < headers.count { r.append("") }
+        return Array(r.prefix(headers.count))
+    }
+
+    private func attrCell(_ cell: String) -> AttributedString {
+        (try? AttributedString(
+            markdown: cell,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(cell)
     }
 }
 

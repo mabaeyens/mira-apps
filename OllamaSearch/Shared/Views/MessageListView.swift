@@ -13,6 +13,7 @@ struct MessageListView: View {
     var thinkingContent: String? = nil
     var isThinkingActive: Bool = false
     var currentToolLabel: String? = nil
+    var topContentInset: CGFloat = 0
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
 
@@ -70,6 +71,7 @@ struct MessageListView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
+                    Color.clear.frame(height: topContentInset)
                     ForEach(messages) { msg in
                         let isLastStreamingEmpty = msg.id == messages.last?.id
                             && msg.isStreaming && msg.content.isEmpty
@@ -81,6 +83,32 @@ struct MessageListView: View {
                             onEdit: onEdit
                         )
                     }
+
+                    // Action buttons below last completed assistant message (iOS only)
+                    #if os(iOS)
+                    if let lastMsg = messages.last,
+                       lastMsg.role == .assistant,
+                       !lastMsg.isStreaming,
+                       !isStreaming {
+                        HStack(spacing: 24) {
+                            Button(action: { UIPasteboard.general.string = lastMsg.content }) {
+                                Image(systemName: "doc.on.doc")
+                            }
+                            Button(action: { onResend?() }) {
+                                Image(systemName: "arrow.counterclockwise")
+                            }
+                            Button(action: { onEdit?() }) {
+                                Image(systemName: "pencil")
+                            }
+                        }
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color.textSecondary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 6)
+                        .padding(.bottom, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    #endif
 
                     // Collapsible thinking block — open while streaming, collapses on first token
                     if let content = thinkingContent {
