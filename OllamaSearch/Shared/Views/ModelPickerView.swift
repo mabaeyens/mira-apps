@@ -8,6 +8,7 @@ struct ModelPickerView: View {
     let liveModelName: String
     let liveContextWindow: Int
     let onSwitch: (String) async -> Void
+    @Binding var thinkingEnabled: Bool
 
     @State private var pendingBackend: String? = nil
 
@@ -129,12 +130,34 @@ struct ModelPickerView: View {
     // ── Model list ────────────────────────────────────────────────────────────
 
     private var modelListView: some View {
-        VStack(spacing: 10) {
-            ForEach(options, id: \.backend) { option in
-                modelRow(option)
+        VStack(spacing: 0) {
+            VStack(spacing: 10) {
+                ForEach(options, id: \.backend) { option in
+                    modelRow(option)
+                }
             }
+            .padding(16)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Thinking")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.textPrimary)
+                    Text("Reasons before answering")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Spacer()
+                Toggle("", isOn: $thinkingEnabled)
+                    .labelsHidden()
+                    .tint(Color.appAccent)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
         }
-        .padding(16)
     }
 
     @ViewBuilder
@@ -188,6 +211,6 @@ struct ModelPickerView: View {
 }
 
 #Preview {
-    ModelPickerView(currentBackend: "ollama", isSwitching: false, switchStatusMessage: "", liveModelName: "Qwen3.6-35B-A3B", liveContextWindow: 262144, onSwitch: { _ in })
+    ModelPickerView(currentBackend: "ollama", isSwitching: false, switchStatusMessage: "", liveModelName: "Qwen3.6-35B-A3B", liveContextWindow: 262144, onSwitch: { _ in }, thinkingEnabled: .constant(false))
         .frame(height: 240)
 }

@@ -1,5 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(iOS)
+import PhotosUI
+#endif
 
 /// Compose bar at the bottom of the chat view.
 /// Two-row card: top row is the text field; bottom row has +, chips, model pill, and send/stop.
@@ -7,10 +10,18 @@ import UniformTypeIdentifiers
 struct InputBar: View {
     @Bindable var vm: ChatViewModel
 
+    // Optional external binding lets the pill + button in ChatView trigger this sheet.
+    var showSheetExternal: Binding<Bool>? = nil
+    @State private var _showAddToChat = false
+    private var showAddToChat: Binding<Bool> { showSheetExternal ?? $_showAddToChat }
+
     @FocusState private var isFocused: Bool
-    @State private var showAddToChat = false
     #if os(iOS)
     @State private var showFilePicker = false
+    @State private var showCameraPicker = false
+    @State private var showPhotosPicker = false
+    @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var showProjectPicker = false
     #endif
 
     var body: some View {
@@ -52,7 +63,7 @@ struct InputBar: View {
                 // Bottom: + | chips | spacer | model▾ | send/stop
                 HStack(alignment: .center, spacing: 8) {
                     // + button
-                    Button { showAddToChat = true } label: {
+                    Button { showAddToChat.wrappedValue = true } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundStyle(Color.textSecondary)
@@ -147,10 +158,43 @@ struct InputBar: View {
         }
         .background(Color.appBg)
         .animation(.spring(duration: 0.2), value: vm.thinkingEnabled)
-        .sheet(isPresented: $showAddToChat) {
-            addToChatSheet
+        #if os(macOS)
+        .popover(isPresented: showAddToChat, arrowEdge: .top) {
+            addToChatPopoverMac
         }
+        #else
+        .sheet(isPresented: showAddToChat) {
+            addToChatSheetIOS
+        }
+        #endif
         #if os(iOS)
+        .photosPicker(isPresented: $showPhotosPicker, selection: $selectedPhotos, matching: .images)
+        .onChange(of: selectedPhotos) { _, items in
+            Task {
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self) {
+                        let name = "photo_\(Int(Date().timeIntervalSince1970)).jpg"
+                        await MainActor.run {
+                            vm.pendingAttachments.append(.fileData(name: name, data: data, mimeType: "image/jpeg"))
+                            vm.stagedAttachmentNames.append(name)
+                        }
+                    }
+                }
+                await MainActor.run { selectedPhotos = [] }
+            }
+        }
+        .fullScreenCover(isPresented: $showCameraPicker) {
+            CameraPickerView(isPresented: $showCameraPicker) { data in
+                let name = "photo_\(Int(Date().timeIntervalSince1970)).jpg"
+                vm.pendingAttachments.append(.fileData(name: name, data: data, mimeType: "image/jpeg"))
+                vm.stagedAttachmentNames.append(name)
+                showAddToChat.wrappedValue = false
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showProjectPicker) {
+            projectPickerSheet
+        }
         .fileImporter(
             isPresented: $showFilePicker,
             allowedContentTypes: [.pdf, .plainText, .html, .png, .jpeg, .gif, .webP, .bmp],
@@ -182,11 +226,48 @@ struct InputBar: View {
         #endif
     }
 
-    // ── "Add to Chat" sheet ───────────────────────────────────────────────────────
+    // ── "Add to Chat" popover — macOS ────────────────────────────────────────────
+
+    #if os(macOS)
+    private var addToChatPopoverMac: some View {
+        VStack(spacing: 0) {
+            Button {
+                showAddToChat.wrappedValue = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    attachFilesMacOS()
+                }
+            } label: {
+                addToChatRow(icon: "paperclip", label: "Files & Images", trailing: nil)
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+                .padding(.horizontal, 12)
+
+            HStack(spacing: 12) {
+                addToChatRow(
+                    icon: vm.thinkingEnabled ? "brain.fill" : "brain",
+                    label: "Thinking",
+                    trailing: nil,
+                    iconColor: vm.thinkingEnabled ? Color.appAccent : Color.textSecondary
+                )
+                Spacer()
+                Toggle("", isOn: $vm.thinkingEnabled)
+                    .labelsHidden()
+                    .tint(Color.appAccent)
+                    .padding(.trailing, 16)
+            }
+        }
+        .frame(width: 260)
+        .padding(.vertical, 4)
+        .background(Color.appBg)
+    }
+    #endif
+
+    // ── "Add to Chat" sheet — macOS (kept for reference, no longer presented) ────
 
     private var addToChatSheet: some View {
         VStack(spacing: 0) {
-            // Pull handle
             RoundedRectangle(cornerRadius: 3)
                 .fill(Color.borderSubtle)
                 .frame(width: 36, height: 4)
@@ -199,32 +280,22 @@ struct InputBar: View {
 
             Divider().background(Color.borderSubtle)
 
-            // Files row
             Button {
-                showAddToChat = false
+                showAddToChat.wrappedValue = false
                 #if os(macOS)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     attachFilesMacOS()
                 }
-                #elseif os(iOS)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    showFilePicker = true
-                }
                 #endif
             } label: {
-                addToChatRow(
-                    icon: "paperclip",
-                    label: "Files & Images",
-                    trailing: nil
-                )
+                addToChatRow(icon: "paperclip", label: "Files & Images", trailing: nil)
             }
             .buttonStyle(.plain)
 
             Divider().background(Color.borderSubtle.opacity(0.5))
 
-            // Thinking row
             Button {
-                showAddToChat = false
+                showAddToChat.wrappedValue = false
                 vm.thinkingEnabled.toggle()
             } label: {
                 addToChatRow(
@@ -243,6 +314,141 @@ struct InputBar: View {
         .presentationDetents([.height(230)])
         .presentationDragIndicator(.hidden)
     }
+
+    // ── "Add to Chat" sheet — iOS (Claude-style grid) ─────────────────────────
+
+    #if os(iOS)
+    private var addToChatSheetIOS: some View {
+        VStack(spacing: 0) {
+            Color.clear.frame(height: 8)
+
+            Text("Add to Chat")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.textPrimary)
+                .padding(.vertical, 14)
+
+            // ── 3-tile grid ───────────────────────────────────────────────────
+            HStack(spacing: 12) {
+                attachmentTile(icon: "camera.fill", label: "Camera",
+                               color: Color(uiColor: .systemBlue)) {
+                    showAddToChat.wrappedValue = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        showCameraPicker = true
+                    }
+                }
+                .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
+
+                attachmentTile(icon: "photo.fill", label: "Photos",
+                               color: Color(uiColor: .systemGreen)) {
+                    showAddToChat.wrappedValue = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        showPhotosPicker = true
+                    }
+                }
+
+                attachmentTile(icon: "arrow.up.doc.fill", label: "Files",
+                               color: Color(uiColor: .systemOrange)) {
+                    showAddToChat.wrappedValue = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        showFilePicker = true
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
+
+            Divider().padding(.horizontal, 16)
+
+            // ── Add to project row ────────────────────────────────────────────
+            Button(action: { showProjectPicker = true }) {
+                addToChatRow(
+                    icon: "folder.badge.plus",
+                    label: "Add to project",
+                    trailing: vm.activeProject?.name
+                )
+            }
+            .buttonStyle(.plain)
+
+            Divider().padding(.horizontal, 16)
+
+            // ── Thinking row ──────────────────────────────────────────────────
+            Button {
+                showAddToChat.wrappedValue = false
+                vm.thinkingEnabled.toggle()
+            } label: {
+                addToChatRow(
+                    icon: vm.thinkingEnabled ? "brain.fill" : "brain",
+                    label: "Thinking",
+                    trailing: vm.thinkingEnabled ? "On" : "Off",
+                    iconColor: vm.thinkingEnabled ? Color.appAccent : Color.textSecondary
+                )
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color.appBg)
+        .presentationDetents([.height(360)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func attachmentTile(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(color.opacity(0.14))
+                    Image(systemName: icon)
+                        .font(.system(size: 26, weight: .medium))
+                        .foregroundStyle(color)
+                }
+                .frame(height: 72)
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var projectPickerSheet: some View {
+        NavigationStack {
+            Group {
+                if vm.projects.isEmpty {
+                    Text("No projects yet")
+                        .foregroundStyle(Color.textSecondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(vm.projects) { project in
+                        Button(action: {
+                            // TODO: assign conversation to project (needs backend PATCH)
+                            showProjectPicker = false
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: project.icon)
+                                    .foregroundStyle(Color.appAccent)
+                                    .frame(width: 20)
+                                Text(project.name)
+                                    .foregroundStyle(Color.textPrimary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .navigationTitle("Add to Project")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showProjectPicker = false }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+    #endif
 
     private func addToChatRow(
         icon: String,
@@ -373,3 +579,41 @@ struct InputBar: View {
         )
     }
 }
+
+// ── Camera picker (UIImagePickerController bridge) ────────────────────────────
+
+#if os(iOS)
+private struct CameraPickerView: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    var onCapture: (Data) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: CameraPickerView
+        init(_ parent: CameraPickerView) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage,
+               let data = image.jpegData(compressionQuality: 0.85) {
+                parent.onCapture(data)
+            }
+            parent.isPresented = false
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.isPresented = false
+        }
+    }
+}
+#endif

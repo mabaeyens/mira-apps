@@ -480,10 +480,13 @@ struct iOSConnectedView: View {
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {
-                // iPad: use NavigationSplitView
+                // iPad / iPhone landscape: NavigationSplitView
+                // IMPORTANT: do NOT add .toolbar to ConversationListView inside a
+                // NavigationStack — iOS 26 treats a toolbar on the root as a column
+                // anchor and shows both root and destination side-by-side.
                 NavigationSplitView(columnVisibility: $columnVisibility) {
                     ConversationListView(vm: chatVM, onTap: { _ in
-                        columnVisibility = .all
+                        columnVisibility = .detailOnly
                     })
                         .toolbar {
                             ToolbarItem(placement: .navigationBarLeading) {
@@ -498,24 +501,14 @@ struct iOSConnectedView: View {
                     ChatView(vm: chatVM)
                 }
             } else {
-                // iPhone: use NavigationStack
-                NavigationStack {
-                    ConversationListView(vm: chatVM, onTap: { convId in
-                        chatVM.selectConversation(convId)
-                    })
-                    .navigationDestination(isPresented: .constant(true)) {
-                        ChatView(vm: chatVM)
-                            .toolbar {
-                                ToolbarItem(placement: .navigationBarLeading) {
-                                    Button { onSettings() } label: {
-                                        Image(systemName: connectionIcon)
-                                            .foregroundStyle(isReachable ? Color.accent : .orange)
-                                    }
-                                    .help(isReachable ? connectionLabel : "\(connectionLabel) — reconnecting…")
-                                }
-                            }
-                    }
-                }
+                // iPhone portrait: ZStack overlay — sidebar slides in from the left.
+                // No NavigationStack root needed; avoids iOS 26 split-column trap.
+                iOSPortraitView(
+                    chatVM: chatVM,
+                    isReachable: isReachable,
+                    connectionIcon: connectionIcon,
+                    onSettings: onSettings
+                )
             }
         }
         .alert("Error", isPresented: Binding(
@@ -533,24 +526,17 @@ struct iOSConnectedView: View {
             chatVM.startHealthPolling()
             await chatVM.loadProjects()
             await chatVM.loadConversations()
-            if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
-                chatVM.selectConversation(first.id)
-            }
-            columnVisibility = (horizontalSizeClass == .regular) ? .all : .detailOnly
-        }
-        .onChange(of: chatVM.loadingConvId) { _, newId in
-            // Navigate to detail immediately when a fetch starts so the user sees
-            // the loading spinner in the chat area instead of waiting on the sidebar.
-            if newId != nil && horizontalSizeClass == .compact {
-                UIApplication.shared.sendAction(
-                    #selector(UIResponder.resignFirstResponder),
-                    to: nil, from: nil, for: nil
-                )
-                columnVisibility = .detailOnly
+            // iPad / landscape: auto-select first conversation so detail column isn't blank.
+            // Portrait iPhone shows the welcome screen instead — no auto-select.
+            if horizontalSizeClass == .regular {
+                if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
+                    chatVM.selectConversation(first.id)
+                }
+                columnVisibility = .all
             }
         }
         .onChange(of: chatVM.currentConvId) { _, newId in
-            if !newId.isEmpty && horizontalSizeClass == .compact {
+            if !newId.isEmpty && horizontalSizeClass == .regular {
                 columnVisibility = .detailOnly
             }
         }
@@ -588,6 +574,110 @@ struct iOSConnectedView: View {
                 Color.borderSubtle.frame(height: 0.5)
             }
             .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+// ── iPhone portrait: ZStack overlay navigation ────────────────────────────────
+// Sidebar slides in from the left over a dim scrim.
+// WelcomeView shown when no conversation is active; ChatView otherwise.
+
+private struct iOSPortraitView: View {
+    let chatVM: ChatViewModel
+    var isReachable: Bool
+    var connectionIcon: String
+    let onSettings: () -> Void
+
+    @State private var showSidebar = false
+    @State private var showChatList = false
+
+    private func openSidebar() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
+        withAnimation(.easeInOut(duration: 0.25)) { showSidebar = true }
+    }
+
+    private func closeSidebar() {
+        withAnimation(.easeInOut(duration: 0.25)) { showSidebar = false }
+    }
+
+    private func openChatList() {
+        closeSidebar()
+        withAnimation(.easeInOut(duration: 0.25)) { showChatList = true }
+    }
+
+    private func closeChatList() {
+        withAnimation(.easeInOut(duration: 0.25)) { showChatList = false }
+    }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            // ── Main content ──────────────────────────────────────────────
+            Group {
+                if chatVM.currentConvId.isEmpty {
+                    WelcomeView(
+                        vm: chatVM,
+                        onMenu: openSidebar,
+                        onSettings: onSettings,
+                        isReachable: isReachable,
+                        connectionIcon: connectionIcon
+                    )
+                    .transition(.opacity)
+                } else {
+                    ChatView(
+                        vm: chatVM,
+                        onBack: { chatVM.currentConvId = "" }
+                    )
+                    .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: chatVM.currentConvId.isEmpty)
+
+            // ── Chat list overlay (full screen) ───────────────────────────
+            if showChatList {
+                ChatListView(
+                    vm: chatVM,
+                    onSelect: { _ in closeChatList() },
+                    onMenu: openSidebar,
+                    onNewChat: {
+                        chatVM.newConversation()
+                        closeChatList()
+                    }
+                )
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.move(edge: .trailing))
+                .zIndex(1)
+            }
+
+            // ── Sidebar overlay ───────────────────────────────────────────
+            if showSidebar {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+                    .onTapGesture { closeSidebar() }
+                    .transition(.opacity)
+
+                ConversationListView(
+                    vm: chatVM,
+                    onTap: { convId in
+                        chatVM.selectConversation(convId)
+                        closeSidebar()
+                    },
+                    onSettings: onSettings,
+                    isReachable: isReachable,
+                    connectionIcon: connectionIcon,
+                    onChats: { openChatList() },
+                    onNewChat: {
+                        chatVM.newConversation()
+                        closeSidebar()
+                    }
+                )
+                .frame(width: UIScreen.main.bounds.width * 0.85)
+                .background(Color.sidebarBg)
+                .transition(.move(edge: .leading))
+                .zIndex(2)
+            }
         }
     }
 }
