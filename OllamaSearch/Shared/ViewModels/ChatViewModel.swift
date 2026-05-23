@@ -257,6 +257,13 @@ final class ChatViewModel {
         inputText = text
     }
 
+    func prepareForNewConversation() {
+        streamTask?.cancel()
+        currentConvId = ""
+        messages = []
+        inputTokens = 0; outputTokens = 0; contextPct = 0
+    }
+
     func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
         thinkingEnabled = false
