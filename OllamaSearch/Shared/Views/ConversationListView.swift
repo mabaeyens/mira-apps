@@ -186,7 +186,9 @@ struct ConversationListView: View {
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
+        #if os(macOS)
         .searchable(text: $searchText, prompt: "Search conversations")
+        #endif
         .task(id: searchText) {
             try? await Task.sleep(for: .milliseconds(200))
             debouncedSearch = searchText
@@ -336,25 +338,49 @@ struct ConversationListView: View {
 
     #if os(iOS)
     private var iosHeader: some View {
-        HStack {
-            Text("Mira")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color.textPrimary)
-            Spacer()
-            if let onSettings {
-                Button(action: onSettings) {
-                    Image(systemName: connectionIcon)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(isReachable ? Color.appAccent : .orange)
-                        .frame(width: 38, height: 38)
-                        .background(Color(uiColor: .systemFill), in: Circle())
+        VStack(spacing: 8) {
+            HStack {
+                Text("Mira")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.textPrimary)
+                Spacer()
+                if let onSettings {
+                    Button(action: onSettings) {
+                        Image(systemName: connectionIcon)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(isReachable ? Color.appAccent : .orange)
+                            .frame(width: 38, height: 38)
+                            .background(Color(uiColor: .systemFill), in: Circle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.textSecondary)
+                TextField("Search", text: $searchText)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Color.textPrimary)
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color(uiColor: .secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 16)
-        .padding(.bottom, 8)
         .background(Color.sidebarBg)
     }
 
