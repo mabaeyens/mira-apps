@@ -197,27 +197,24 @@ struct ChatView: View {
 
     #if os(iOS)
     private var floatingPillNav: some View {
-        HStack(spacing: 4) {
-            pillButton(icon: "chevron.left") { onBack?() }
+        HStack {
+            navCircleButton(icon: "chevron.left") { onBack?() }
             Spacer()
-            pillButton(icon: "plus") { showAttachSheet = true }
-            pillButton(icon: "ellipsis") { showOptions = true }
+            navCircleButton(icon: "ellipsis") { showOptions = true }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.4), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
         .padding(.horizontal, 16)
         .padding(.top, 8)
     }
 
-    private func pillButton(icon: String, action: @escaping () -> Void) -> some View {
+    private func navCircleButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.textPrimary)
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(Color.borderSubtle.opacity(0.4), lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -275,7 +272,7 @@ private struct ConversationOptionsSheet: View {
 
             Spacer()
         }
-        .presentationDetents([.height(260)])
+        .presentationDetents([.height(300)])
         .presentationDragIndicator(.visible)
         .alert("Rename conversation", isPresented: $showRename) {
             TextField("Title", text: $renameText)
@@ -305,15 +302,15 @@ private struct ConversationOptionsSheet: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 20))
                     .foregroundStyle(destructive ? .red : Color.textPrimary)
-                    .frame(width: 24)
+                    .frame(width: 28)
                 Text(label)
-                    .font(.system(size: 16))
+                    .font(.system(size: 17))
                     .foregroundStyle(destructive ? .red : Color.textPrimary)
                 Spacer()
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
         }
         .buttonStyle(.plain)
     }

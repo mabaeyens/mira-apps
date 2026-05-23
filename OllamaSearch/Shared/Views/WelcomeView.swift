@@ -6,9 +6,6 @@ import SwiftUI
 struct WelcomeView: View {
     @Bindable var vm: ChatViewModel
     var onMenu: () -> Void
-    var onSettings: (() -> Void)? = nil
-    var isReachable: Bool = true
-    var connectionIcon: String = "wifi"
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,13 +13,6 @@ struct WelcomeView: View {
             HStack {
                 circleButton(icon: "line.3.horizontal", action: onMenu)
                 Spacer()
-                if let onSettings {
-                    circleButton(
-                        icon: connectionIcon,
-                        color: isReachable ? Color.appAccent : .orange,
-                        action: onSettings
-                    )
-                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)

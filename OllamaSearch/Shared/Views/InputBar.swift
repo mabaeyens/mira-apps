@@ -109,35 +109,24 @@ struct InputBar: View {
 
                     Spacer()
 
-                    // Model switcher pill
-                    Button { vm.showModelPicker = true } label: {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(modelStatusColor)
-                                .frame(width: 6, height: 6)
-                            Text(vm.modelName.isEmpty
-                                ? (vm.currentBackend == "omlx" ? "oMLX" : "Ollama")
-                                : vm.modelName)
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color.textPrimary)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 8))
-                                .foregroundStyle(Color.textSecondary)
-                                .opacity(0.7)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.surfaceBg)
-                                .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
-                        )
+                    // Model indicator pill (non-interactive — single model)
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(modelStatusColor)
+                            .frame(width: 6, height: 6)
+                        Text(vm.modelName.isEmpty
+                            ? (vm.currentBackend == "omlx" ? "oMLX" : "Ollama")
+                            : vm.modelName)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.textPrimary)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(vm.isSwitchingBackend)
-                    #if os(macOS)
-                    .focusEffectDisabled()
-                    #endif
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.surfaceBg)
+                            .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
+                    )
 
                     actionButton
                 }

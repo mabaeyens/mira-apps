@@ -27,8 +27,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Mira uses the camera to capture and attach images to your messages. Photos are sent only to your local Mira server and are not shared externally.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Mira uses the local network to discover and connect to the server running on your Mac.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mira accesses your photo library so you can attach images to messages. Photos are sent only to your local Mira server and are not shared externally.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Bookerly-Regular.ttf</string>
