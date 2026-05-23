@@ -105,8 +105,8 @@ struct MessageBubble: View {
 
     // ── Assistant bubble ──────────────────────────────────────────────────────
     //
-    // MessageContentView splits content into prose (SelectableText / SwiftUI Text
-    // with AttributedString) and fenced code blocks (CopyableCodeBlock).
+    // MessageContentView splits content into prose (Markdown), fenced code blocks
+    // (CopyableCodeBlock), and tables (MarkdownTableBlock).
     // macOS adds a right-click "Copy" context menu.
 
     @ViewBuilder
@@ -165,52 +165,11 @@ struct MessageBubble: View {
     }
 }
 
-// ── Selectable prose renderer (iOS + macOS) ───────────────────────────────────
-//
-// SwiftUI Text with AttributedString(markdown:) correctly renders PresentationIntent
-// attributes (list items, headings, etc.) that UITextView/NSTextView do not understand.
-// .textSelection(.enabled) on the MessageContentView VStack creates a unified
-// selection context across all Text views within a message.
-private struct SelectableText: View {
-    let content: String
-
-    private var attributed: AttributedString {
-        let processed = preprocessLatex(content)
-        var options = AttributedString.MarkdownParsingOptions()
-        options.interpretedSyntax = .full
-        guard var attr = try? AttributedString(markdown: processed, options: options) else {
-            return AttributedString(processed)
-        }
-        for run in attr.runs {
-            if run.inlinePresentationIntent?.contains(.code) == true {
-                attr[run.range].font = .body.monospaced()
-                #if os(iOS)
-                attr[run.range].backgroundColor = Color(uiColor: .systemGray6)
-                #else
-                attr[run.range].backgroundColor = Color(nsColor: .windowBackgroundColor)
-                #endif
-            }
-        }
-        return attr
-    }
-
-    var body: some View {
-        Text(attributed)
-            .font(.body)
-            .foregroundStyle(Color.textPrimary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            .textSelection(.enabled)
-    }
-}
-
 // ── Mixed prose + code-block renderer ────────────────────────────────────────
 //
-// Splits the raw markdown into text segments and fenced code blocks.
-// Prose is rendered by SelectableText (SwiftUI Text + AttributedString).
-// Code blocks use CopyableCodeBlock (syntax highlight + copy button).
-// .textSelection(.enabled) on the VStack creates a unified selection context
-// across all Text views within a message.
+// Splits raw markdown into segments: prose uses Markdown() with .markdownTheme(.app)
+// for full block-level rendering (headings, lists, rules). Fenced code uses
+// CopyableCodeBlock. GFM tables use MarkdownTableBlock (horizontally scrollable).
 
 struct MessageContentView: View {
     let content: String
