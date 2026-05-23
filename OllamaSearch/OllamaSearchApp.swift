@@ -616,7 +616,7 @@ private struct iOSPortraitView: View {
         ZStack(alignment: .leading) {
             // ── Main content ──────────────────────────────────────────────
             Group {
-                if chatVM.currentConvId.isEmpty {
+                if chatVM.currentConvId.isEmpty && !chatVM.isStreaming {
                     WelcomeView(
                         vm: chatVM,
                         onMenu: openSidebar
@@ -625,7 +625,11 @@ private struct iOSPortraitView: View {
                 } else {
                     ChatView(
                         vm: chatVM,
-                        onBack: { chatVM.currentConvId = "" }
+                        onBack: {
+                            chatVM.stopStreaming()
+                            chatVM.isStreaming = false
+                            chatVM.currentConvId = ""
+                        }
                     )
                     .transition(.opacity)
                 }
@@ -637,9 +641,9 @@ private struct iOSPortraitView: View {
                 ChatListView(
                     vm: chatVM,
                     onSelect: { _ in closeChatList() },
-                    onMenu: openSidebar,
+                    onMenu: { closeChatList(); openSidebar() },
                     onNewChat: {
-                        chatVM.newConversation()
+                        chatVM.currentConvId = ""
                         closeChatList()
                     }
                 )
@@ -666,7 +670,7 @@ private struct iOSPortraitView: View {
                     connectionIcon: connectionIcon,
                     onChats: { openChatList() },
                     onNewChat: {
-                        chatVM.newConversation()
+                        chatVM.currentConvId = ""
                         closeSidebar()
                     }
                 )

@@ -77,111 +77,6 @@ final class ChatViewModel {
     // ── Slow-connection patience messages ─────────────────────────────────────
     // Shown after 3 s of streaming with no tokens yet. Rotates every 6 s.
     var streamingWaitMessage: String? = nil
-    private var waitMessageTask: Task<Void, Never>?
-
-    private static let waitingMessages: [String] = [
-        "Local models take their time — hang tight",
-        "Good things come to those who wait…",
-        "Thinking hard about this one",
-        "The model is working on it…",
-        "Generating your response…",
-        "Almost there — local inference can be slow",
-        "Please be patient, this might take a moment",
-        "Crunching the tokens…",
-        "Your local AI is busy thinking",
-        "Processing… grab a coffee ☕",
-        "This is the price of privacy — worth it",
-        "100% local, 100% private, occasionally slow",
-        "No cloud, no rush — just your machine",
-        "Running entirely on your hardware",
-        "Patience, the model is doing its best",
-        "Still here, still thinking…",
-        "Large responses take a little longer",
-        "Working through your request…",
-        "Your data never left this machine",
-        "On-device AI — give it a moment",
-        "Thinking at the speed of silicon…",
-        "Warming up the weights…",
-        "One token at a time…",
-        "The wheels are turning",
-        "Complex questions deserve careful answers",
-        "Inference in progress — please wait",
-        "Not a cloud service — be patient",
-        "Locally run, locally slow at times",
-        "Your question is being processed",
-        "Hang tight while I think this through",
-        "Taking a moment to get this right",
-        "Almost ready — just a few more seconds",
-        "Patience is a virtue, especially with LLMs",
-        "The model is giving this its full attention",
-        "Your hardware is working overtime",
-        "Composing a thoughtful response…",
-        "Generating — this depends on your hardware",
-        "Local model, local pace",
-        "Slower than the cloud, more private than it too",
-        "Your GPU/CPU is hard at work",
-        "Still generating — complex tasks take longer",
-        "A response is being crafted for you",
-        "Thinking… don't go anywhere",
-        "Inference underway",
-        "This one might take a bit longer",
-        "On-device reasoning in progress",
-        "Your assistant is thinking carefully",
-        "The model hasn't given up — it's still going",
-        "Sometimes slow is just… thorough",
-        "Processing with full context…",
-        "No timeout here — take as long as you need",
-        "Running the full model, not a trimmed one",
-        "Locally hosted means no rate limits",
-        "Still generating — feel free to wait",
-        "The longer the wait, the more thorough the answer",
-        "Heating up the inference engine…",
-        "Your machine is doing the heavy lifting",
-        "Mira is thinking…",
-        "Generating tokens, one by one",
-        "This is local AI — patience rewarded",
-        "A good answer is worth waiting for",
-        "The model is fully engaged with your request",
-        "Working at full capacity…",
-        "Local inference: no throttling, no rush",
-        "Thinking at inference speed…",
-        "On your hardware, on your terms",
-        "Computation in progress…",
-        "Still crafting your response",
-        "Your context window is being processed",
-        "Don't worry — it hasn't crashed",
-        "Just a moment more…",
-        "The bigger the model, the longer the wait",
-        "Quality over speed",
-        "Hang in there — response incoming",
-        "Slower than ChatGPT, more private though",
-        "Your patience is appreciated",
-        "Running inference locally…",
-        "Almost done thinking…",
-        "Local AI is worth the wait",
-        "Still at it — complex queries take time",
-        "Your assistant is fully focused on this",
-        "Response generation in progress",
-        "Taking a deep breath and thinking…",
-        "Still working — check back in a moment",
-        "Inference can't be rushed — almost there",
-        "The model is doing its thing",
-        "Generating carefully…",
-        "No shortcuts — full generation in progress",
-        "A thoughtful response takes time",
-        "Running on local hardware — patience pays off",
-        "Busy generating your answer",
-        "Your request is in good hands",
-        "The model is still thinking",
-        "Processing at local inference speed",
-        "Generating — network not involved",
-        "Still here, still working",
-        "Taking longer than usual — still going",
-        "The response is on its way",
-        "Patience mode activated",
-        "Your local assistant is deep in thought",
-        "Still thinking — this is a good sign",
-    ]
 
     // Token throttle: accumulate tokens, flush every 100ms to avoid
     // re-rendering swift-markdown-ui on every individual token.
@@ -262,19 +157,7 @@ final class ChatViewModel {
         thinkingContent = nil
         isThinkingActive = false
 
-        // Show "Sending…" immediately so the user sees feedback within 100 ms.
-        // After 5 s with no tokens, rotate through patience messages until the
-        // first token arrives (or streaming stops).
         streamingWaitMessage = "Sending…"
-        waitMessageTask?.cancel()
-        waitMessageTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(5_000))
-            guard let self, !Task.isCancelled else { return }
-            while !Task.isCancelled {
-                self.streamingWaitMessage = Self.waitingMessages.randomElement()
-                try? await Task.sleep(for: .milliseconds(6_000))
-            }
-        }
 
         // Reset heartbeat clock then start watchdog: if no event arrives for >15 s
         // (including heartbeats, which come every 5 s), treat as dropped connection.
@@ -329,8 +212,6 @@ final class ChatViewModel {
         streamTask = nil
         flushTask?.cancel()
         flushTask = nil
-        waitMessageTask?.cancel()
-        waitMessageTask = nil
         staleConnectionTask?.cancel()
         staleConnectionTask = nil
         streamingWaitMessage = nil
@@ -639,8 +520,6 @@ final class ChatViewModel {
             isThinkingActive = false
             if streamingWaitMessage != nil {
                 streamingWaitMessage = nil
-                waitMessageTask?.cancel()
-                waitMessageTask = nil
             }
             bufferToken(t, msgId: assistantMsgId)
 
@@ -749,8 +628,6 @@ final class ChatViewModel {
         isThinkingActive = false
         currentToolLabel = nil
         streamingWaitMessage = nil
-        waitMessageTask?.cancel()
-        waitMessageTask = nil
         staleConnectionTask?.cancel()
         staleConnectionTask = nil
 

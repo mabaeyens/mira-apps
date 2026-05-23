@@ -43,8 +43,8 @@ struct MessageBubble: View {
                         .font(.chatBody)
                         .textSelection(.enabled)
                         .foregroundStyle(Color.textPrimary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                         .background(
                             RoundedRectangle(cornerRadius: 18)
                                 .fill(Color.userBubbleBg)
@@ -56,7 +56,7 @@ struct MessageBubble: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 
     private var resendActions: some View {

@@ -76,7 +76,6 @@ struct ChatListView: View {
             HStack {
                 circleButton(icon: "line.3.horizontal", action: onMenu)
                 Spacer()
-                circleButton(icon: "line.3.horizontal.decrease.circle", action: {})
             }
             .padding(.horizontal, 16)
         }
