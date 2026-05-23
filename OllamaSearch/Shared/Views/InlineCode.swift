@@ -383,6 +383,7 @@ struct MarkdownTableBlock: View {
                 Text(attrCell(cell))
                     .font(isHeader ? .system(size: 13, weight: .semibold) : .system(size: 13))
                     .foregroundStyle(Color.textPrimary)
+                    .fixedSize(horizontal: true, vertical: false)
                     .frame(minWidth: 80, alignment: .leading)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)

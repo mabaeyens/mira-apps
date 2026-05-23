@@ -207,10 +207,9 @@ struct ConversationListView: View {
             }
             Button("Cancel", role: .cancel) { renamingConv = nil }
         }
-        .confirmationDialog(
+        .alert(
             "Delete \"\(deletingConv?.title ?? "")\"?",
-            isPresented: Binding(get: { deletingConv != nil }, set: { if !$0 { deletingConv = nil } }),
-            titleVisibility: .visible
+            isPresented: Binding(get: { deletingConv != nil }, set: { if !$0 { deletingConv = nil } })
         ) {
             Button("Delete", role: .destructive) {
                 if let conv = deletingConv { vm.deleteConversation(conv.id) }
