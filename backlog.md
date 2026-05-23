@@ -2,13 +2,12 @@
 
 ## Upcoming (prioritized)
 
-1. **[BLOCKER] macOS prose rendering** — see Known bugs above; fix before any release
-2. **iPad layout** — verify conversation list and detail pane on iPad-sized simulator
-3. **Project conversation count** — badge on project rows; verify accuracy after delete
+1. **iPad layout** — verify conversation list and detail pane on iPad-sized simulator
+2. **Project conversation count** — badge on project rows; verify accuracy after delete
 
 ## Known bugs
 
-- **[OPEN — 2026-05-22] macOS markdown prose rendering broken** — After today's session, assistant messages on macOS show paragraphs running together with no blank-line separation, bold definition items (e.g. `**Label**: text`) not separated, and `$\to$` LaTeX tokens not converted (only `$\rightarrow$` is in `preprocessLatex`). Tables render correctly (confirmed). Text selection works via NSTextView. The last attempted fix (2026-05-22 end of session) was changing the block separator in `buildAttr()` from `\n` + `paragraphSpacing:10` to `\n\n` — **not yet tested** as of commit. Root cause analysis: `paragraphSpacing` on a trailing `\n` is ignored by NSLayoutManager (it reads paragraph attributes from the first character of the paragraph, not the last). The `\n\n` fix creates an empty paragraph for visual spacing instead. If this still doesn't work, the likely next approach is using Swift `AttributedString(markdown:)` for the full joined content instead of per-block `NSAttributedString(markdown:)`. See `MessageBubble.swift` — `SelectableTextMacOS.buildAttr()` and `paragraphBlocks()`.
+- **[FIXED — 2026-05-23] iOS + macOS markdown prose rendering broken** — Root cause: UITextView/NSTextView bridges introduced for text selection replaced MarkdownUI, which broke list rendering and paragraph structure. Fix: restored `MarkdownUI.Markdown()` with `.markdownTheme(.app)` in `renderedMessageText`; removed `.textSelection(.enabled)` (caused pasteboard crash on iOS); copy is now via long-press context menu on both platforms using `UIPasteboard`/`NSPasteboard` directly.
 
 ## Notes
 
@@ -16,7 +15,7 @@
 - Release history: `.claude/projects/.../memory/backlog_testflight.md`
 - Workflow and development practices: `WORKFLOW.md`
 - Color.appAccent is canonical amber — never use Color.accent (SwiftUI redeclaration conflict)
-- iOS message rendering: `MessageContentView` splits content into prose (`SelectableText` / UITextView) and fenced code blocks (`CopyableCodeBlock`). Prose gets real cursor/drag selection; code blocks have syntax highlight + copy button.
+- Message rendering: `MarkdownUI.Markdown()` with `.markdownTheme(.app)` handles all content (prose, lists, headings, inline code, tables, code blocks). Code blocks use `CopyableCodeBlock` via the theme. Long-press → Copy on assistant bubbles copies the full raw message.
 - waitingMessages: 100 entries in ChatViewModel, shown after 3s, rotates every 6s
 - reconnectMessages: 103 entries in OllamaSearchApp (iOS), shown during startReconnect()
 - sidebarPinned defaults to true — never auto-hides unless user clicks pin icon
