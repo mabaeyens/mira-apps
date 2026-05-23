@@ -47,8 +47,8 @@ struct InputBar: View {
                     .font(.chatBody)
                     .foregroundStyle(Color.textPrimary)
                     .padding(.horizontal, 14)
-                    .padding(.top, 10)
-                    .padding(.bottom, 8)
+                    .padding(.top, 13)
+                    .padding(.bottom, 11)
                     .focused($isFocused)
                     .onSubmit {
                         guard !vm.isStreaming else { return }
@@ -81,7 +81,7 @@ struct InputBar: View {
                                 Image(systemName: "brain.fill")
                                     .font(.system(size: 10))
                                 Text("Thinking")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundStyle(Color.appAccent)
                             .padding(.horizontal, 7)
@@ -98,7 +98,7 @@ struct InputBar: View {
                             Image(systemName: project.localPath != nil ? "folder" : "network")
                                 .font(.system(size: 9, weight: .medium))
                             Text(project.name)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 12, weight: .medium))
                                 .lineLimit(1)
                         }
                         .foregroundStyle(Color.appAccent)
@@ -117,7 +117,7 @@ struct InputBar: View {
                         Text(vm.modelName.isEmpty
                             ? (vm.currentBackend == "omlx" ? "oMLX" : "Ollama")
                             : vm.modelName)
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundStyle(Color.textPrimary)
                     }
                     .padding(.horizontal, 8)
