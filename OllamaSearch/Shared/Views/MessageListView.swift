@@ -84,14 +84,45 @@ struct MessageListView: View {
                         )
                     }
 
-                    // Action buttons below last completed assistant message (iOS only)
-                    #if os(iOS)
+                    // Action buttons below last completed assistant message
                     if let lastMsg = messages.last,
                        lastMsg.role == .assistant,
                        !lastMsg.isStreaming,
                        !isStreaming {
+                        #if os(macOS)
+                        HStack(spacing: 0) {
+                            Button(action: {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(lastMsg.content, forType: .string)
+                            }) {
+                                Image(systemName: "doc.on.doc")
+                                    .frame(width: 32, height: 28)
+                            }
+                            .buttonStyle(.plain)
+                            Button(action: { onResend?() }) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .frame(width: 32, height: 28)
+                            }
+                            .buttonStyle(.plain)
+                            Button(action: { onEdit?() }) {
+                                Image(systemName: "pencil")
+                                    .frame(width: 32, height: 28)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.textSecondary)
+                        .background(Color.surfaceBg, in: RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
+                        .padding(.horizontal, 20)
+                        .padding(.top, 6)
+                        .padding(.bottom, 4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        #else
                         HStack(spacing: 24) {
-                            Button(action: { UIPasteboard.general.string = lastMsg.content }) {
+                            Button(action: {
+                                UIPasteboard.general.string = lastMsg.content
+                            }) {
                                 Image(systemName: "doc.on.doc")
                             }
                             Button(action: { onResend?() }) {
@@ -107,8 +138,8 @@ struct MessageListView: View {
                         .padding(.top, 6)
                         .padding(.bottom, 4)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        #endif
                     }
-                    #endif
 
                     // Collapsible thinking block — open while streaming, collapses on first token
                     if let content = thinkingContent {
