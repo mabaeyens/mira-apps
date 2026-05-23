@@ -606,7 +606,7 @@ private struct iOSPortraitView: View {
         ZStack(alignment: .leading) {
             // ── Main content ──────────────────────────────────────────────
             Group {
-                if chatVM.currentConvId.isEmpty && !chatVM.isStreaming {
+                if chatVM.currentConvId.isEmpty && !chatVM.isStreaming && chatVM.messages.isEmpty {
                     WelcomeView(
                         vm: chatVM,
                         onMenu: openSidebar
@@ -620,7 +620,7 @@ private struct iOSPortraitView: View {
                     .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: chatVM.currentConvId.isEmpty)
+            .animation(.easeInOut(duration: 0.2), value: chatVM.currentConvId.isEmpty && chatVM.messages.isEmpty)
 
             // ── Sidebar overlay ───────────────────────────────────────────
             if showSidebar {
@@ -639,7 +639,7 @@ private struct iOSPortraitView: View {
                     isReachable: isReachable,
                     connectionIcon: connectionIcon,
                     onNewChat: {
-                        chatVM.currentConvId = ""
+                        chatVM.prepareForNewConversation()
                         closeSidebar()
                     }
                 )
