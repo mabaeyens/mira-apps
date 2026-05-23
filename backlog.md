@@ -7,6 +7,7 @@
 
 ## Known bugs
 
+- **[FIXED — 2026-05-23] Markdown tables not horizontally scrollable** — Root cause: `renderedMessageText` was calling `MarkdownUI.Markdown()` directly, completely bypassing `MessageContentView` and `MarkdownTableBlock`. All prior fix attempts were correct but dead code. Fix (9c137e2): route `renderedMessageText` → `MessageContentView`; use `Markdown()` for prose segments (preserves headings/lists/rules) and `MarkdownTableBlock` for tables; explicit `tableWidth = cols × 160pt` on VStack inside `ScrollView(.horizontal)`; removed `.textSelection(.enabled)` from table cells (UITextView gesture interception).
 - **[FIXED — 2026-05-23] iOS + macOS markdown prose rendering broken** — Root cause: UITextView/NSTextView bridges introduced for text selection replaced MarkdownUI, which broke list rendering and paragraph structure. Fix: restored `MarkdownUI.Markdown()` with `.markdownTheme(.app)` in `renderedMessageText`; removed `.textSelection(.enabled)` (caused pasteboard crash on iOS); copy is now via long-press context menu on both platforms using `UIPasteboard`/`NSPasteboard` directly.
 
 ## Notes
@@ -15,7 +16,7 @@
 - Release history: `.claude/projects/.../memory/backlog_testflight.md`
 - Workflow and development practices: `WORKFLOW.md`
 - Color.appAccent is canonical amber — never use Color.accent (SwiftUI redeclaration conflict)
-- Message rendering: `MarkdownUI.Markdown()` with `.markdownTheme(.app)` handles all content (prose, lists, headings, inline code, tables, code blocks). Code blocks use `CopyableCodeBlock` via the theme. Long-press → Copy on assistant bubbles copies the full raw message.
+- Message rendering: `renderedMessageText` → `MessageContentView` splits content into segments: prose uses `Markdown(preprocessLatex())` with `.markdownTheme(.app)` (full block-level rendering), fenced code uses `CopyableCodeBlock`, GFM tables use `MarkdownTableBlock` (horizontally scrollable, 160pt columns). `SelectableText` struct in MessageBubble.swift is now dead code — safe to remove later. Long-press → Copy on assistant bubbles copies the full raw message.
 - waitingMessages removed (bde4bc5) — only "Sending…" / "Thinking…" shown; blinking cursor provides activity feedback
 - reconnectMessages: 103 entries in OllamaSearchApp (iOS), shown during startReconnect()
 - sidebarPinned defaults to true — never auto-hides unless user clicks pin icon
