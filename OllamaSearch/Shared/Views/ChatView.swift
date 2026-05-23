@@ -57,6 +57,7 @@ struct ChatView: View {
                     thinkingContent: vm.thinkingContent,
                     isThinkingActive: vm.isThinkingActive,
                     currentToolLabel: vm.currentToolLabel,
+                    agentStepLabel: vm.agentStepLabel,
                     topContentInset: {
                         #if os(iOS)
                         return onBack != nil ? 56 : 0

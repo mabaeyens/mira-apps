@@ -13,6 +13,7 @@ struct MessageListView: View {
     var thinkingContent: String? = nil
     var isThinkingActive: Bool = false
     var currentToolLabel: String? = nil
+    var agentStepLabel: String? = nil
     var topContentInset: CGFloat = 0
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
@@ -186,6 +187,9 @@ struct MessageListView: View {
                     }
                     if let label = currentToolLabel {
                         activityRow(icon: "gear", text: label)
+                    }
+                    if let label = agentStepLabel {
+                        activityRow(icon: "arrow.triangle.2.circlepath", text: label)
                     }
                     Color.clear.frame(height: 1).id(bottomAnchor)
                 }
