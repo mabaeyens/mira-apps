@@ -241,7 +241,9 @@ struct ConversationListView: View {
     private func projectRow(_ project: Project) -> some View {
         Button {
             vm.newConversation(projectId: project.id)
+            #if !os(macOS)
             onNewChat?()
+            #endif
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: project.icon)

@@ -72,6 +72,9 @@ struct InputBar: View {
                     .buttonStyle(.plain)
                     #if os(macOS)
                     .focusEffectDisabled()
+                    .popover(isPresented: showAddToChat, arrowEdge: .bottom) {
+                        addToChatPopoverMac
+                    }
                     #endif
 
                     // Thinking chip — visible only when ON; tap to turn off
@@ -147,11 +150,7 @@ struct InputBar: View {
         }
         .background(Color.appBg)
         .animation(.spring(duration: 0.2), value: vm.thinkingEnabled)
-        #if os(macOS)
-        .popover(isPresented: showAddToChat, arrowEdge: .top) {
-            addToChatPopoverMac
-        }
-        #else
+        #if os(iOS)
         .sheet(isPresented: showAddToChat) {
             addToChatSheetIOS
         }
