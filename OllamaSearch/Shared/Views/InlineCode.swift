@@ -244,7 +244,7 @@ struct HighlightedCodeView: View {
                         .textSelection(.enabled)
                 } else {
                     Text(code)
-                        .font(.system(size: 15, design: .monospaced))
+                        .font(.system(size: 16, design: .monospaced))
                         .foregroundStyle(Color.textPrimary)
                         .textSelection(.enabled)
                 }
@@ -260,11 +260,11 @@ struct HighlightedCodeView: View {
         let h = Highlightr()
         h?.setTheme(to: colorScheme == .dark ? "atom-one-dark" : "atom-one-light")
         #if os(macOS)
-        h?.theme.setCodeFont(NSFont(name: "Menlo", size: 15)
-            ?? NSFont.monospacedSystemFont(ofSize: 15, weight: .regular))
+        h?.theme.setCodeFont(NSFont(name: "Menlo", size: 16)
+            ?? NSFont.monospacedSystemFont(ofSize: 16, weight: .regular))
         #else
-        h?.theme.setCodeFont(UIFont(name: "Menlo", size: 15)
-            ?? UIFont.monospacedSystemFont(ofSize: 15, weight: .regular))
+        h?.theme.setCodeFont(UIFont(name: "Menlo", size: 16)
+            ?? UIFont.monospacedSystemFont(ofSize: 16, weight: .regular))
         #endif
         guard let ns = h?.highlight(code, as: lang) else { return nil }
         let mutable = NSMutableAttributedString(attributedString: ns)
@@ -356,22 +356,24 @@ struct MarkdownTableBlock: View {
     let rows: [[String]]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            tableRow(cells: headers, isHeader: true)
-            divider(opacity: 0.2)
-            ForEach(Array(rows.enumerated()), id: \.offset) { r, row in
-                tableRow(cells: padded(row), isHeader: false)
-                    .background(r % 2 == 1 ? Color.primary.opacity(0.03) : Color.clear)
-                divider(opacity: 0.08)
+        ScrollView(.horizontal, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 0) {
+                tableRow(cells: headers, isHeader: true)
+                divider(opacity: 0.2)
+                ForEach(Array(rows.enumerated()), id: \.offset) { r, row in
+                    tableRow(cells: padded(row), isHeader: false)
+                        .background(r % 2 == 1 ? Color.primary.opacity(0.03) : Color.clear)
+                    divider(opacity: 0.08)
+                }
             }
+            .fixedSize(horizontal: true, vertical: false)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .padding(.vertical, 4)
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -381,7 +383,7 @@ struct MarkdownTableBlock: View {
                 Text(attrCell(cell))
                     .font(isHeader ? .system(size: 13, weight: .semibold) : .system(size: 13))
                     .foregroundStyle(Color.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(minWidth: 80, alignment: .leading)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .textSelection(.enabled)
@@ -390,7 +392,6 @@ struct MarkdownTableBlock: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
         .background(isHeader ? Color.primary.opacity(0.07) : Color.clear)
     }
 
