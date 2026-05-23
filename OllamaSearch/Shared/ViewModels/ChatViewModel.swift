@@ -54,6 +54,7 @@ final class ChatViewModel {
     var currentSearchQuery: String? = nil
     var isFetching: Bool = false
     var currentToolLabel: String? = nil
+    var agentStepLabel: String? = nil
 
     var errorMessage: String? = nil
     /// Non-nil while a conversation's message history is being fetched.
@@ -154,6 +155,7 @@ final class ChatViewModel {
         currentSearchQuery = nil
         isFetching = false
         currentToolLabel = nil
+        agentStepLabel = nil
         thinkingContent = nil
         isThinkingActive = false
 
@@ -548,6 +550,9 @@ final class ChatViewModel {
         case .toolDone:
             currentToolLabel = nil
 
+        case .agentStep(let step, let tool):
+            agentStepLabel = "Step \(step) — \(tool)"
+
         case .fetchContext(let fetches):
             isFetching = false
             updateMessage(id: assistantMsgId) { $0.fetchContext = fetches }
@@ -564,8 +569,10 @@ final class ChatViewModel {
             flushPendingTokens()
             updateMessage(id: assistantMsgId) { $0.content = content; $0.isStreaming = false }
             isStreaming = false
+            streamingWaitMessage = nil
             currentSearchQuery = nil
             isFetching = false
+            agentStepLabel = nil
             // loadConversations() is called in finishStreaming() after the loop,
             // which runs after .title and .compress events have also been processed.
 
@@ -634,6 +641,7 @@ final class ChatViewModel {
         isStreaming = false
         isThinkingActive = false
         currentToolLabel = nil
+        agentStepLabel = nil
         streamingWaitMessage = nil
         staleConnectionTask?.cancel()
         staleConnectionTask = nil
