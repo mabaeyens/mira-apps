@@ -355,8 +355,14 @@ struct MarkdownTableBlock: View {
     let headers: [String]
     let rows: [[String]]
 
+    // Each cell: 140pt content + 10pt padding on each side = 160pt; plus 1pt dividers between cols
+    private var tableWidth: CGFloat {
+        let cols = CGFloat(headers.count)
+        return cols * 160 + max(cols - 1, 0)
+    }
+
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 0) {
                 tableRow(cells: headers, isHeader: true)
                 divider(opacity: 0.2)
@@ -366,6 +372,7 @@ struct MarkdownTableBlock: View {
                     divider(opacity: 0.08)
                 }
             }
+            .frame(width: tableWidth, alignment: .leading)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
                     .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
@@ -385,7 +392,6 @@ struct MarkdownTableBlock: View {
                     .frame(width: 140, alignment: .leading)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
-                    .textSelection(.enabled)
                 if i < cells.count - 1 {
                     Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
                 }
