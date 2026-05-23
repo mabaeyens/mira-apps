@@ -394,7 +394,7 @@ struct ConversationListView: View {
         #if os(macOS)
         let rowFill: Color = isSelected ? Color.primary.opacity(0.08) : .clear
         #else
-        let rowFill: Color = isSelected ? Color.appAccent.opacity(0.14) : Color.surfaceBg.opacity(0.45)
+        let rowFill: Color = isSelected ? Color.appAccent.opacity(0.14) : .clear
         #endif
         return HStack {
             VStack(alignment: .leading, spacing: 4) {

@@ -619,10 +619,7 @@ private struct iOSPortraitView: View {
                 if chatVM.currentConvId.isEmpty {
                     WelcomeView(
                         vm: chatVM,
-                        onMenu: openSidebar,
-                        onSettings: onSettings,
-                        isReachable: isReachable,
-                        connectionIcon: connectionIcon
+                        onMenu: openSidebar
                     )
                     .transition(.opacity)
                 } else {
