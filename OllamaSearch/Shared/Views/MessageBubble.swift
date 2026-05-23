@@ -202,6 +202,7 @@ private struct SelectableText: View {
             .foregroundStyle(Color.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
+            .textSelection(.enabled)
     }
 }
 
@@ -235,6 +236,5 @@ struct MessageContentView: View {
                 }
             }
         }
-        .textSelection(.enabled)
     }
 }

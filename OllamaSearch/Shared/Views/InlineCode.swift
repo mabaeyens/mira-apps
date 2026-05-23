@@ -366,7 +366,6 @@ struct MarkdownTableBlock: View {
                     divider(opacity: 0.08)
                 }
             }
-            .fixedSize(horizontal: true, vertical: false)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
                     .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
@@ -383,8 +382,7 @@ struct MarkdownTableBlock: View {
                 Text(attrCell(cell))
                     .font(isHeader ? .system(size: 13, weight: .semibold) : .system(size: 13))
                     .foregroundStyle(Color.textPrimary)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .frame(minWidth: 80, alignment: .leading)
+                    .frame(width: 140, alignment: .leading)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .textSelection(.enabled)
