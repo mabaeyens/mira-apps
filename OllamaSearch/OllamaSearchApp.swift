@@ -589,7 +589,6 @@ private struct iOSPortraitView: View {
     let onSettings: () -> Void
 
     @State private var showSidebar = false
-    @State private var showChatList = false
 
     private func openSidebar() {
         UIApplication.shared.sendAction(
@@ -601,15 +600,6 @@ private struct iOSPortraitView: View {
 
     private func closeSidebar() {
         withAnimation(.easeInOut(duration: 0.25)) { showSidebar = false }
-    }
-
-    private func openChatList() {
-        closeSidebar()
-        withAnimation(.easeInOut(duration: 0.25)) { showChatList = true }
-    }
-
-    private func closeChatList() {
-        withAnimation(.easeInOut(duration: 0.25)) { showChatList = false }
     }
 
     var body: some View {
@@ -625,32 +615,12 @@ private struct iOSPortraitView: View {
                 } else {
                     ChatView(
                         vm: chatVM,
-                        onBack: {
-                            chatVM.stopStreaming()
-                            chatVM.isStreaming = false
-                            chatVM.currentConvId = ""
-                        }
+                        onBack: { openSidebar() }
                     )
                     .transition(.opacity)
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: chatVM.currentConvId.isEmpty)
-
-            // ── Chat list overlay (full screen) ───────────────────────────
-            if showChatList {
-                ChatListView(
-                    vm: chatVM,
-                    onSelect: { _ in closeChatList() },
-                    onMenu: { closeChatList(); openSidebar() },
-                    onNewChat: {
-                        chatVM.currentConvId = ""
-                        closeChatList()
-                    }
-                )
-                .ignoresSafeArea(edges: .bottom)
-                .transition(.move(edge: .trailing))
-                .zIndex(1)
-            }
 
             // ── Sidebar overlay ───────────────────────────────────────────
             if showSidebar {
@@ -668,7 +638,6 @@ private struct iOSPortraitView: View {
                     onSettings: onSettings,
                     isReachable: isReachable,
                     connectionIcon: connectionIcon,
-                    onChats: { openChatList() },
                     onNewChat: {
                         chatVM.currentConvId = ""
                         closeSidebar()

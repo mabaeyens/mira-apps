@@ -16,7 +16,7 @@
 - Workflow and development practices: `WORKFLOW.md`
 - Color.appAccent is canonical amber — never use Color.accent (SwiftUI redeclaration conflict)
 - Message rendering: `MarkdownUI.Markdown()` with `.markdownTheme(.app)` handles all content (prose, lists, headings, inline code, tables, code blocks). Code blocks use `CopyableCodeBlock` via the theme. Long-press → Copy on assistant bubbles copies the full raw message.
-- waitingMessages: 100 entries in ChatViewModel, shown after 3s, rotates every 6s
+- waitingMessages removed (bde4bc5) — only "Sending…" / "Thinking…" shown; blinking cursor provides activity feedback
 - reconnectMessages: 103 entries in OllamaSearchApp (iOS), shown during startReconnect()
 - sidebarPinned defaults to true — never auto-hides unless user clicks pin icon
 - projectsExpanded (@AppStorage) persists projects section collapse state across launches

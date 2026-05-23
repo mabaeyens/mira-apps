@@ -237,18 +237,20 @@ struct HighlightedCodeView: View {
     ]
 
     var body: some View {
-        Group {
-            if let attr = highlighted {
-                Text(attr)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-            } else {
-                Text(code)
-                    .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(Color.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
+        ScrollView(.horizontal, showsIndicators: false) {
+            Group {
+                if let attr = highlighted {
+                    Text(attr)
+                        .textSelection(.enabled)
+                } else {
+                    Text(code)
+                        .font(.system(size: 15, design: .monospaced))
+                        .foregroundStyle(Color.textPrimary)
+                        .textSelection(.enabled)
+                }
             }
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(minWidth: 0, alignment: .leading)
         }
         .task(id: colorScheme) { highlighted = computeHighlighted() }
     }
@@ -258,11 +260,11 @@ struct HighlightedCodeView: View {
         let h = Highlightr()
         h?.setTheme(to: colorScheme == .dark ? "atom-one-dark" : "atom-one-light")
         #if os(macOS)
-        h?.theme.setCodeFont(NSFont(name: "Menlo", size: 13)
-            ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular))
+        h?.theme.setCodeFont(NSFont(name: "Menlo", size: 15)
+            ?? NSFont.monospacedSystemFont(ofSize: 15, weight: .regular))
         #else
-        h?.theme.setCodeFont(UIFont(name: "Menlo", size: 13)
-            ?? UIFont.monospacedSystemFont(ofSize: 13, weight: .regular))
+        h?.theme.setCodeFont(UIFont(name: "Menlo", size: 15)
+            ?? UIFont.monospacedSystemFont(ofSize: 15, weight: .regular))
         #endif
         guard let ns = h?.highlight(code, as: lang) else { return nil }
         let mutable = NSMutableAttributedString(attributedString: ns)
