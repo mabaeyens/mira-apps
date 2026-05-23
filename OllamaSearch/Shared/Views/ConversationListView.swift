@@ -141,7 +141,7 @@ struct ConversationListView: View {
                             sectionHeader("Projects")
                             Spacer()
                             Image(systemName: projectsExpanded ? "chevron.down" : "chevron.right")
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(Color.textSecondary)
                         }
                     }
@@ -240,6 +240,7 @@ struct ConversationListView: View {
     private func projectRow(_ project: Project) -> some View {
         Button {
             vm.newConversation(projectId: project.id)
+            onNewChat?()
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: project.icon)
