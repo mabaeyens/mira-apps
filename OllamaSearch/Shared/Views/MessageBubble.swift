@@ -161,9 +161,7 @@ struct MessageBubble: View {
 
     @ViewBuilder
     private var renderedMessageText: some View {
-        Markdown(preprocessLatex(message.content))
-            .markdownTheme(.app)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        MessageContentView(content: message.content)
     }
 }
 
@@ -226,7 +224,8 @@ struct MessageContentView: View {
                 case .text(let prose):
                     let trimmed = prose.trimmingCharacters(in: .newlines)
                     if !trimmed.isEmpty {
-                        SelectableText(content: trimmed)
+                        Markdown(preprocessLatex(trimmed))
+                            .markdownTheme(.app)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 case .codeBlock(let lang, let code):
