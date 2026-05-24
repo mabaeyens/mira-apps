@@ -449,6 +449,7 @@ final class ChatViewModel {
             do {
                 try await api.deleteConversation(id: id)
                 await loadConversations()
+                await loadProjects()
                 if id == currentConvId {
                     if let first = conversations.first {
                         selectConversation(first.id)
@@ -551,7 +552,7 @@ final class ChatViewModel {
             currentToolLabel = nil
 
         case .agentStep(let step, let tool):
-            agentStepLabel = "Step \(step) — \(tool)"
+            agentStepLabel = "Step \(step)/15 · \(tool)"
 
         case .fetchContext(let fetches):
             isFetching = false
