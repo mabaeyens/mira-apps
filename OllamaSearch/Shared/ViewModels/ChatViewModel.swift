@@ -242,18 +242,29 @@ final class ChatViewModel {
         return messages[messages.count - 2]
     }
 
-    /// Drops the failed exchange and re-sends the same question.
+    /// Non-nil after any completed exchange (success or failure, not streaming).
+    /// Used by resendLast() and editLast() for the bottom action bar.
+    var lastUserMessage: Message? {
+        guard !isStreaming,
+              let last = messages.last, last.role == .assistant,
+              messages.count >= 2,
+              messages[messages.count - 2].role == .user
+        else { return nil }
+        return messages[messages.count - 2]
+    }
+
+    /// Drops the last exchange and re-sends the same question.
     func resendLast() {
-        guard let userMsg = lastFailedUserMessage else { return }
+        guard let userMsg = lastUserMessage else { return }
         let text = userMsg.content
         if messages.count >= 2 { messages.removeLast(2) }
         inputText = text
         send()
     }
 
-    /// Drops the failed exchange and restores the question to the input field.
+    /// Drops the last exchange and restores the question to the input field.
     func editLast() {
-        guard let userMsg = lastFailedUserMessage else { return }
+        guard let userMsg = lastUserMessage else { return }
         let text = userMsg.content
         if messages.count >= 2 { messages.removeLast(2) }
         inputText = text
