@@ -12,11 +12,11 @@ Each release gets its own dated section at the top (newest first).
 **Goal:** Confirm `NavigationSplitView` renders correctly on iPad.
 
 Steps:
-- [ ] Open Xcode, select an iPad simulator (e.g. iPad Pro 13")
-- [ ] Launch the app
-- [ ] Verify: conversation list on the left column, chat detail on the right
-- [ ] Tap a conversation in the list — detail panel updates without pushing the list off-screen
-- [ ] Rotate to portrait — layout degrades gracefully (list collapses or overlays)
+- [x] Open Xcode, select an iPad simulator (e.g. iPad Pro 13")
+- [x] Launch the app
+- [x] Verify: conversation list on the left column, chat detail on the right
+- [x] Tap a conversation in the list — detail panel updates without pushing the list off-screen
+- [x] Rotate to portrait — layout degrades gracefully (list collapses or overlays)
 
 Expected: Two-column layout in landscape; no blank detail pane on cold launch.
 
@@ -29,11 +29,11 @@ Expected: Two-column layout in landscape; no blank detail pane on cold launch.
 Setup: Mira server running (`python server.py` or LaunchAgent active).
 
 Steps:
-- [ ] Send a prompt that triggers tool use, e.g.: "Search the web for the latest Swift concurrency proposals and summarise the top 3"
-- [ ] While the response streams, verify an activity row appears: `↻  Step 1/15 · web_search` (or similar tool name)
-- [ ] Step counter increments with each tool call: Step 2/15, Step 3/15…
-- [ ] Activity row disappears once the final response is complete
-- [ ] Verify the response text is coherent and includes source links
+- [x] Send a prompt that triggers tool use, e.g.: "Search the web for the latest Swift concurrency proposals and summarise the top 3"
+- [x] While the response streams, verify an activity row appears: `↻  Step 1/15 · web_search` (or similar tool name)
+- [x] Step counter increments with each tool call: Step 2/15, Step 3/15…
+- [x] Activity row disappears once the final response is complete
+- [x] Verify the response text is coherent and includes source links
 
 Expected: Step counter visible during tool calls; clears on completion; no stale indicator left on screen.
 
@@ -44,9 +44,9 @@ Expected: Step counter visible during tool calls; clears on completion; no stale
 **Goal:** Confirm the project badge count updates immediately after deleting a conversation.
 
 Steps:
-- [ ] In the sidebar, find a project with at least 2 conversations; note the badge count (e.g. "3")
-- [ ] Delete one conversation from that project (swipe-to-delete or context menu)
-- [ ] Without navigating away, verify the badge count decreases by 1 (e.g. "2")
+- [x] In the sidebar, find a project with at least 2 conversations; note the badge count (e.g. "3")
+- [x] Delete one conversation from that project (swipe-to-delete or context menu)
+- [x] Without navigating away, verify the badge count decreases by 1 (e.g. "2")
 
 Expected: Badge refreshes synchronously — no stale count, no manual reload needed.
 
@@ -57,14 +57,29 @@ Expected: Badge refreshes synchronously — no stale count, no manual reload nee
 **Goal:** Confirm `task_done` exits the loop cleanly and the divergence guard does not false-fire.
 
 Steps:
-- [ ] Send a multi-step prompt that requires several tool calls, e.g.:
+- [x] Send a multi-step prompt that requires several tool calls, e.g.:
   > "Find the current Python version, check if there are any open CVEs for it, and give me a one-paragraph summary."
-- [ ] Observe the activity rows: step counter increments, tool names change (search → fetch → …)
-- [ ] Response completes with a coherent final answer — no truncation, no error message
-- [ ] Loop exits after `task_done` — no extra tool calls after the answer appears
-- [ ] Divergence guard check: repeat the same prompt a second time — response should complete normally (guard should not fire on a legitimate task)
+- [x] Observe the activity rows: step counter increments, tool names change (search → fetch → …)
+- [x] Response completes with a coherent final answer — no truncation, no error message
+- [x] Loop exits after `task_done` — no extra tool calls after the answer appears
+- [x] Divergence guard check: repeat the same prompt a second time — response should complete normally (guard should not fire on a legitimate task)
 
 Expected: Clean loop exit, accurate answer, no "divergence detected" or error event in the response.
+
+---
+
+### 6. Edit and Resend (Bug Fix)
+
+**Goal:** Confirm Edit and Resend work after a successful response, not only after a failure.
+
+Steps:
+- [ ] Send any message and wait for a complete response
+- [ ] Tap **Resend** (↺) — conversation rewinds to just before that turn and re-sends automatically
+- [ ] Tap **Edit** (pencil) — conversation rewinds and the message text appears in the input field
+- [ ] macOS: same buttons in the bottom-left action bar behave identically
+- [ ] Error case: disconnect server, send a message — bubble-level Edit/Resend on the user bubble still appears and works
+
+Expected: Edit/Resend work on every completed turn, not only when the server returned an error.
 
 ---
 
