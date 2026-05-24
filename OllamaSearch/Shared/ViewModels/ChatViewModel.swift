@@ -307,15 +307,17 @@ final class ChatViewModel {
     /// Check Mira health and update backendReady. Call once on connect, then poll.
     func refreshBackendHealth() async {
         let h = await APIClient.shared.health()
-        if h.startupStatus == .ready {
+        switch h.startupStatus {
+        case .ready:
             if h.backendReady {
                 backendLoadingSince = nil
             } else if backendLoadingSince == nil {
                 backendLoadingSince = Date()
             }
             backendReady = h.backendReady
+        case .starting, .unavailable:
+            backendReady = false
         }
-        // If Mira itself isn't up yet, leave backendReady unchanged.
     }
 
     /// Start periodic backend health polling every 10 s (cancels on next call).
