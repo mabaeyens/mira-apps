@@ -69,11 +69,12 @@ struct OllamaSearchApp: App {
                         showingConnectionSettings = true
                     }
                     .sheet(isPresented: $showingConnectionSettings) {
-                        ConnectionView { newURL in
+                        ConnectionView { newURL, token in
                             reconnectTask?.cancel()
                             reconnectTask = nil
                             reconnectMessage = nil
                             isReachable = true
+                            APIClient.shared.authToken = token
                             APIClient.shared.baseURL = newURL
                             activeURL = newURL
                             showingConnectionSettings = false
@@ -81,7 +82,8 @@ struct OllamaSearchApp: App {
                         .environment(connectionsStore)
                     }
                 } else {
-                    ConnectionView { url in
+                    ConnectionView { url, token in
+                        APIClient.shared.authToken = token
                         APIClient.shared.baseURL = url
                         activeURL = url
                     }
@@ -94,6 +96,7 @@ struct OllamaSearchApp: App {
                 let url = await found
                 withAnimation(.easeOut(duration: 0.4)) {
                     if let url {
+                        APIClient.shared.authToken = connectionsStore.token(for: url.absoluteString)
                         APIClient.shared.baseURL = url
                         activeURL = url
                     }
@@ -151,6 +154,7 @@ struct OllamaSearchApp: App {
                     // No response at all — try other saved connections.
                     reconnectMessage = Self.reconnectMessages.randomElement()
                     if let found = await autoConnect() {
+                        APIClient.shared.authToken = connectionsStore.token(for: found.absoluteString)
                         APIClient.shared.baseURL = found
                         activeURL = found
                         isReachable = true

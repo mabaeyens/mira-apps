@@ -6,11 +6,13 @@ struct SavedConnection: Codable, Identifiable, Hashable {
     var id: UUID
     var label: String
     var urlString: String
+    var token: String?
 
-    init(id: UUID = UUID(), label: String, urlString: String) {
+    init(id: UUID = UUID(), label: String, urlString: String, token: String? = nil) {
         self.id = id
         self.label = label
         self.urlString = urlString
+        self.token = token
     }
 
     var url: URL? { URL(string: urlString) }
@@ -28,11 +30,9 @@ final class SavedConnectionsStore {
     private static let activeKey     = "activeConnectionURL"
 
     // ── Known connections ──────────────────────────────────────────────────────
-    // Edit this array locally with your real IPs/hostnames.
-    // After editing, run once to prevent git from tracking your IPs:
-    //   git update-index --skip-worktree OllamaSearch/iOS/SavedConnections.swift
+    // Add your own connections via the UI. The seeds array ships empty so no
+    // real IPs are committed to the repository.
     static let seeds: [(label: String, url: String)] = [
-        ("Local", "http://192.168.0.188:8000"),
         // ("Home WiFi",  "http://192.168.x.x:8000"),
         // ("Tailscale",  "https://your-mac.ts.net:8443"),
     ]
@@ -75,6 +75,16 @@ final class SavedConnectionsStore {
     func setActive(_ urlString: String) {
         activeURLString = urlString
         UserDefaults.standard.set(urlString, forKey: Self.activeKey)
+    }
+
+    func update(_ connection: SavedConnection) {
+        guard let idx = connections.firstIndex(where: { $0.id == connection.id }) else { return }
+        connections[idx] = connection
+        persist()
+    }
+
+    func token(for urlString: String) -> String? {
+        connections.first { $0.urlString == urlString }?.token
     }
 
     private func persist() {
