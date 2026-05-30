@@ -519,6 +519,18 @@ struct iOSConnectedView: View {
                 )
             }
         }
+        .sheet(isPresented: $chatVM.showModelPicker) {
+            ModelPickerView(
+                currentBackend: chatVM.currentBackend,
+                currentModelId: chatVM.modelName,
+                isSwitching: chatVM.isSwitchingBackend,
+                switchStatusMessage: chatVM.switchStatusMessage,
+                liveModelName: chatVM.modelName,
+                liveContextWindow: chatVM.contextWindow,
+                onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) },
+                thinkingEnabled: $chatVM.thinkingEnabled
+            )
+        }
         .alert("Error", isPresented: Binding(
             get: { chatVM.errorMessage != nil },
             set: { if !$0 { chatVM.errorMessage = nil } }

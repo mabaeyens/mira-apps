@@ -86,6 +86,7 @@ struct ChatView: View {
         #else
         .navigationTitle(currentTitle)
         #endif
+        #if os(macOS)
         .sheet(isPresented: $vm.showModelPicker) {
             ModelPickerView(
                 currentBackend: vm.currentBackend,
@@ -98,6 +99,7 @@ struct ChatView: View {
                 thinkingEnabled: $vm.thinkingEnabled
             )
         }
+        #endif
         #if os(iOS)
         .sheet(isPresented: $showOptions) {
             ConversationOptionsSheet(
