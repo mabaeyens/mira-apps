@@ -371,10 +371,6 @@ struct MacRootView: View {
                     chatVM.startHealthPolling()
                     await chatVM.loadProjects()
                     await chatVM.loadConversations()
-                    if chatVM.currentConvId.isEmpty,
-                       let first = chatVM.conversations.first {
-                        chatVM.selectConversation(first.id)
-                    }
                 }
             } else {
                 SplashView(state: connection.state) {

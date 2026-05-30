@@ -62,11 +62,15 @@ struct ChatView: View {
                         #if os(iOS)
                         return onBack != nil ? 56 : 0
                         #else
-                        return 0
+                        return 32
                         #endif
                     }(),
                     onResend: { vm.resendLast() },
-                    onEdit: { vm.editLast() }
+                    onEdit: { vm.editLast() },
+                    onSendSuggestion: { text in
+                        vm.inputText = text
+                        vm.send()
+                    }
                 )
                 #if os(iOS)
                 if onBack != nil { floatingPillNav }
