@@ -24,7 +24,11 @@ struct ServerInfo: Codable {
     }
 
     var backendDisplayName: String {
-        backend == "omlx" ? "oMLX" : "Ollama"
+        switch backend {
+        case "mlx-lm": return "mlx-lm"
+        case "omlx":   return "oMLX"
+        default:       return "Ollama"
+        }
     }
 
     var ssdCacheDirShortened: String {
