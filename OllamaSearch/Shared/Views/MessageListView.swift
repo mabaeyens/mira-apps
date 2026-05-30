@@ -17,6 +17,7 @@ struct MessageListView: View {
     var topContentInset: CGFloat = 0
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
+    var onSendSuggestion: ((String) -> Void)? = nil
 
     @State private var scrollPinned = true
     @State private var thinkingExpanded = true
@@ -51,15 +52,24 @@ struct MessageListView: View {
     private var welcomeView: some View {
         VStack(spacing: 0) {
             Spacer()
-            MiraLogoView(size: 120)
-            Spacer().frame(height: 22)
-            Text("Mira")
-                .font(.bookerly(size: 28, weight: .semibold))
+            MiraLogoView(size: 80)
+            Spacer().frame(height: 20)
+            Text("How can I help?")
+                .font(.bookerly(size: 32, weight: .light))
                 .foregroundStyle(Color.textPrimary)
             Spacer().frame(height: 8)
-            Text("How can I help?")
-                .font(.bookerly(size: 20))
+            #if os(macOS)
+            Text("Running locally on your Mac")
+                .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
+            Spacer().frame(height: 36)
+            HStack(spacing: 10) {
+                ForEach(["Summarize a document", "Write a script", "Explain some code", "What's on my mind"], id: \.self) { prompt in
+                    Button(prompt) { onSendSuggestion?(prompt) }
+                        .buttonStyle(SuggestionChipStyle())
+                }
+            }
+            #endif
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -73,6 +83,7 @@ struct MessageListView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: topContentInset)
+                    VStack(spacing: 0) {
                     ForEach(messages) { msg in
                         let isLastStreamingEmpty = msg.id == messages.last?.id
                             && msg.isStreaming && msg.content.isEmpty
@@ -192,6 +203,9 @@ struct MessageListView: View {
                         activityRow(icon: "arrow.triangle.2.circlepath", text: label)
                     }
                     Color.clear.frame(height: 1).id(bottomAnchor)
+                    }
+                    .frame(maxWidth: 780)
+                    .frame(maxWidth: .infinity)
                 }
             }
             .scrollDismissesKeyboard(.immediately)
@@ -277,3 +291,20 @@ struct MessageListView: View {
         .padding(.vertical, 4)
     }
 }
+
+#if os(macOS)
+struct SuggestionChipStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12))
+            .foregroundStyle(Color.textSecondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .strokeBorder(Color.borderSubtle.opacity(configuration.isPressed ? 1.0 : 0.55), lineWidth: 1)
+            )
+            .opacity(configuration.isPressed ? 0.65 : 1)
+    }
+}
+#endif
