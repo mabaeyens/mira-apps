@@ -18,7 +18,7 @@ struct SSEClient {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 300
         config.timeoutIntervalForResource = 3600
-        return URLSession(configuration: config, delegateQueue: nil)
+        return URLSession(configuration: config, delegate: nil, delegateQueue: nil)
     }()
 
     /// Opens an SSE stream for a POST /chat request.
