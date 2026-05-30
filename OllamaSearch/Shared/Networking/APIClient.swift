@@ -20,6 +20,12 @@ final class APIClient {
     // Regenerate if the Tailscale cert is rotated: openssl x509 -in <cert> -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | base64
     private let pinnedPublicKeyHash = "99rNnbhgsl9Wbxt3WgflG4iEVT6WHwIUGbmtwa9Whvk="
 
+    // Static so nonisolated probe() can access it without @MainActor.
+    private static let staticPinnedSession: URLSession = {
+        let hash = "99rNnbhgsl9Wbxt3WgflG4iEVT6WHwIUGbmtwa9Whvk="
+        return URLSession(configuration: .default, delegate: CertPinner(pinnedHash: hash), delegateQueue: nil)
+    }()
+
     private lazy var pinnedSession: URLSession = {
         URLSession(configuration: .default, delegate: CertPinner(pinnedHash: pinnedPublicKeyHash), delegateQueue: nil)
     }()
@@ -108,12 +114,13 @@ final class APIClient {
     /// where VPN-induced network stalls can prevent sleep continuations from firing.
     nonisolated func probe(_ url: URL, deadline: Double = 5) async -> Bool {
         guard let healthURL = URL(string: "/health", relativeTo: url) else { return false }
+        let probeSession = url.scheme == "https" ? APIClient.staticPinnedSession : URLSession.shared
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask {
                 var req = URLRequest(url: healthURL)
                 req.timeoutInterval = deadline
                 do {
-                    let (_, response) = try await URLSession.shared.data(for: req)
+                    let (_, response) = try await probeSession.data(for: req)
                     return (response as? HTTPURLResponse)?.statusCode == 200
                 } catch { return false }
             }
