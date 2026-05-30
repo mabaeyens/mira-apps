@@ -149,6 +149,64 @@ final class APIClient {
         return try JSONDecoder().decode(ServerInfo.self, from: data)
     }
 
+    // ── Model browser ─────────────────────────────────────────────────────────
+
+    func fetchModels() async throws -> ModelsResponse {
+        let url = baseURL.appendingPathComponent("models")
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        authed(&req)
+        let (data, _) = try await URLSession.shared.data(for: req)
+        let decoder = JSONDecoder()
+        return try decoder.decode(ModelsResponse.self, from: data)
+    }
+
+    /// POST /models/switch — stops the current model and starts `modelId` on `backend`.
+    /// Blocks until the new server is ready (up to 120 s).
+    func switchModel(backend: String, modelId: String) async throws -> BackendInfo {
+        let url = baseURL.appendingPathComponent("models/switch")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["backend": backend, "model_id": modelId])
+        req.timeoutInterval = 150
+        authed(&req)
+        _ = try await URLSession.shared.data(for: req)
+        return try await getBackend()
+    }
+
+    /// POST /models/pull — returns an AsyncThrowingStream of PullProgress events.
+    func pullModel(modelId: String) -> AsyncThrowingStream<PullProgress, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                let url = self.baseURL.appendingPathComponent("models/pull")
+                var req = URLRequest(url: url)
+                req.httpMethod = "POST"
+                req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                req.httpBody = try? JSONEncoder().encode(["model_id": modelId])
+                req.timeoutInterval = 3600
+                self.authed(&req)
+
+                do {
+                    let (bytes, _) = try await URLSession.shared.bytes(for: req)
+                    let decoder = JSONDecoder()
+                    for try await line in bytes.lines {
+                        guard line.hasPrefix("data: ") else { continue }
+                        let payload = String(line.dropFirst(6))
+                        guard let data = payload.data(using: .utf8),
+                              let progress = try? decoder.decode(PullProgress.self, from: data)
+                        else { continue }
+                        continuation.yield(progress)
+                        if progress.type == "done" || progress.type == "error" { break }
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+
     // ── Chat ──────────────────────────────────────────────────────────────────
 
     /// Build the URLRequest for POST /chat (multipart).
