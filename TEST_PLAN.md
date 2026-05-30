@@ -73,11 +73,11 @@ Expected: Clean loop exit, accurate answer, no "divergence detected" or error ev
 **Goal:** Confirm Edit and Resend work after a successful response, not only after a failure.
 
 Steps:
-- [ ] Send any message and wait for a complete response
-- [ ] Tap **Resend** (↺) — conversation rewinds to just before that turn and re-sends automatically
-- [ ] Tap **Edit** (pencil) — conversation rewinds and the message text appears in the input field
-- [ ] macOS: same buttons in the bottom-left action bar behave identically
-- [ ] Error case: disconnect server, send a message — bubble-level Edit/Resend on the user bubble still appears and works
+- [x] Send any message and wait for a complete response
+- [x] Tap **Resend** (↺) — conversation rewinds to just before that turn and re-sends automatically
+- [x] Tap **Edit** (pencil) — conversation rewinds and the message text appears in the input field
+- [x] macOS: same buttons in the bottom-left action bar behave identically
+- [x] Error case: disconnect server, send a message — bubble-level Edit/Resend on the user bubble still appears and works
 
 Expected: Edit/Resend work on every completed turn, not only when the server returned an error.
 

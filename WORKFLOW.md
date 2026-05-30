@@ -1,4 +1,4 @@
-# Mira Apps — Development Workflow
+# Mira Apps -- Development Workflow
 
 Reference for Claude Code sessions working on mira-apps (iOS + macOS). See `MIRA_WORKFLOW.md` (root) for the complete workflow guide and practices.
 
@@ -7,7 +7,6 @@ Reference for Claude Code sessions working on mira-apps (iOS + macOS). See `MIRA
 ## Session Checklist
 
 Before starting work on mira-apps:
-
 - [ ] Have you written a 5-bullet spec? (Do this outside Claude Code)
 - [ ] Have you checked the sibling app (`mira-core`) for patterns? (API client, state management, etc.)
 - [ ] Is this a follow-up to recent work? If yes, skip `/mira-status`.
@@ -18,19 +17,19 @@ Before starting work on mira-apps:
 
 ### iOS Entry Points
 
-- `OllamaSearch/App.swift` — main app, scene setup
-- `OllamaSearch/iOSRootView.swift` — NavigationStack for iPhone, NavigationSplitView for iPad
+- `OllamaSearch/App.swift` -- main app, scene setup
+- `OllamaSearch/iOSRootView.swift` -- NavigationStack for iPhone, NavigationSplitView for iPad
 
 ### macOS Entry Points
 
-- `OllamaSearchApp.swift` — main app, menu bar, window management
-- `OllamaSearchApp/MacRootView.swift` — NavigationSplitView with pinned sidebar (pattern: proven, do not change)
+- `OllamaSearchApp.swift` -- main app, menu bar, window management
+- `OllamaSearchApp/MacRootView.swift` -- NavigationSplitView with pinned sidebar (pattern: proven, do not change)
 
 ### Shared Components
 
-- `ConversationListView.swift` — conversation list UI, around 480 lines
-- `ChatView.swift` — message rendering
-- `APIClient.swift` — API calls to mira-core backend
+- `ConversationListView.swift` -- conversation list UI, around 480 lines
+- `ChatView.swift` -- message rendering
+- `APIClient.swift` -- API calls to mira-core backend
 
 ---
 
@@ -46,8 +45,8 @@ Before starting work on mira-apps:
 - iPhone: Full-screen detail view (columnVisibility set to `.detailOnly` on load)
 
 **Files:**
-- `MacRootView.swift` (lines 468–490) — the proven pattern
-- `iOSRootView.swift` — check here first before making sidebar changes on iPad
+- `MacRootView.swift` (lines 468-490) -- the proven pattern
+- `iOSRootView.swift` -- check here first before making sidebar changes on iPad
 
 **Why this matters:** macOS 26 beta broke HSplitView and collapsed HStack to one pane. NavigationSplitView + pinned binding is the solution that works across all platforms.
 
@@ -107,7 +106,7 @@ See `MIRA_WORKFLOW.md` section 5 for full validation details.
 
 **Target:** One release per week (Friday or Monday).
 
-**Why one per week?** Each TestFlight build notifies testers. Too many builds confuse the testing story. 
+**Why one per week?** Each TestFlight build notifies testers. Too many builds confuse the testing story.
 
 **What happened in the intensive weekend:** 4 releases in one day (0.1.9 → 0.1.11 → 0.1.12 → 0.1.13). This was unsustainable and made it hard to track which build had which fix.
 
@@ -125,7 +124,7 @@ See `MIRA_WORKFLOW.md` section 7 for full details and commit discipline advice.
 
 Open bugs are tracked in the root `BUGS.md` file (if it exists) or in the "Known bugs" section of `BACKLOG.md` (optional).
 
-Completed work lives in `git log`. Don't archive completed bugs into a Done section — once fixed, they're deleted after 90 days.
+Completed work lives in `git log`. Don't archive completed bugs into a Done section -- once fixed, they're deleted after 90 days.
 
 ---
 
@@ -134,10 +133,10 @@ Completed work lives in `git log`. Don't archive completed bugs into a Done sect
 Last weekend of each month, run `/security-review` on this repo. Fix HIGH and MEDIUM issues before the next release.
 
 **What to audit:**
-- ATS (App Transport Security) settings — ensure no unencrypted endpoints
-- Keychain vs UserDefaults — sensitive data must use Keychain, not UserDefaults
-- Entitlement scope — network access, file access, camera, etc. must be justified
-- Third-party package versions — any outdated pods with CVEs?
+- ATS (App Transport Security) settings -- ensure no unencrypted endpoints
+- Keychain vs UserDefaults -- sensitive data must use Keychain, not UserDefaults
+- Entitlement scope -- network access, file access, camera, etc. must be justified
+- Third-party package versions -- any outdated pods with CVEs?
 
 ---
 
@@ -145,7 +144,7 @@ Last weekend of each month, run `/security-review` on this repo. Fix HIGH and ME
 
 - Compact at 50% context, not 95% (use `/compact`)
 - Write a 5-bullet spec before opening Claude Code
-- One deliverable per session — note scope creep for next time
+- One deliverable per session -- note scope creep for next time
 - Use `grep` before `Read` to find the exact line number in large files
 - Check the sibling app first before re-solving any UI pattern
 
@@ -171,7 +170,7 @@ Borrowed patterns should be noted in commit messages.
 
 ### Schemes
 
-- `OllamaSearch` — the main app (iOS + macOS)
+- `OllamaSearch` -- the main app (iOS + macOS)
 - Make sure you're building the right target (iOS vs macOS)
 
 ### Destinations
@@ -194,7 +193,7 @@ Borrowed patterns should be noted in commit messages.
 - Use `git rebase -i` to squash commits before pushing if you have many small changes
 - Release commits are tagged with version: `git tag v0.1.25 && git push origin v0.1.25`
 
-Commit discipline advice: Normal pace is 5–10 commits per day (coherent changes). Sprint pace is 20–30 per day. More than 30 in a day signals trial-and-error coding — use upfront specs to prevent this.
+Commit discipline advice: Normal pace is 5-10 commits per day (coherent changes). Sprint pace is 20-30 per day. More than 30 in a day signals trial-and-error coding -- use upfront specs to prevent this.
 
 ---
 
@@ -202,8 +201,8 @@ Commit discipline advice: Normal pace is 5–10 commits per day (coherent change
 
 **Watch out for large files that consume context:**
 
-- `OllamaSearchApp.swift` — ~580 lines
-- `ConversationListView.swift` — ~480 lines
+- `OllamaSearchApp.swift` -- ~580 lines
+- `ConversationListView.swift` -- ~480 lines
 
 **Before reading:** Use `grep` to find the exact line number of the function you need. Example:
 
@@ -221,7 +220,7 @@ This saves context for the actual work.
 
 ### HSplitView vs NavigationSplitView
 
-**macOS 26 beta broke HSplitView** — it collapses to a single pane and ignores width constraints. Solution: Use `NavigationSplitView` with a pinned `columnVisibility` binding instead.
+**macOS 26 beta broke HSplitView** -- it collapses to a single pane and ignores width constraints. Solution: Use `NavigationSplitView` with a pinned `columnVisibility` binding instead.
 
 **Pattern is in `MacRootView.swift`.** Do not change it unless you have a specific reason and have tested on macOS 26 beta.
 
@@ -248,20 +247,23 @@ This saves context for the actual work.
 
 ---
 
-## Intensive Weekend Session — What Worked and What Didn't
+## Intensive Weekend Session -- What Worked and What Didn't
 
 ### What worked:
-- Security audit (HIGH → MEDIUM → LOW framework) — comprehensive and found real issues
-- Connection resilience fix — prevented spurious reconnection attempts
-- Sidebar fix (NavigationSplitView pinned binding) — solved a 3-session problem in one deliberate fix
+
+- Security audit (HIGH → MEDIUM → LOW framework) -- comprehensive and found real issues
+- Connection resilience fix -- prevented spurious reconnection attempts
+- Sidebar fix (NavigationSplitView pinned binding) -- solved a 3-session problem in one deliberate fix
 
 ### What didn't work:
-- 87 commits in 48 hours — too many small/reversal commits. Should have used squash rebase.
-- 4 releases in one day — unsustainable. One per week is the target.
-- No 5-bullet specs upfront — each feature evolved mid-implementation
+
+- 87 commits in 48 hours -- too many small/reversal commits. Should have used squash rebase.
+- 4 releases in one day -- unsustainable. One per week is the target.
+- No 5-bullet specs upfront -- each feature evolved mid-implementation
 
 ### Going forward:
-- Write specs before coding (5-minute spec prevents 3–5 revision turns)
+
+- Write specs before coding (5-minute spec prevents 3-5 revision turns)
 - Compact at 50% context, not 95% (saves tokens, speeds up next turn)
 - One deliverable per session (not 3 features + 2 refactors)
 - Validate before committing (don't commit broken builds and fix in the next commit)
