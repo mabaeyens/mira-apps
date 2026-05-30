@@ -177,9 +177,7 @@ struct ConversationListView: View {
             // Conversations section
             Section {
                 #if os(iOS)
-                let displayConvs = onChats != nil
-                    ? Array(filteredConversations.prefix(20))
-                    : filteredConversations
+                let displayConvs = filteredConversations
                 let titleOnly = onChats != nil
                 #else
                 let displayConvs = filteredConversations

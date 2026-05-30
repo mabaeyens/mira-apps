@@ -221,6 +221,9 @@ struct InputBar: View {
         .onChange(of: sr.transcript) { _, newVal in
             if !newVal.isEmpty { vm.inputText = newVal }
         }
+        .onChange(of: vm.isSwitchingBackend) { _, switching in
+            if switching && sr.isRecording { sr.stop() }
+        }
         .alert("Microphone Access", isPresented: Binding(
             get: { sr.error != nil },
             set: { if !$0 { sr.error = nil } }
@@ -547,7 +550,7 @@ struct InputBar: View {
                 .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
-        .disabled(vm.isStreaming)
+        .disabled(vm.isStreaming || vm.isSwitchingBackend)
     }
     #endif
 

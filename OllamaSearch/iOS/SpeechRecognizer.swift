@@ -16,6 +16,7 @@ final class SpeechRecognizer {
     private var hardStopTimer:      Timer?
 
     func start() async {
+        guard !isRecording else { return }
         guard await requestPermissions() else { return }
         do {
             try startRecognition()
