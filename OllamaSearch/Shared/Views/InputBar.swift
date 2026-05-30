@@ -123,6 +123,7 @@ struct InputBar: View {
                                 : vm.modelDisplayName)
                                 .font(.system(size: 13))
                                 .foregroundStyle(Color.textPrimary)
+                                .lineLimit(1)
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
