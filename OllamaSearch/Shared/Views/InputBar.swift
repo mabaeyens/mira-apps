@@ -77,8 +77,8 @@ struct InputBar: View {
                     }
                     #endif
 
-                    // Thinking chip — visible only when ON; tap to turn off
-                    if vm.thinkingEnabled {
+                    // Thinking chip — visible only when ON and backend supports it
+                    if vm.thinkingEnabled && vm.currentBackend != "mlx-lm" {
                         Button { vm.thinkingEnabled = false } label: {
                             HStack(spacing: 3) {
                                 Image(systemName: "brain.fill")
@@ -118,8 +118,8 @@ struct InputBar: View {
                             .fill(modelStatusColor)
                             .frame(width: 6, height: 6)
                         Text(vm.modelName.isEmpty
-                            ? (vm.currentBackend == "omlx" ? "oMLX" : "Ollama")
-                            : vm.modelName)
+                            ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : "Ollama")
+                            : vm.modelDisplayName)
                             .font(.system(size: 13))
                             .foregroundStyle(Color.textPrimary)
                     }
@@ -244,7 +244,9 @@ struct InputBar: View {
                     .labelsHidden()
                     .tint(Color.appAccent)
                     .padding(.trailing, 16)
+                    .disabled(vm.currentBackend == "mlx-lm")
             }
+            .opacity(vm.currentBackend == "mlx-lm" ? 0.4 : 1.0)
         }
         .frame(width: 260)
         .padding(.vertical, 4)
