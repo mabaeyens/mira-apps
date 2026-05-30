@@ -16,7 +16,7 @@ Steps:
 - [X] Sheet lists models with active/available indicators
 - [X] Tap an inactive model → confirmation alert appears (warns ~30–60s pause) → confirm
 - [X] Progress states cycle: "Stopping…" → "Starting…" → "Loading weights…" → "Almost ready…"
-- [ ] Chat resumes with the new model (send a message to confirm)
+- [X] Chat resumes with the new model (send a message to confirm)
 - [X] While switching: chat input is blocked; toolbar shows switching status
 
 Expected: Full switch completes without crash; input re-enabled after switch.
