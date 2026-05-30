@@ -35,6 +35,20 @@ final class ChatViewModel {
     var isThinkingActive: Bool = false
     var currentBackend: String = "ollama"
     var modelName: String = ""
+
+    var modelDisplayName: String {
+        // Strip org prefix and -it-* suffix: mlx-community/gemma-4-26b-a4b-it-4bit → gemma-4-26b-a4b
+        let base = modelName.split(separator: "/").last.map(String.init) ?? modelName
+        return base.components(separatedBy: "-it-").first ?? base
+    }
+
+    private func backendLabel(_ backend: String) -> String {
+        switch backend {
+        case "omlx": return "oMLX"
+        case "mlx-lm": return "mlx-lm"
+        default: return "Ollama"
+        }
+    }
     var contextWindow: Int = 0
     var isSwitchingBackend: Bool = false
     var showModelPicker: Bool = false
@@ -299,6 +313,7 @@ final class ChatViewModel {
             currentBackend = info.backend
             modelName = info.model
             contextWindow = info.contextWindow
+            if info.backend == "mlx-lm" { thinkingEnabled = false }
         } catch {
             // Non-fatal — UI defaults to "ollama"
         }
@@ -347,6 +362,7 @@ final class ChatViewModel {
             currentBackend = info.backend
             modelName = info.model
             contextWindow = info.contextWindow
+            if info.backend == "mlx-lm" { thinkingEnabled = false }
             backendReady = true
         } catch {
             errorMessage = "Could not start backend: \(error.localizedDescription)"
@@ -360,7 +376,7 @@ final class ChatViewModel {
         isSwitchingBackend = true
 
         let fromName = modelName.isEmpty ? currentBackend : modelName
-        let toBackendLabel = backend == "omlx" ? "oMLX" : "Ollama"
+        let toBackendLabel = backendLabel(backend)
         switchStatusMessage = "Stopping \(fromName)…"
 
         let statusTask = Task { @MainActor in
@@ -382,8 +398,7 @@ final class ChatViewModel {
             modelName = info.model
             contextWindow = info.contextWindow
             showModelPicker = false
-            let backendLabel = info.backend == "omlx" ? "oMLX" : "Ollama"
-            messages.append(.info("— Switched to \(info.model) (\(backendLabel)). Conversation history is preserved. —"))
+            messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"
