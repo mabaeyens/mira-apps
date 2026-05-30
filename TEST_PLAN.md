@@ -5,6 +5,58 @@ Each release gets its own dated section at the top (newest first).
 
 ---
 
+## v0.1.34 — pending release
+
+### 1. Voice Input (M5)
+
+**Goal:** Confirm mic button transcribes speech and feeding it into the input field.
+
+Steps:
+- [ ] Tap mic button in InputBar — iOS permission sheet appears for microphone + speech recognition
+- [ ] Grant permissions → speak a sentence → words appear live in the text field
+- [ ] Tap mic again (or wait 3s of silence) → recording stops; text remains editable
+- [ ] Edit transcribed text if needed → tap send → response streams normally
+- [ ] Denial path: revoke Microphone in Settings → Privacy → tap mic → alert appears, no crash
+- [ ] Streaming guard: while AI is responding, mic button must be grayed out (disabled)
+
+Expected: On-device transcription via Apple Speech; no external API calls; macOS build unaffected.
+
+---
+
+### 2. Long-Term Memory (M4)
+
+**Goal:** Confirm memories persist across conversations and the model uses them.
+
+Steps:
+- [ ] Tap brain icon in sidebar → Memories panel opens
+- [ ] Tap "+" → add a memory (e.g. "My name is Miguel") → save
+- [ ] Start a new conversation → ask "What's my name?" → AI answers with the saved memory
+- [ ] Long-press an assistant message → tap "Remember this" → sheet pre-fills → save → memory appears in Memories panel
+
+Expected: Memory saved to server, injected into system prompt on next conversation.
+
+---
+
+### 3. Standard Checks
+
+- [ ] Send a short message — response streams in correctly
+- [ ] iPad layout — two-column NavigationSplitView in landscape (if iPad simulator available)
+
+---
+
+### 4. Archive Checklist (final gate)
+
+Run only after items 1–3 pass.
+
+- [ ] All changes committed and pushed to `origin main`
+- [ ] Xcode: Product → Clean Build Folder
+- [ ] Xcode: Product → Archive (Any iOS Device destination)
+- [ ] Organizer opens automatically — verify bundle version shows correct number
+- [ ] Distribute App → TestFlight → upload
+- [ ] Confirm build appears in App Store Connect within ~10 min
+
+---
+
 ## v0.1.32 — 2026-05-24
 
 ### 1. iPad Layout
@@ -101,23 +153,30 @@ Run only after items 1–4 pass.
 ```
 ## vX.Y.Z — YYYY-MM-DD
 
-### 1. iPad Layout
+### 1. Voice Input (M5)
+- [ ] Tap mic → permission sheet → grant → speak → live transcription in text field
+- [ ] Tap mic again or wait 3s → stops; text editable → send works
+- [ ] Denial path: revoke in Settings → alert shown, no crash
+- [ ] Streaming guard: mic disabled while AI responds
+
+### 2. Long-Term Memory (M4)
+- [ ] Add memory → new conversation → AI reflects it
+- [ ] "Remember this" context menu → sheet pre-fills → save works
+
+### 3. iPad Layout
 - [ ] Two-column layout in landscape on iPad simulator
 - [ ] Detail pane not blank on cold launch
 - [ ] Portrait degrades gracefully
 
-### 2. Agent Step Indicator
+### 4. Agent Step Indicator
 - [ ] "Step N/15 · toolname" appears during tool calls
 - [ ] Clears on response completion
 
-### 3. Project Count Badge After Delete
-- [ ] Badge decrements immediately after conversation delete
+### 5. Standard Checks
+- [ ] Send a message — response streams correctly
+- [ ] [describe the specific change being validated]
 
-### 4. End-to-End Agentic Loop
-- [ ] Multi-step prompt completes with coherent answer
-- [ ] No divergence guard false-fire on second run
-
-### 5. Archive Checklist
+### 6. Archive Checklist
 - [ ] All changes committed and pushed
 - [ ] Clean build, archive, bundle version correct
 - [ ] Uploaded to TestFlight
