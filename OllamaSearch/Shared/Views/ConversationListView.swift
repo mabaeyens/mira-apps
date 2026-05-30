@@ -21,6 +21,7 @@ struct ConversationListView: View {
     @State private var debouncedSearch: String = ""
     @State private var showAddProject = false
     @State private var showMemories = false
+    @State private var isRefreshing = false
     @State private var deletingConv: Conversation? = nil
     @Environment(CloudPreferences.self) private var prefs
 
@@ -387,6 +388,26 @@ struct ConversationListView: View {
                         .foregroundStyle(Color.textSecondary)
                         .frame(width: 38, height: 38)
                         .background(Color(uiColor: .systemFill), in: Circle())
+                }
+                .buttonStyle(.plain)
+                Button {
+                    isRefreshing = true
+                    Task {
+                        await vm.loadConversations()
+                        isRefreshing = false
+                    }
+                } label: {
+                    Group {
+                        if isRefreshing {
+                            ProgressView().scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                    }
+                    .frame(width: 38, height: 38)
+                    .background(Color(uiColor: .systemFill), in: Circle())
                 }
                 .buttonStyle(.plain)
                 if let onSettings {

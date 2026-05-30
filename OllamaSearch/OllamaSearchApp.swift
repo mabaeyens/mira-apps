@@ -657,6 +657,9 @@ private struct iOSPortraitView: View {
                 .zIndex(2)
             }
         }
+        .onChange(of: showSidebar) { _, shown in
+            if shown { Task { await chatVM.loadConversations() } }
+        }
     }
 }
 #endif
