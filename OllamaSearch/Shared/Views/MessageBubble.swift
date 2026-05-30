@@ -11,6 +11,8 @@ struct MessageBubble: View {
     var onResend: (() -> Void)? = nil
     var onEdit: (() -> Void)? = nil
 
+    @State private var showRememberSheet = false
+
     var body: some View {
         switch message.role {
         case .user:      userBubble
@@ -127,6 +129,16 @@ struct MessageBubble: View {
                     } label: {
                         Label("Copy", systemImage: "doc.on.doc")
                     }
+                    Button {
+                        showRememberSheet = true
+                    } label: {
+                        Label("Remember this", systemImage: "brain")
+                    }
+                }
+            }
+            .sheet(isPresented: $showRememberSheet) {
+                RememberThisSheet(messageText: message.content) { text in
+                    Task { try? await APIClient.shared.addMemory(text) }
                 }
             }
     }

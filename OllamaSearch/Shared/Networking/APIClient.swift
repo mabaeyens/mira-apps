@@ -371,6 +371,39 @@ final class APIClient {
         return obj.messages
     }
 
+    // ── Memories ──────────────────────────────────────────────────────────────
+
+    func fetchMemories() async throws -> [MemoryItem] {
+        let url = baseURL.appendingPathComponent("memories")
+        var req = URLRequest(url: url)
+        authed(&req)
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(MemoryList.self, from: data).memories
+    }
+
+    func addMemory(_ text: String) async throws -> MemoryItem {
+        guard let url = URL(string: "/memories", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["text": text])
+        authed(&req)
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(MemoryItem.self, from: data)
+    }
+
+    func deleteMemory(id: Int) async throws {
+        guard let url = URL(string: "/memories/\(id)", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        authed(&req)
+        _ = try await URLSession.shared.data(for: req)
+    }
+
     // ── Multipart builder ─────────────────────────────────────────────────────
 
     private func multipartBody(
@@ -463,6 +496,10 @@ private struct ProjectList: Decodable {
 
 private struct MessageList: Decodable {
     let messages: [ConversationMessage]
+}
+
+private struct MemoryList: Decodable {
+    let memories: [MemoryItem]
 }
 
 private struct APIErrorResponse: Decodable {
