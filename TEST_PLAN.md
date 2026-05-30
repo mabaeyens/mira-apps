@@ -36,7 +36,21 @@ Expected: Encrypted LAN connection with no user-visible cert warnings; same pinn
 
 ---
 
-### 3. Standard Checks
+### 3. macOS Visual Polish
+
+**Goal:** Welcome screen, message layout, and launch state match new design.
+
+Steps:
+- [ ] Launch app with existing conversations → welcome screen shown (not auto-jumped into a conversation)
+- [ ] Welcome screen: "How can I help?" heading + "Running locally on your Mac" subtitle + 4 suggestion chips visible
+- [ ] Tap a suggestion chip → message is sent, conversation starts correctly
+- [ ] Open an existing conversation → messages are centered with side margins on a wide window (≥1200pt)
+- [ ] Resize window to ~700pt wide → messages fill the available width without clipping
+- [ ] First message in a conversation has ~32pt gap below the toolbar
+
+---
+
+### 4. Standard Checks
 
 - [ ] Send a short message — response streams correctly (macOS + iOS)
 - [ ] Memories: add → new conversation → AI reflects it
