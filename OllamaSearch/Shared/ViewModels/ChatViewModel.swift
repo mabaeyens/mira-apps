@@ -400,7 +400,9 @@ final class ChatViewModel {
             modelName = info.model
             contextWindow = info.contextWindow
             showModelPicker = false
-            messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+            if !currentConvId.isEmpty {
+                messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+            }
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"
@@ -435,7 +437,9 @@ final class ChatViewModel {
             modelName = info.model
             contextWindow = info.contextWindow
             showModelPicker = false
-            messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+            if !currentConvId.isEmpty {
+                messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+            }
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"
