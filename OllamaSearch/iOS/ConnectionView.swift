@@ -206,6 +206,15 @@ struct ConnectionView: View {
                         .textInputAutocapitalization(.never)
                 } header: { Text("Server Token") }
                   footer: { Text("Optional — copy from ~/.local/share/mira/token on your Mac. Leave blank if the server has no auth configured yet.") }
+
+                if let err = addError {
+                    Section {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .background(Color.appBg)
@@ -222,15 +231,6 @@ struct ConnectionView: View {
                         Button("Connect") { attemptAdd() }
                             .disabled(addURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if let err = addError {
-                    Text(err)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                        .padding()
                 }
             }
         }
