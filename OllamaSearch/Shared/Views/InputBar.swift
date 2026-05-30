@@ -22,6 +22,7 @@ struct InputBar: View {
     @State private var showPhotosPicker = false
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showProjectPicker = false
+    @State private var sr = SpeechRecognizer()
     #endif
 
     var body: some View {
@@ -131,6 +132,9 @@ struct InputBar: View {
                             .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
                     )
 
+                    #if os(iOS)
+                    micButton
+                    #endif
                     actionButton
                 }
                 .padding(.horizontal, 12)
@@ -210,6 +214,17 @@ struct InputBar: View {
                     }
                 }
             }
+        }
+        .onChange(of: sr.transcript) { _, newVal in
+            if !newVal.isEmpty { vm.inputText = newVal }
+        }
+        .alert("Microphone Access", isPresented: Binding(
+            get: { sr.error != nil },
+            set: { if !$0 { sr.error = nil } }
+        )) {
+            Button("OK") { sr.error = nil }
+        } message: {
+            Text(sr.error ?? "")
         }
         #endif
     }
@@ -514,6 +529,24 @@ struct InputBar: View {
         if vm.backendReady { return .green }
         return Color(white: 0.45)
     }
+
+    #if os(iOS)
+    private var micButton: some View {
+        Button {
+            Task {
+                if sr.isRecording { sr.stop() }
+                else { await sr.start() }
+            }
+        } label: {
+            Image(systemName: sr.isRecording ? "mic.fill" : "mic")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(sr.isRecording ? Color.accent : Color.textSecondary)
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isStreaming)
+    }
+    #endif
 
     @ViewBuilder
     private var actionButton: some View {
