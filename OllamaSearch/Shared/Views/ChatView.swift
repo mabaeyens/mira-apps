@@ -69,7 +69,6 @@ struct ChatView: View {
                     onEdit: { vm.editLast() },
                     onSendSuggestion: { text in
                         vm.inputText = text
-                        vm.send()
                     }
                 )
                 #if os(iOS)

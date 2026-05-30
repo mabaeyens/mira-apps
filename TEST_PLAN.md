@@ -12,10 +12,10 @@ Each release gets its own dated section at the top (newest first).
 **Goal:** Memories are visible even when the Mac server is unreachable (off-LAN / cellular).
 
 Steps:
-- [ ] While on home WiFi: open Memories panel → memories load from server → disconnect from WiFi (or turn off Mac server)
-- [ ] Re-open Memories panel → cached memories still appear (no error alert)
-- [ ] Add a memory while online → reconnect → verify it persists server-side
-- [ ] Delete a memory while online → verify removal reflected immediately
+- [X] While on home WiFi: open Memories panel → memories load from server → disconnect from WiFi (or turn off Mac server)
+- [X] Re-open Memories panel → cached memories still appear (no error alert)
+- [X] Add a memory while online → reconnect → verify it persists server-side
+- [X] Delete a memory while online → verify removal reflected immediately
 
 Expected: No error alert when offline; cached list shown instead. Online add/delete keep cache in sync.
 
@@ -26,8 +26,8 @@ Expected: No error alert when offline; cached list shown instead. Online add/del
 **Goal:** iOS can connect to the Mac server over LAN via HTTPS without a device trust profile.
 
 Steps:
-- [ ] In iOS Connection screen: add `https://192.168.x.x:8443` (replace with Mac's LAN IP)
-- [ ] Select that connection → app connects without a certificate error or trust prompt
+- [X] In iOS Connection screen: add `https://192.168.x.x:8443` (replace with Mac's LAN IP)
+- [X] Select that connection → app connects without a certificate error or trust prompt
 - [ ] Send a message — response streams correctly over HTTPS
 - [ ] HTTP LAN alert: verify banner does NOT appear (connection is encrypted)
 - [ ] Tailscale connection (`https://miguels-macbook-pro.tail51ad7d.ts.net:8443`) still works
@@ -41,19 +41,19 @@ Expected: Encrypted LAN connection with no user-visible cert warnings; same pinn
 **Goal:** Welcome screen, message layout, and launch state match new design.
 
 Steps:
-- [ ] Launch app with existing conversations → welcome screen shown (not auto-jumped into a conversation)
-- [ ] Welcome screen: "How can I help?" heading + "Running locally on your Mac" subtitle + 4 suggestion chips visible
-- [ ] Tap a suggestion chip → message is sent, conversation starts correctly
-- [ ] Open an existing conversation → messages are centered with side margins on a wide window (≥1200pt)
-- [ ] Resize window to ~700pt wide → messages fill the available width without clipping
-- [ ] First message in a conversation has ~32pt gap below the toolbar
+- [X] Launch app with existing conversations → welcome screen shown (not auto-jumped into a conversation)
+- [X] Welcome screen: "How can I help?" heading + "Running locally on your Mac" subtitle + 4 suggestion chips visible
+- [X] Tap a suggestion chip → message is sent, conversation starts correctly
+- [X] Open an existing conversation → messages are centered with side margins on a wide window (≥1200pt)
+- [X] Resize window to ~700pt wide → messages fill the available width without clipping
+- [X] First message in a conversation has ~32pt gap below the toolbar
 
 ---
 
 ### 4. Standard Checks
 
-- [ ] Send a short message — response streams correctly (macOS + iOS)
-- [ ] Memories: add → new conversation → AI reflects it
+- [X] Send a short message — response streams correctly (macOS + iOS)
+- [X] Memories: add → new conversation → AI reflects it
 
 ---
 
