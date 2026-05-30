@@ -5,6 +5,57 @@ Each release gets its own dated section at the top (newest first).
 
 ---
 
+## v0.1.35 — pending release
+
+### 1. Offline Memory Cache
+
+**Goal:** Memories are visible even when the Mac server is unreachable (off-LAN / cellular).
+
+Steps:
+- [ ] While on home WiFi: open Memories panel → memories load from server → disconnect from WiFi (or turn off Mac server)
+- [ ] Re-open Memories panel → cached memories still appear (no error alert)
+- [ ] Add a memory while online → reconnect → verify it persists server-side
+- [ ] Delete a memory while online → verify removal reflected immediately
+
+Expected: No error alert when offline; cached list shown instead. Online add/delete keep cache in sync.
+
+---
+
+### 2. LAN HTTPS (Certificate Pinning)
+
+**Goal:** iOS can connect to the Mac server over LAN via HTTPS without a device trust profile.
+
+Steps:
+- [ ] In iOS Connection screen: add `https://192.168.x.x:8443` (replace with Mac's LAN IP)
+- [ ] Select that connection → app connects without a certificate error or trust prompt
+- [ ] Send a message — response streams correctly over HTTPS
+- [ ] HTTP LAN alert: verify banner does NOT appear (connection is encrypted)
+- [ ] Tailscale connection (`https://miguels-macbook-pro.tail51ad7d.ts.net:8443`) still works
+
+Expected: Encrypted LAN connection with no user-visible cert warnings; same pinned cert works for both LAN and Tailscale hostnames.
+
+---
+
+### 3. Standard Checks
+
+- [ ] Send a short message — response streams correctly (macOS + iOS)
+- [ ] Memories: add → new conversation → AI reflects it
+
+---
+
+### 4. Archive Checklist (final gate)
+
+Run only after items 1–3 pass.
+
+- [ ] All changes committed and pushed to `origin main`
+- [ ] Xcode: Product → Clean Build Folder
+- [ ] Xcode: Product → Archive (Any iOS Device destination)
+- [ ] Organizer opens automatically — verify bundle version shows correct number
+- [ ] Distribute App → TestFlight → upload
+- [ ] Confirm build appears in App Store Connect within ~10 min
+
+---
+
 ## v0.1.34 — pending release
 
 ### 1. In-App Model Browser
