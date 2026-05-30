@@ -2,20 +2,22 @@
 
 A native macOS and iOS chat app for local AI models, built with SwiftUI.
 
-Mira runs entirely on your own hardware — no cloud, no subscription, no data leaving your machine. It connects to a local Python server that manages an Ollama model, and pairs with an iPhone over Bonjour or Tailscale for the same experience on the go.
+Mira runs entirely on your own hardware — no cloud, no subscription, no data leaving your machine. It connects to a local Python server (mlx-lm for inference, Ollama for RAG embeddings) and pairs with an iPhone over Bonjour or Tailscale for the same experience on the go.
 
 ## Features
 
-- **Local-first** — all inference runs on your Mac via Ollama; nothing is sent to external APIs
+- **Local-first** — inference runs on your Mac via mlx-lm; nothing is sent to external APIs
 - **Streaming responses** — server-sent events for real-time token output
 - **RAG** — attach documents and let the model search them before answering
+- **Long-term memory** — save facts across conversations; model uses them automatically
+- **Voice input** — tap the mic to dictate; live transcription via Apple Speech (on-device, iOS only)
 - **Conversation history** — persistent, named conversations with a sidebar
 - **Markdown rendering** — code blocks, tables, and inline formatting via MarkdownUI
 - **iOS companion** — iPhone app connects to the Mac server over WiFi (Bonjour) or remotely (Tailscale)
 - **Splash screens** — animated Mira logo while the server and model load (macOS and iOS)
 - **About screen** — accessible from the macOS app menu and iOS info button
 - **Adaptive app icon** — light, dark, and tinted variants for iOS 18 home screen modes
-- **Dark & light modes** — warm stone palette that adapts to system appearance
+- **Dark mode** — warm stone palette
 
 ## Requirements
 
@@ -25,8 +27,9 @@ Mira runs entirely on your own hardware — no cloud, no subscription, no data l
 | macOS (dev machine) | 26+ |
 | iOS (device) | 26+ |
 | Swift | 6 |
-| Python | 3.11+ (for the server) |
-| Ollama | latest |
+| Python | 3.12+ (for the server) |
+| mlx-lm | 0.31.3+ (inference) |
+| Ollama | latest (RAG embeddings only) |
 
 ## Project structure
 
@@ -50,7 +53,8 @@ Design/
 iPhone (Mira iOS)
     └── WiFi / Tailscale ──► Mac (Mira macOS)
                                  └── localhost:8000 ──► Python server (FastAPI)
-                                                            └── Ollama (LLM)
+                                                            └── mlx-lm (inference, port 8080)
+                                                            └── Ollama (RAG embeddings, port 11434)
 ```
 
 The macOS app connects to the Python server, which runs as a macOS LaunchAgent (`com.mab.mira`) installed separately from the app. The iOS app discovers the Mac over Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale IP.
