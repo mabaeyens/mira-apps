@@ -164,10 +164,10 @@ struct ConversationListView: View {
                     } label: {
                         HStack(spacing: 4) {
                             sectionHeader("Projects")
-                            Spacer()
                             Image(systemName: prefs.projectsExpanded ? "chevron.down" : "chevron.right")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(Color.textSecondary)
+                            Spacer()
                         }
                     }
                     .buttonStyle(.plain)
@@ -350,6 +350,7 @@ struct ConversationListView: View {
                 Image(systemName: "person.text.rectangle")
                     .foregroundStyle(Color.textSecondary)
                     .font(Font.sidebarMeta)
+                    .frame(width: 20, height: 20)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 10)
             }
@@ -360,7 +361,8 @@ struct ConversationListView: View {
                 Image(systemName: prefs.sidebarPinned ? "pin.fill" : "pin")
                     .foregroundStyle(prefs.sidebarPinned ? Color.appAccent : Color.textSecondary)
                     .font(Font.sidebarMeta)
-                    .padding(.trailing, 14)
+                    .frame(width: 20, height: 20)
+                    .padding(.trailing, 16)
                     .padding(.vertical, 10)
             }
             .buttonStyle(.plain)

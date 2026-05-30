@@ -37,12 +37,14 @@ struct MiraLogoView: View {
             let inFront  = sin(rad) >= 0   // positive y → lower half → in front
 
             ZStack {
-                // Ambient glow
-                Ellipse()
-                    .fill(Color.accent.opacity(0.18))
-                    .blur(radius: size * 0.20)
-                    .scaleEffect(glowing ? 1.4 : 1.0)
-                    .frame(width: size * 0.70, height: size * 0.44)
+                // Ambient glow — only when animated to avoid visible bleed on light bg
+                if animated || playIntro {
+                    Ellipse()
+                        .fill(Color.accent.opacity(0.18))
+                        .blur(radius: size * 0.20)
+                        .scaleEffect(glowing ? 1.4 : 1.0)
+                        .frame(width: size * 0.70, height: size * 0.44)
+                }
 
                 // Small star — back half (behind big star, slightly dim)
                 if !inFront {
@@ -67,6 +69,7 @@ struct MiraLogoView: View {
             }
         }
         .frame(width: size, height: size)
+        .background(Color.clear)
         .onAppear { handleAppear() }
         .onChange(of: animated) { if animated { beginOrbit() } }
     }

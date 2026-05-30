@@ -64,7 +64,7 @@ struct MessageListView: View {
                 .foregroundStyle(Color.textSecondary)
             Spacer().frame(height: 36)
             HStack(spacing: 10) {
-                ForEach(["Summarize a document", "Write a script", "Explain some code", "What's on my mind"], id: \.self) { prompt in
+                ForEach(["What time is it?", "What's the weather in Madrid?", "Tell me a joke", "What's in the news today?"], id: \.self) { prompt in
                     Button(prompt) { onSendSuggestion?(prompt) }
                         .buttonStyle(SuggestionChipStyle())
                 }

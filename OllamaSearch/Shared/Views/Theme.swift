@@ -41,7 +41,7 @@ extension Color {
         dark:  Color(hex: 0x292524)
     )
     static let userBubbleBg = Color(
-        light: Color(hex: 0xE8E3DC),
+        light: Color(hex: 0xD0C8BE),
         dark:  Color(hex: 0x44403C)
     )
     static let surfaceBg = Color(
