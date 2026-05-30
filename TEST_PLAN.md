@@ -7,9 +7,57 @@ Each release gets its own dated section at the top (newest first).
 
 ## v0.1.34 — pending release
 
-### 1. Voice Input (M5)
+### 1. In-App Model Browser
 
-**Goal:** Confirm mic button transcribes speech and feeding it into the input field.
+**Goal:** Confirm model switching works end-to-end from the UI.
+
+Steps:
+- [ ] Tap model pill/name in toolbar → model sheet opens
+- [ ] Sheet lists models with active/available indicators
+- [ ] Tap an inactive model → confirmation alert appears (warns ~30–60s pause) → confirm
+- [ ] Progress states cycle: "Stopping…" → "Starting…" → "Loading weights…" → "Almost ready…"
+- [ ] Chat resumes with the new model (send a message to confirm)
+- [ ] While switching: chat input is blocked; toolbar shows switching status
+
+Expected: Full switch completes without crash; input re-enabled after switch.
+
+---
+
+### 2. iCloud Sync (M3) — setup required first
+
+**Goal:** Confirm conversations sync between simulator and device via iCloud.
+
+Setup (one-time, manual in Xcode):
+1. Open `OllamaSearch.xcodeproj`
+2. Select the `OllamaSearch` target → **Signing & Capabilities** → **+**
+3. Add **iCloud** → check "Key-value storage" and "iCloud Documents"
+4. Container: `iCloud.com.mab.OllamaSearch`
+
+Steps:
+- [ ] iCloud capability added in Xcode (setup step above)
+- [ ] Create a conversation on simulator → verify it appears on iPhone Miguel (or vice versa)
+
+Expected: Conversations visible on both simulator and device after iCloud sync.
+
+---
+
+### 3. Long-Term Memory (M4)
+
+**Goal:** Confirm memories persist across conversations and the model uses them.
+
+Steps:
+- [ ] Tap brain icon → Memories panel opens
+- [ ] Tap "+" → add a memory (e.g. "My name is Miguel") → save
+- [ ] Start a new conversation → ask "What's my name?" → AI answers with the saved memory
+- [ ] Long-press an assistant message → tap "Remember this" → sheet pre-fills → save → appears in Memories panel
+
+Expected: Memory saved to server, injected into system prompt on next conversation.
+
+---
+
+### 4. Voice Input (M5) — iOS only
+
+**Goal:** Confirm mic button transcribes speech and feeds it into the input field.
 
 Steps:
 - [ ] Tap mic button in InputBar — iOS permission sheet appears for microphone + speech recognition
@@ -23,30 +71,19 @@ Expected: On-device transcription via Apple Speech; no external API calls; macOS
 
 ---
 
-### 2. Long-Term Memory (M4)
+### 5. Standard Checks
 
-**Goal:** Confirm memories persist across conversations and the model uses them.
-
-Steps:
-- [ ] Tap brain icon in sidebar → Memories panel opens
-- [ ] Tap "+" → add a memory (e.g. "My name is Miguel") → save
-- [ ] Start a new conversation → ask "What's my name?" → AI answers with the saved memory
-- [ ] Long-press an assistant message → tap "Remember this" → sheet pre-fills → save → memory appears in Memories panel
-
-Expected: Memory saved to server, injected into system prompt on next conversation.
+- [ ] Send a short message — response streams correctly (macOS + iOS)
+- [ ] RAG: attach a PDF → `rag_indexing` banner appears → response uses document content (Ollama not required)
+- [ ] Model pill: toolbar shows human-readable name (not raw HuggingFace path)
+- [ ] Thinking toggle: brain icon in input bar is disabled/hidden on mlx-lm backend
+- [ ] HTTP LAN alert: banner visible when connecting via plain HTTP on LAN; absent on Tailscale/HTTPS
 
 ---
 
-### 3. Standard Checks
+### 6. Archive Checklist (final gate)
 
-- [ ] Send a short message — response streams in correctly
-- [ ] iPad layout — two-column NavigationSplitView in landscape (if iPad simulator available)
-
----
-
-### 4. Archive Checklist (final gate)
-
-Run only after items 1–3 pass.
+Run only after items 1–5 pass.
 
 - [ ] All changes committed and pushed to `origin main`
 - [ ] Xcode: Product → Clean Build Folder
