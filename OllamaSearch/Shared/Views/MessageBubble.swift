@@ -132,7 +132,7 @@ struct MessageBubble: View {
                     Button {
                         showRememberSheet = true
                     } label: {
-                        Label("Remember this", systemImage: "brain")
+                        Label("Remember this", systemImage: "person.text.rectangle")
                     }
                 }
             }

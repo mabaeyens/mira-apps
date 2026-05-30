@@ -348,7 +348,7 @@ struct ConversationListView: View {
             .buttonStyle(.plain)
 
             Button(action: { showMemories = true }) {
-                Image(systemName: "brain")
+                Image(systemName: "person.text.rectangle")
                     .foregroundStyle(Color.textSecondary)
                     .font(Font.sidebarMeta)
                     .padding(.horizontal, 6)
@@ -382,7 +382,7 @@ struct ConversationListView: View {
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Button(action: { showMemories = true }) {
-                    Image(systemName: "brain")
+                    Image(systemName: "person.text.rectangle")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Color.textSecondary)
                         .frame(width: 38, height: 38)

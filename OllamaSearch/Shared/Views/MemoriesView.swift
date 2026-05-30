@@ -106,7 +106,7 @@ struct MemoriesView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "brain")
+            Image(systemName: "person.text.rectangle")
                 .font(.system(size: 40))
                 .foregroundStyle(Color.textSecondary.opacity(0.5))
             Text("No memories yet")
