@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import OSLog
 
@@ -14,6 +15,19 @@ final class APIClient {
     // Compile-time constant literal — URL(string:) only returns nil for malformed strings.
     var baseURL: URL = URL(string: "http://127.0.0.1:8000")!
     var authToken: String?
+
+    // SHA256 hash of the server cert's DER public key (mira-apps/certs/*.crt).
+    // Regenerate if the Tailscale cert is rotated: openssl x509 -in <cert> -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | base64
+    private let pinnedPublicKeyHash = "99rNnbhgsl9Wbxt3WgflG4iEVT6WHwIUGbmtwa9Whvk="
+
+    private lazy var pinnedSession: URLSession = {
+        URLSession(configuration: .default, delegate: CertPinner(pinnedHash: pinnedPublicKeyHash), delegateQueue: nil)
+    }()
+
+    // Use the pinned session for https:// connections; URLSession.shared for http://.
+    private var session: URLSession {
+        baseURL.scheme == "https" ? pinnedSession : .shared
+    }
 
     private func authed(_ req: inout URLRequest) {
         if let token = authToken, !token.isEmpty {
@@ -39,7 +53,7 @@ final class APIClient {
         var req = URLRequest(url: healthURL)
         req.timeoutInterval = 5.0
         do {
-            let (data, response) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await session.data(for: req)
             let code = (response as? HTTPURLResponse)?.statusCode
             switch code {
             case 200:
@@ -78,7 +92,7 @@ final class APIClient {
         var req = URLRequest(url: healthURL)
         req.timeoutInterval = timeout
         do {
-            let (_, response) = try await URLSession.shared.data(for: req)
+            let (_, response) = try await session.data(for: req)
             return (response as? HTTPURLResponse)?.statusCode == 200
         } catch {
             return false
@@ -120,7 +134,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         return try JSONDecoder().decode(BackendInfo.self, from: data)
     }
 
@@ -134,7 +148,7 @@ final class APIClient {
         req.httpBody = try JSONEncoder().encode(["backend": backend])
         req.timeoutInterval = 120
         authed(&req)
-        _ = try await URLSession.shared.data(for: req)
+        _ = try await session.data(for: req)
         return try await getBackend()
     }
 
@@ -145,7 +159,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.timeoutInterval = 5
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         return try JSONDecoder().decode(ServerInfo.self, from: data)
     }
 
@@ -156,7 +170,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         let decoder = JSONDecoder()
         return try decoder.decode(ModelsResponse.self, from: data)
     }
@@ -171,7 +185,7 @@ final class APIClient {
         req.httpBody = try JSONEncoder().encode(["backend": backend, "model_id": modelId])
         req.timeoutInterval = 150
         authed(&req)
-        _ = try await URLSession.shared.data(for: req)
+        _ = try await session.data(for: req)
         return try await getBackend()
     }
 
@@ -188,7 +202,7 @@ final class APIClient {
                 self.authed(&req)
 
                 do {
-                    let (bytes, _) = try await URLSession.shared.bytes(for: req)
+                    let (bytes, _) = try await session.bytes(for: req)
                     let decoder = JSONDecoder()
                     for try await line in bytes.lines {
                         guard line.hasPrefix("data: ") else { continue }
@@ -239,7 +253,7 @@ final class APIClient {
         req.httpMethod = "POST"
         authed(&req)
         do {
-            _ = try await URLSession.shared.data(for: req)
+            _ = try await session.data(for: req)
         } catch {
             // Non-fatal: local streaming state is already stopped.
             logger.debug("Cancel request failed: \(error)")
@@ -253,7 +267,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(ResetResponse.self, from: data)
         return (obj.convId, obj.title)
     }
@@ -266,7 +280,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(CompactResponse.self, from: data)
         return obj.message
     }
@@ -278,7 +292,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.timeoutInterval = 15
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(ConversationList.self, from: data)
         return obj.conversations
     }
@@ -294,7 +308,7 @@ final class APIClient {
             req.httpBody = try JSONEncoder().encode(["project_id": pid])
         }
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(NewConversationResponse.self, from: data)
         return obj.id
     }
@@ -305,7 +319,7 @@ final class APIClient {
         let url = baseURL.appendingPathComponent("projects")
         var req = URLRequest(url: url)
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         return try JSONDecoder().decode(ProjectList.self, from: data).projects
     }
 
@@ -321,7 +335,7 @@ final class APIClient {
         if let gh = githubRepo { body["github_repo"] = gh }
         req.httpBody = try JSONEncoder().encode(body)
         authed(&req)
-        let (data, response) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await session.data(for: req)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.detail ?? "Server error \(http.statusCode)"
             throw APIError.serverError(msg)
@@ -336,7 +350,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
         authed(&req)
-        _ = try await URLSession.shared.data(for: req)
+        _ = try await session.data(for: req)
     }
 
     func renameConversation(id: String, title: String) async throws {
@@ -348,7 +362,7 @@ final class APIClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(["title": title])
         authed(&req)
-        _ = try await URLSession.shared.data(for: req)
+        _ = try await session.data(for: req)
     }
 
     func deleteConversation(id: String) async throws {
@@ -358,7 +372,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
         authed(&req)
-        _ = try await URLSession.shared.data(for: req)
+        _ = try await session.data(for: req)
     }
 
     func getMessages(conversationId: String) async throws -> [ConversationMessage] {
@@ -366,7 +380,7 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.timeoutInterval = 60
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
+        let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(MessageList.self, from: data)
         return obj.messages
     }
@@ -377,8 +391,20 @@ final class APIClient {
         let url = baseURL.appendingPathComponent("memories")
         var req = URLRequest(url: url)
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
-        return try JSONDecoder().decode(MemoryList.self, from: data).memories
+        do {
+            let (data, _) = try await session.data(for: req)
+            let items = try JSONDecoder().decode(MemoryList.self, from: data).memories
+            if let encoded = try? JSONEncoder().encode(items) {
+                UserDefaults.standard.set(encoded, forKey: "cachedMemories")
+            }
+            return items
+        } catch {
+            if let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
+               let items = try? JSONDecoder().decode([MemoryItem].self, from: cached) {
+                return items
+            }
+            throw error
+        }
     }
 
     func addMemory(_ text: String) async throws -> MemoryItem {
@@ -390,8 +416,16 @@ final class APIClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(["text": text])
         authed(&req)
-        let (data, _) = try await URLSession.shared.data(for: req)
-        return try JSONDecoder().decode(MemoryItem.self, from: data)
+        let (data, _) = try await session.data(for: req)
+        let item = try JSONDecoder().decode(MemoryItem.self, from: data)
+        if let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
+           var items = try? JSONDecoder().decode([MemoryItem].self, from: cached) {
+            items.insert(item, at: 0)
+            if let encoded = try? JSONEncoder().encode(items) {
+                UserDefaults.standard.set(encoded, forKey: "cachedMemories")
+            }
+        }
+        return item
     }
 
     func deleteMemory(id: Int) async throws {
@@ -401,7 +435,14 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
         authed(&req)
-        _ = try await URLSession.shared.data(for: req)
+        _ = try await session.data(for: req)
+        if let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
+           var items = try? JSONDecoder().decode([MemoryItem].self, from: cached) {
+            items.removeAll { $0.id == id }
+            if let encoded = try? JSONEncoder().encode(items) {
+                UserDefaults.standard.set(encoded, forKey: "cachedMemories")
+            }
+        }
     }
 
     // ── Multipart builder ─────────────────────────────────────────────────────
@@ -504,4 +545,40 @@ private struct MemoryList: Decodable {
 
 private struct APIErrorResponse: Decodable {
     let detail: String
+}
+
+// ── Certificate pinning ───────────────────────────────────────────────────────
+
+private final class CertPinner: NSObject, URLSessionDelegate {
+    let pinnedHash: String
+
+    init(pinnedHash: String) {
+        self.pinnedHash = pinnedHash
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let serverTrust = challenge.protectionSpace.serverTrust else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+
+        guard let pubKey = SecTrustCopyKey(serverTrust),
+              let keyData = SecKeyCopyExternalRepresentation(pubKey, nil) as? Data else {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+            return
+        }
+
+        let hash = Data(SHA256.hash(data: keyData)).base64EncodedString()
+
+        if hash == pinnedHash {
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
+        } else {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
+    }
 }
