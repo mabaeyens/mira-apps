@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import OSLog
 
@@ -16,19 +15,7 @@ final class APIClient {
     var baseURL: URL = URL(string: "http://127.0.0.1:8000")!
     var authToken: String?
 
-    // SHA256 of the full certificate DER (mira-apps/certs/*.crt). Expires 2026-07-05.
-    // Regenerate when Tailscale renews the cert: openssl x509 -in <cert> -outform DER | openssl dgst -sha256 -binary | base64
-    private let pinnedCertHash = "vIpucfyWXVY5fwbgKnExapU54tmUIKuf4WMm6puR+LU="
-
-
-    private lazy var pinnedSession: URLSession = {
-        URLSession(configuration: .default, delegate: CertPinner(pinnedHash: pinnedCertHash), delegateQueue: nil)
-    }()
-
-    // Use the pinned session for https:// connections; URLSession.shared for http://.
-    private var session: URLSession {
-        baseURL.scheme == "https" ? pinnedSession : .shared
-    }
+    private var session: URLSession { .shared }
 
     private func authed(_ req: inout URLRequest) {
         if let token = authToken, !token.isEmpty {
@@ -109,13 +96,12 @@ final class APIClient {
     /// where VPN-induced network stalls can prevent sleep continuations from firing.
     nonisolated func probe(_ url: URL, deadline: Double = 5) async -> Bool {
         guard let healthURL = URL(string: "/health", relativeTo: url) else { return false }
-        let probeSession = url.scheme == "https" ? _pinnedSession : URLSession.shared
         return await withTaskGroup(of: Bool.self) { group in
             group.addTask {
                 var req = URLRequest(url: healthURL)
                 req.timeoutInterval = deadline
                 do {
-                    let (_, response) = try await probeSession.data(for: req)
+                    let (_, response) = try await URLSession.shared.data(for: req)
                     return (response as? HTTPURLResponse)?.statusCode == 200
                 } catch { return false }
             }
@@ -549,47 +535,3 @@ private struct APIErrorResponse: Decodable {
     let detail: String
 }
 
-// ── Certificate pinning ───────────────────────────────────────────────────────
-
-// Shared across APIClient and SSEClient so both use the same cert-pinned session.
-let sharedCertPinner = CertPinner(pinnedHash: "vIpucfyWXVY5fwbgKnExapU54tmUIKuf4WMm6puR+LU=")
-
-// Global so nonisolated APIClient.probe() can reach it without @MainActor.
-private let _pinnedSession: URLSession = {
-    return URLSession(configuration: .default, delegate: sharedCertPinner, delegateQueue: nil)
-}()
-
-final class CertPinner: NSObject, URLSessionDelegate {
-    let pinnedHash: String
-
-    init(pinnedHash: String) {
-        self.pinnedHash = pinnedHash
-    }
-
-    func urlSession(
-        _ session: URLSession,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
-        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let serverTrust = challenge.protectionSpace.serverTrust else {
-            completionHandler(.performDefaultHandling, nil)
-            return
-        }
-
-        guard let chainArray = SecTrustCopyCertificateChain(serverTrust) as? NSArray,
-              let cert = chainArray.firstObject as? SecCertificate else {
-            completionHandler(.cancelAuthenticationChallenge, nil)
-            return
-        }
-
-        let certData = SecCertificateCopyData(cert) as Data
-        let hash = Data(SHA256.hash(data: certData)).base64EncodedString()
-
-        if hash == pinnedHash {
-            completionHandler(.useCredential, URLCredential(trust: serverTrust))
-        } else {
-            completionHandler(.cancelAuthenticationChallenge, nil)
-        }
-    }
-}
