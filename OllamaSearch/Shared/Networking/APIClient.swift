@@ -577,8 +577,8 @@ final class CertPinner: NSObject, URLSessionDelegate {
             return
         }
 
-        guard let chain = SecTrustCopyCertificateChain(serverTrust) as? [SecCertificate],
-              let cert = chain.first else {
+        guard let chainArray = SecTrustCopyCertificateChain(serverTrust) as? NSArray,
+              let cert = chainArray.firstObject as? SecCertificate else {
             completionHandler(.cancelAuthenticationChallenge, nil)
             return
         }
