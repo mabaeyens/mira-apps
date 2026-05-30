@@ -551,13 +551,15 @@ private struct APIErrorResponse: Decodable {
 
 // ── Certificate pinning ───────────────────────────────────────────────────────
 
-// File-private global so nonisolated APIClient.probe() can reach it without @MainActor.
+// Shared across APIClient and SSEClient so both use the same cert-pinned session.
+let sharedCertPinner = CertPinner(pinnedHash: "vIpucfyWXVY5fwbgKnExapU54tmUIKuf4WMm6puR+LU=")
+
+// Global so nonisolated APIClient.probe() can reach it without @MainActor.
 private let _pinnedSession: URLSession = {
-    let hash = "vIpucfyWXVY5fwbgKnExapU54tmUIKuf4WMm6puR+LU="
-    return URLSession(configuration: .default, delegate: CertPinner(pinnedHash: hash), delegateQueue: nil)
+    return URLSession(configuration: .default, delegate: sharedCertPinner, delegateQueue: nil)
 }()
 
-private final class CertPinner: NSObject, URLSessionDelegate {
+final class CertPinner: NSObject, URLSessionDelegate {
     let pinnedHash: String
 
     init(pinnedHash: String) {
