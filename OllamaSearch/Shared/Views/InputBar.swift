@@ -113,24 +113,27 @@ struct InputBar: View {
 
                     Spacer()
 
-                    // Model indicator pill (non-interactive — single model)
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(modelStatusColor)
-                            .frame(width: 6, height: 6)
-                        Text(vm.modelName.isEmpty
-                            ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : "Ollama")
-                            : vm.modelDisplayName)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.textPrimary)
+                    Button { vm.showModelPicker = true } label: {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(modelStatusColor)
+                                .frame(width: 6, height: 6)
+                            Text(vm.modelName.isEmpty
+                                ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : "Ollama")
+                                : vm.modelDisplayName)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color.textPrimary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(Color.surfaceBg)
+                                .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
+                        )
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.surfaceBg)
-                            .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
-                    )
+                    .buttonStyle(.plain)
+                    .disabled(vm.isSwitchingBackend || vm.isStreaming)
 
                     #if os(iOS)
                     micButton
