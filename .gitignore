@@ -32,5 +32,9 @@ OllamaSearch/OllamaSearch.xcodeproj/
 .idea/
 *.swp
 
-# TLS certificates
+# TLS certificates and private keys
 certs/
+keys/
+
+# Security audit notes (local only)
+SECURITY_AUDIT.md

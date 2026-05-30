@@ -2,18 +2,21 @@
 import SwiftUI
 
 struct ConnectionView: View {
-    let onConnect: (URL) -> Void
+    let onConnect: (URL, String?) -> Void
 
     @Environment(SavedConnectionsStore.self) private var store
 
-    @State private var showAddSheet  = false
-    @State private var addURL        = ""
-    @State private var addLabel      = ""
+    @State private var showAddSheet      = false
+    @State private var addURL            = ""
+    @State private var addLabel          = ""
+    @State private var addToken          = ""
     @State private var addError: String? = nil
-    @State private var isAddConnecting = false
+    @State private var isAddConnecting   = false
+    @State private var showInsecureAlert = false
 
     @State private var connectingURL: String? = nil
     @State private var rowError: String? = nil
+    @State private var editingConnection: SavedConnection? = nil
 
     @State private var showAbout = false
 
@@ -56,6 +59,7 @@ struct ConnectionView: View {
                 Button {
                     addURL = ""
                     addLabel = ""
+                    addToken = ""
                     addError = nil
                     showAddSheet = true
                 } label: {
@@ -93,6 +97,14 @@ struct ConnectionView: View {
         }
         .sheet(isPresented: $showAddSheet) {
             addConnectionSheet
+        }
+        .sheet(item: $editingConnection) { conn in
+            EditConnectionSheet(connection: conn) { updated in
+                store.update(updated)
+                if store.activeURLString == updated.urlString {
+                    APIClient.shared.authToken = updated.token
+                }
+            }
         }
         .task { await probeAllConnections() }
     }
@@ -139,6 +151,14 @@ struct ConnectionView: View {
         .padding(.vertical, 2)
         .contentShape(Rectangle())
         .onTapGesture { connectRow(urlString: conn.urlString) }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                editingConnection = conn
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.blue)
+        }
         .listRowBackground(Color.surfaceBg)
     }
 
@@ -179,6 +199,13 @@ struct ConnectionView: View {
                         .autocorrectionDisabled()
                 } header: { Text("Label") }
                   footer: { Text("Optional — a name to identify this connection.") }
+
+                Section {
+                    SecureField("Paste token from server", text: $addToken)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: { Text("Server Token") }
+                  footer: { Text("Optional — copy from ~/.local/share/mira/token on your Mac. Leave blank if the server has no auth configured yet.") }
             }
             .scrollContentBackground(.hidden)
             .background(Color.appBg)
@@ -207,7 +234,13 @@ struct ConnectionView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
+        .alert("Unencrypted Connection", isPresented: $showInsecureAlert) {
+            Button("Connect Anyway", role: .destructive) { performAdd() }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("HTTP traffic over the network is unencrypted. Your conversations will be visible to others on the same network.\n\nUse HTTPS (Tailscale) for remote access.")
+        }
     }
 
     // ── Tailscale setup guide ──────────────────────────────────────────────
@@ -278,7 +311,7 @@ struct ConnectionView: View {
                 connectingURL = nil
                 if ok {
                     store.setActive(urlString)
-                    onConnect(url)
+                    onConnect(url, store.token(for: urlString))
                 } else {
                     rowError = "Could not reach \(urlString). Check the URL and your connection."
                 }
@@ -303,11 +336,21 @@ struct ConnectionView: View {
 
     private func attemptAdd() {
         let trimmedURL = addURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmedURL),
-              url.scheme == "http" || url.scheme == "https" else {
+        guard let scheme = URL(string: trimmedURL)?.scheme,
+              scheme == "http" || scheme == "https" else {
             addError = "Enter a valid http or https URL."
             return
         }
+        if isInsecureNonLocal {
+            showInsecureAlert = true
+            return
+        }
+        performAdd()
+    }
+
+    private func performAdd() {
+        let trimmedURL = addURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmedURL) else { return }
         isAddConnecting = true
         addError = nil
         Task {
@@ -316,19 +359,84 @@ struct ConnectionView: View {
                 isAddConnecting = false
                 if ok {
                     let label = addLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let tokenValue = addToken.trimmingCharacters(in: .whitespacesAndNewlines)
                     let conn = SavedConnection(
                         label: label.isEmpty ? SavedConnection.autoLabel(for: trimmedURL) : label,
-                        urlString: trimmedURL
+                        urlString: trimmedURL,
+                        token: tokenValue.isEmpty ? nil : tokenValue
                     )
                     store.add(conn)
                     store.setActive(trimmedURL)
                     showAddSheet = false
-                    onConnect(url)
+                    onConnect(url, conn.token)
                 } else {
                     addError = "Could not reach server. Check the URL and your connection."
                 }
             }
         }
+    }
+}
+
+// ── Edit connection sheet ─────────────────────────────────────────────────────
+
+private struct EditConnectionSheet: View {
+    let connection: SavedConnection
+    let onSave: (SavedConnection) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var label: String
+    @State private var token: String
+
+    init(connection: SavedConnection, onSave: @escaping (SavedConnection) -> Void) {
+        self.connection = connection
+        self.onSave = onSave
+        _label = State(initialValue: connection.label)
+        _token = State(initialValue: connection.token ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text(connection.urlString)
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                } header: { Text("URL") }
+
+                Section {
+                    TextField("e.g. Home WiFi, Tailscale", text: $label)
+                        .autocorrectionDisabled()
+                } header: { Text("Label") }
+
+                Section {
+                    SecureField("Paste token from server", text: $token)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: { Text("Server Token") }
+                  footer: { Text("Copy from ~/.local/share/mira/token on your Mac. Leave blank to remove authentication.") }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.appBg)
+            .navigationTitle("Edit Connection")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = connection
+                        let trimmedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+                        updated.label = trimmedLabel.isEmpty ? connection.label : trimmedLabel
+                        updated.token = trimmedToken.isEmpty ? nil : trimmedToken
+                        onSave(updated)
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 

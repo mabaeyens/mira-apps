@@ -33,6 +33,7 @@ final class MacConnectionManager {
                 let status = await APIClient.shared.startupStatus()
                 switch status {
                 case .ready:
+                    self?.loadToken()
                     self?.state = .ready
                     return
                 case .starting:
@@ -50,6 +51,14 @@ final class MacConnectionManager {
 
     func retry() {
         start()
+    }
+
+    private func loadToken() {
+        let path = FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: ".local/share/mira/token")
+        if let raw = try? String(contentsOf: path, encoding: .utf8) {
+            APIClient.shared.authToken = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
     }
 }
 #endif

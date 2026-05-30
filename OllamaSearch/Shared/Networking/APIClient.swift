@@ -13,6 +13,13 @@ final class APIClient {
 
     // Compile-time constant literal — URL(string:) only returns nil for malformed strings.
     var baseURL: URL = URL(string: "http://127.0.0.1:8000")!
+    var authToken: String?
+
+    private func authed(_ req: inout URLRequest) {
+        if let token = authToken, !token.isEmpty {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+    }
 
     // ── Health ────────────────────────────────────────────────────────────────
 
@@ -112,6 +119,7 @@ final class APIClient {
         let url = baseURL.appendingPathComponent("backend")
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         return try JSONDecoder().decode(BackendInfo.self, from: data)
     }
@@ -125,6 +133,7 @@ final class APIClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(["backend": backend])
         req.timeoutInterval = 120
+        authed(&req)
         _ = try await URLSession.shared.data(for: req)
         return try await getBackend()
     }
@@ -135,6 +144,7 @@ final class APIClient {
         let url = baseURL.appendingPathComponent("info")
         var req = URLRequest(url: url)
         req.timeoutInterval = 5
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         return try JSONDecoder().decode(ServerInfo.self, from: data)
     }
@@ -154,6 +164,7 @@ final class APIClient {
         // 64-hex-char boundary makes accidental collision with file content statistically impossible.
         let boundary = UUID().uuidString.replacingOccurrences(of: "-", with: "") + UUID().uuidString.replacingOccurrences(of: "-", with: "")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        authed(&request)
         request.httpBody = multipartBody(
             message: message,
             conversationId: conversationId,
@@ -168,6 +179,7 @@ final class APIClient {
         guard let url = URL(string: "/cancel", relativeTo: baseURL) else { return }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        authed(&req)
         do {
             _ = try await URLSession.shared.data(for: req)
         } catch {
@@ -182,6 +194,7 @@ final class APIClient {
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(ResetResponse.self, from: data)
         return (obj.convId, obj.title)
@@ -194,6 +207,7 @@ final class APIClient {
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(CompactResponse.self, from: data)
         return obj.message
@@ -205,6 +219,7 @@ final class APIClient {
         let url = baseURL.appendingPathComponent("conversations")
         var req = URLRequest(url: url)
         req.timeoutInterval = 15
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(ConversationList.self, from: data)
         return obj.conversations
@@ -220,6 +235,7 @@ final class APIClient {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(["project_id": pid])
         }
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(NewConversationResponse.self, from: data)
         return obj.id
@@ -229,7 +245,9 @@ final class APIClient {
 
     func listProjects() async throws -> [Project] {
         let url = baseURL.appendingPathComponent("projects")
-        let (data, _) = try await URLSession.shared.data(from: url)
+        var req = URLRequest(url: url)
+        authed(&req)
+        let (data, _) = try await URLSession.shared.data(for: req)
         return try JSONDecoder().decode(ProjectList.self, from: data).projects
     }
 
@@ -244,6 +262,7 @@ final class APIClient {
         if let lp = localPath { body["local_path"] = lp }
         if let gh = githubRepo { body["github_repo"] = gh }
         req.httpBody = try JSONEncoder().encode(body)
+        authed(&req)
         let (data, response) = try await URLSession.shared.data(for: req)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.detail ?? "Server error \(http.statusCode)"
@@ -258,6 +277,7 @@ final class APIClient {
         }
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
+        authed(&req)
         _ = try await URLSession.shared.data(for: req)
     }
 
@@ -269,6 +289,7 @@ final class APIClient {
         req.httpMethod = "PATCH"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(["title": title])
+        authed(&req)
         _ = try await URLSession.shared.data(for: req)
     }
 
@@ -278,6 +299,7 @@ final class APIClient {
         }
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
+        authed(&req)
         _ = try await URLSession.shared.data(for: req)
     }
 
@@ -285,6 +307,7 @@ final class APIClient {
         let url = baseURL.appendingPathComponent("conversations/\(conversationId)/messages")
         var req = URLRequest(url: url)
         req.timeoutInterval = 60
+        authed(&req)
         let (data, _) = try await URLSession.shared.data(for: req)
         let obj = try JSONDecoder().decode(MessageList.self, from: data)
         return obj.messages
