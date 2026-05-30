@@ -7,11 +7,13 @@ struct OllamaSearchApp: App {
     // ── macOS ─────────────────────────────────────────────────────────────────
     #if os(macOS)
     @State private var chatVM = ChatViewModel()
+    @State private var cloudPrefs = CloudPreferences()
 
     var body: some Scene {
         WindowGroup {
             MacRootView(chatVM: chatVM)
             .frame(minWidth: 700, minHeight: 500)
+            .environment(cloudPrefs)
         }
         .defaultSize(width: 960, height: 680)
         .commands {
@@ -49,6 +51,7 @@ struct OllamaSearchApp: App {
     #if os(iOS)
     @State private var chatVM = ChatViewModel()
     @State private var connectionsStore = SavedConnectionsStore()
+    @State private var cloudPrefs = CloudPreferences()
     @State private var activeURL: URL? = nil
     @State private var splashDone = false
     @State private var showingConnectionSettings = false
@@ -107,6 +110,7 @@ struct OllamaSearchApp: App {
                 guard phase == .active, splashDone, activeURL != nil else { return }
                 startReconnect()
             }
+            .environment(cloudPrefs)
         }
     }
 
@@ -341,14 +345,14 @@ struct MacRootView: View {
     private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @AppStorage("sidebarPinned") private var sidebarPinned: Bool = true
+    @Environment(CloudPreferences.self) private var prefs
 
     // When pinned, the binding always reports .all and ignores writes so
     // SwiftUI navigation actions can't collapse the sidebar automatically.
     private var visibilityBinding: Binding<NavigationSplitViewVisibility> {
         Binding(
-            get: { sidebarPinned ? .all : columnVisibility },
-            set: { if !sidebarPinned { columnVisibility = $0 } }
+            get: { prefs.sidebarPinned ? .all : columnVisibility },
+            set: { if !prefs.sidebarPinned { columnVisibility = $0 } }
         )
     }
 

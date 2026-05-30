@@ -28,6 +28,7 @@ struct SavedConnection: Codable, Identifiable, Hashable {
 final class SavedConnectionsStore {
     private static let connectionsKey = "savedConnections_v2"
     private static let activeKey     = "activeConnectionURL"
+    private let kv = NSUbiquitousKeyValueStore.default
 
     // ── Known connections ──────────────────────────────────────────────────────
     // Add your own connections via the UI. The seeds array ships empty so no
@@ -42,8 +43,15 @@ final class SavedConnectionsStore {
 
     init() {
         load()
+        migrateToKVStoreIfNeeded()
         migrateIfNeeded()
         seedKnownConnections()
+        NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: kv,
+            queue: .main
+        ) { [weak self] _ in self?.load() }
+        kv.synchronize()
     }
 
     private func seedKnownConnections() {
@@ -67,14 +75,15 @@ final class SavedConnectionsStore {
         connections.remove(atOffsets: offsets)
         if let active = activeURLString, removed.contains(active) {
             activeURLString = connections.first?.urlString
-            UserDefaults.standard.set(activeURLString, forKey: Self.activeKey)
+            if let v = activeURLString { kv.set(v, forKey: Self.activeKey) } else { kv.removeObject(forKey: Self.activeKey) }
         }
         persist()
     }
 
     func setActive(_ urlString: String) {
         activeURLString = urlString
-        UserDefaults.standard.set(urlString, forKey: Self.activeKey)
+        kv.set(urlString, forKey: Self.activeKey)
+        kv.synchronize()
     }
 
     func update(_ connection: SavedConnection) {
@@ -89,14 +98,29 @@ final class SavedConnectionsStore {
 
     private func persist() {
         guard let data = try? JSONEncoder().encode(connections) else { return }
-        UserDefaults.standard.set(data, forKey: Self.connectionsKey)
+        kv.set(data, forKey: Self.connectionsKey)
+        kv.synchronize()
     }
 
     private func load() {
-        activeURLString = UserDefaults.standard.string(forKey: Self.activeKey)
-        guard let data = UserDefaults.standard.data(forKey: Self.connectionsKey),
+        activeURLString = kv.string(forKey: Self.activeKey)
+        guard let data = kv.data(forKey: Self.connectionsKey),
               let decoded = try? JSONDecoder().decode([SavedConnection].self, from: data) else { return }
         connections = decoded
+    }
+
+    // One-time migration from UserDefaults to NSUbiquitousKeyValueStore.
+    private func migrateToKVStoreIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: "savedConnections_kv_migrated") else { return }
+        defer { UserDefaults.standard.set(true, forKey: "savedConnections_kv_migrated") }
+        guard kv.data(forKey: Self.connectionsKey) == nil else { return }
+        if let data = UserDefaults.standard.data(forKey: Self.connectionsKey) {
+            kv.set(data, forKey: Self.connectionsKey)
+        }
+        if let active = UserDefaults.standard.string(forKey: Self.activeKey) {
+            kv.set(active, forKey: Self.activeKey)
+        }
+        kv.synchronize()
     }
 
     // One-time migration from the old localURL / remoteURL keys

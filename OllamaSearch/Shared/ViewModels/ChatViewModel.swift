@@ -76,6 +76,8 @@ final class ChatViewModel {
     var loadingConvId: String? = nil
     /// True while the conversation list is being fetched from the server.
     var isLoadingConversations: Bool = false
+    /// Non-nil when conversations are loaded from the iCloud cache (backend unreachable).
+    var offlineCacheDate: Date? = nil
 
     // ── Internals ────────────────────────────────────────────────────────────
 
@@ -562,6 +564,8 @@ final class ChatViewModel {
         defer { timeout.cancel() }
         do {
             conversations = try await work.value
+            offlineCacheDate = nil
+            Task { await ConversationCache.shared.save(conversations) }
         } catch is CancellationError {
             // 8-second timeout fired (server busy or network slow) — don't surface
             // the raw "cancelled" description; show nothing so background refreshes
@@ -572,7 +576,12 @@ final class ChatViewModel {
             // URLSession cancelled by iOS when app went to background — ignore.
             return
         } catch {
-            errorMessage = "Could not reach server (\(error.localizedDescription)). Check your connection and try again."
+            if let cached = await ConversationCache.shared.load(), !cached.conversations.isEmpty {
+                conversations = cached.conversations
+                offlineCacheDate = cached.savedAt
+            } else {
+                errorMessage = "Could not reach server (\(error.localizedDescription)). Check your connection and try again."
+            }
         }
     }
 

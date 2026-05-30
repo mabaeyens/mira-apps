@@ -85,3 +85,16 @@ struct ConversationMessage: Decodable {
     let role: String
     let content: String
 }
+
+// ── Memory ────────────────────────────────────────────────────────────────────
+
+struct MemoryItem: Codable, Identifiable {
+    let id: Int
+    let text: String
+    let createdAt: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, text
+        case createdAt = "created_at"
+    }
+}

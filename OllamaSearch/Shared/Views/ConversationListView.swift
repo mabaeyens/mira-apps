@@ -20,8 +20,9 @@ struct ConversationListView: View {
     @State private var searchText: String = ""
     @State private var debouncedSearch: String = ""
     @State private var showAddProject = false
+    @State private var showMemories = false
     @State private var deletingConv: Conversation? = nil
-    @AppStorage("projectsExpanded") private var projectsExpanded = true
+    @Environment(CloudPreferences.self) private var prefs
 
     private var filteredConversations: [Conversation] {
         guard !debouncedSearch.isEmpty else { return vm.conversations }
@@ -61,6 +62,29 @@ struct ConversationListView: View {
         .sheet(isPresented: $showAddProject) {
             AddProjectSheet(vm: vm, isPresented: $showAddProject)
         }
+        .sheet(isPresented: $showMemories) {
+            MemoriesView()
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let date = vm.offlineCacheDate {
+                offlineCacheBanner(date)
+            }
+        }
+    }
+
+    private func offlineCacheBanner(_ date: Date) -> some View {
+        let formatted = RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
+        return HStack(spacing: 6) {
+            Image(systemName: "icloud.slash")
+                .font(.system(size: 11))
+            Text("Offline · cached \(formatted)")
+                .font(.system(size: 11))
+        }
+        .foregroundStyle(Color.textSecondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) { Color.borderSubtle.frame(height: 0.5) }
     }
 
     // ── Loading / empty states ────────────────────────────────────────────────
@@ -123,7 +147,7 @@ struct ConversationListView: View {
             // Projects section — collapsible
             if !vm.projects.isEmpty {
                 Section {
-                    if projectsExpanded {
+                    if prefs.projectsExpanded {
                         ForEach(vm.projects) { project in
                             projectRow(project)
                                 .listRowBackground(Color.clear)
@@ -134,13 +158,13 @@ struct ConversationListView: View {
                 } header: {
                     Button {
                         withAnimation(.spring(duration: 0.2)) {
-                            projectsExpanded.toggle()
+                            prefs.projectsExpanded.toggle()
                         }
                     } label: {
                         HStack(spacing: 4) {
                             sectionHeader("Projects")
                             Spacer()
-                            Image(systemName: projectsExpanded ? "chevron.down" : "chevron.right")
+                            Image(systemName: prefs.projectsExpanded ? "chevron.down" : "chevron.right")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundStyle(Color.textSecondary)
                         }
@@ -232,7 +256,11 @@ struct ConversationListView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
+            #if os(macOS)
+            .font(Font.sidebarMeta)
+            #else
             .font(Font.sidebarMeta.weight(.semibold))
+            #endif
             .foregroundStyle(Color.textSecondary)
     }
 
@@ -302,8 +330,6 @@ struct ConversationListView: View {
     // ── About / New Chat (macOS) ──────────────────────────────────────────────
 
     #if os(macOS)
-    @AppStorage("sidebarPinned") private var sidebarPinned: Bool = true
-
     private var newChatButton: some View {
         HStack(spacing: 0) {
             Button(action: { vm.newConversation() }) {
@@ -321,15 +347,25 @@ struct ConversationListView: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: { sidebarPinned.toggle() }) {
-                Image(systemName: sidebarPinned ? "pin.fill" : "pin")
-                    .foregroundStyle(sidebarPinned ? Color.appAccent : Color.textSecondary)
+            Button(action: { showMemories = true }) {
+                Image(systemName: "brain")
+                    .foregroundStyle(Color.textSecondary)
+                    .font(Font.sidebarMeta)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+            .help("Memories")
+
+            Button(action: { prefs.sidebarPinned.toggle() }) {
+                Image(systemName: prefs.sidebarPinned ? "pin.fill" : "pin")
+                    .foregroundStyle(prefs.sidebarPinned ? Color.appAccent : Color.textSecondary)
                     .font(Font.sidebarMeta)
                     .padding(.trailing, 14)
                     .padding(.vertical, 10)
             }
             .buttonStyle(.plain)
-            .help(sidebarPinned ? "Sidebar always visible — click to auto-hide" : "Sidebar auto-hides — click to keep visible")
+            .help(prefs.sidebarPinned ? "Sidebar always visible — click to auto-hide" : "Sidebar auto-hides — click to keep visible")
         }
         .background(.clear)
     }
@@ -345,6 +381,14 @@ struct ConversationListView: View {
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
+                Button(action: { showMemories = true }) {
+                    Image(systemName: "brain")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                        .frame(width: 38, height: 38)
+                        .background(Color(uiColor: .systemFill), in: Circle())
+                }
+                .buttonStyle(.plain)
                 if let onSettings {
                     Button(action: onSettings) {
                         Image(systemName: connectionIcon)
