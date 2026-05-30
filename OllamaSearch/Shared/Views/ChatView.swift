@@ -89,11 +89,12 @@ struct ChatView: View {
         .sheet(isPresented: $vm.showModelPicker) {
             ModelPickerView(
                 currentBackend: vm.currentBackend,
+                currentModelId: vm.modelName,
                 isSwitching: vm.isSwitchingBackend,
                 switchStatusMessage: vm.switchStatusMessage,
                 liveModelName: vm.modelName,
                 liveContextWindow: vm.contextWindow,
-                onSwitch: { backend in await vm.switchBackend(to: backend) },
+                onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) },
                 thinkingEnabled: $vm.thinkingEnabled
             )
         }

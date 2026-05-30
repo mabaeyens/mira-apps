@@ -407,6 +407,41 @@ final class ChatViewModel {
         isSwitchingBackend = false
     }
 
+    func switchModel(backend: String, modelId: String) async {
+        guard !isSwitchingBackend else { return }
+        isSwitchingBackend = true
+
+        let toLabel = modelId.split(separator: "/").last.map(String.init) ?? modelId
+        switchStatusMessage = "Stopping \(modelName.isEmpty ? currentBackend : modelName)…"
+
+        let statusTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled else { return }
+            switchStatusMessage = "Starting \(toLabel)…"
+            try? await Task.sleep(for: .seconds(18))
+            guard !Task.isCancelled else { return }
+            switchStatusMessage = "Loading model weights…"
+            try? await Task.sleep(for: .seconds(20))
+            guard !Task.isCancelled else { return }
+            switchStatusMessage = "Almost ready…"
+        }
+
+        do {
+            let info = try await APIClient.shared.switchModel(backend: backend, modelId: modelId)
+            statusTask.cancel()
+            currentBackend = info.backend
+            modelName = info.model
+            contextWindow = info.contextWindow
+            showModelPicker = false
+            messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+        } catch {
+            statusTask.cancel()
+            errorMessage = "Failed to switch model: \(error.localizedDescription)"
+        }
+        switchStatusMessage = ""
+        isSwitchingBackend = false
+    }
+
     func loadProjects() async {
         do {
             projects = try await api.listProjects()
