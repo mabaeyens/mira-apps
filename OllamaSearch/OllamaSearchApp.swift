@@ -488,6 +488,9 @@ struct iOSConnectedView: View {
             liveContextWindow: chatVM.contextWindow,
             onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) }
         )
+        #if os(iOS)
+        .presentationBackground(Color.appBg)
+        #endif
     }
 
     var body: some View {

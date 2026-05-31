@@ -131,6 +131,14 @@ struct MemoriesView: View {
                     .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 280)
+                Button("Add a memory") {
+                    prefillText = ""
+                    showingAddSheet = true
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.appAccent)
+                .disabled(vm.memories.count >= 30)
+                .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -17,13 +17,13 @@ struct InputBar: View {
     private var showAddToChat: Binding<Bool> { showSheetExternal ?? $_showAddToChat }
 
     @FocusState private var isFocused: Bool
+    @State private var sr = SpeechRecognizer()
     #if os(iOS)
     @State private var showFilePicker = false
     @State private var showCameraPicker = false
     @State private var showPhotosPicker = false
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showProjectPicker = false
-    @State private var sr = SpeechRecognizer()
     #endif
 
     var body: some View {
@@ -141,9 +141,7 @@ struct InputBar: View {
                     .buttonStyle(.plain)
                     .disabled(vm.isSwitchingBackend || vm.isStreaming)
 
-                    #if os(iOS)
                     micButton
-                    #endif
                     actionButton
                 }
                 .padding(.horizontal, 12)
@@ -341,7 +339,7 @@ struct InputBar: View {
             Color.clear.frame(height: 8)
 
             Text("Add to Chat")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Color.textPrimary)
                 .padding(.vertical, 14)
 
@@ -390,8 +388,18 @@ struct InputBar: View {
             Divider().padding(.horizontal, 16)
 
             // ── Speech language row ───────────────────────────────────────────
-            HStack {
-                addToChatRow(icon: "mic.fill", label: "Speech language", trailing: nil)
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.surfaceBg)
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Text("Speech language")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Picker("", selection: Bindable(prefs).speechLanguage) {
                     Text("Auto").tag("auto")
@@ -399,14 +407,13 @@ struct InputBar: View {
                     Text("Español").tag("es-ES")
                 }
                 .pickerStyle(.menu)
-                .padding(.trailing, 16)
             }
-
-            Spacer()
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
         }
         .frame(maxWidth: .infinity)
         .background(Color.appBg)
-        .presentationDetents([.height(360)])
+        .presentationDetents([.height(300)])
         .presentationDragIndicator(.visible)
     }
 
@@ -422,7 +429,7 @@ struct InputBar: View {
                 }
                 .frame(height: 72)
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Color.textSecondary)
             }
         }
@@ -542,7 +549,6 @@ struct InputBar: View {
         return Color(white: 0.45)
     }
 
-    #if os(iOS)
     private var micButton: some View {
         Button {
             Task {
@@ -558,7 +564,6 @@ struct InputBar: View {
         .buttonStyle(.plain)
         .disabled(vm.isStreaming || vm.isSwitchingBackend)
     }
-    #endif
 
     @ViewBuilder
     private var actionButton: some View {
