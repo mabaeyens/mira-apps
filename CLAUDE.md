@@ -1,6 +1,6 @@
 # Mira Apps — Claude Code Reference
 
-Native apps (iOS + macOS) for Mira. See `workflow.md` for session guidance and `../MIRA_WORKFLOW.md` for complete development workflow.
+Native apps (iOS + macOS) for Mira.
 
 ## Project Stack
 
@@ -20,8 +20,6 @@ Native apps (iOS + macOS) for Mira. See `workflow.md` for session guidance and `
 - **State management:** `@Observable @MainActor` for all view models
 - **Connection resilience:** Backend may sleep — handle gracefully with probes and transient banners
 
-See `workflow.md` for full pattern reference and sibling app cross-checks.
-
 ## Build Targets
 
 - `OllamaSearch` (main scheme) — iOS + macOS
@@ -34,16 +32,18 @@ Before any release:
 2. Manual smoke check (2 min): launch, open conversation, send message, check specific feature
 3. Run `/mira-release` — bumps version, archives both platforms, uploads to TestFlight
 
-**Release cadence:** One per week (Friday or Monday). See section 7 of `../MIRA_WORKFLOW.md`.
+**Release cadence:** One per week (Friday or Monday).
+**Security audit:** Run `/security-review` last weekend of each month.
 
-## Workflow Reference
+## Spec Format (5 bullets)
 
-See `../MIRA_WORKFLOW.md` for:
-- Session checklist and 5-bullet spec format (section 2)
-- Validation before releasing (section 5)
-- Release cadence (1 per week, section 7)
-- Monthly security audit (section 6)
-- Token efficiency tips (sections 1 and 8)
+When a new bug or feature request arrives, write the spec to `specs/<slug>.md` before implementing. The `specs/` folder is gitignored (local only). Once implemented, the relevant detail moves to README or architecture docs — the spec file can then be deleted.
+
+1. Problem: what is broken or missing
+2. Files: which files to change and which functions to touch first
+3. Constraint: a hard rule (don't show X if Y, match pattern Z)
+4. Edge cases: (a) case 1, (b) case 2
+5. Done: acceptance criteria (2–3 bullets)
 
 ## File Sizes
 
