@@ -90,7 +90,7 @@ struct ChatView: View {
         .navigationTitle(currentTitle)
         #endif
         #if os(macOS)
-        .sheet(isPresented: $vm.showModelPicker) {
+        .sheet(isPresented: Bindable(vm).showModelPicker) {
             ModelPickerView(
                 currentBackend: vm.currentBackend,
                 currentModelId: vm.modelName,
