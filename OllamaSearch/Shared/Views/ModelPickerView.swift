@@ -48,7 +48,7 @@ struct ModelPickerView: View {
         #if os(macOS)
         .frame(width: 340)
         #else
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         #endif
         .background(Color.appBg)
         .task { await loadModels() }
@@ -144,6 +144,7 @@ struct ModelPickerView: View {
             }
         }
         .frame(maxHeight: 440)
+        .background(Color.appBg)
     }
 
     @ViewBuilder
