@@ -49,7 +49,7 @@ struct InputBar: View {
             .padding(.bottom, 12)
         }
         .background(Color.appBg)
-        .animation(.spring(duration: 0.2), value: vm.thinkingEnabled)
+        .animation(.spring(duration: 0.2), value: vm.thinkingMode)
         #if os(iOS)
         .sheet(isPresented: showAddToChat) {
             addToChatSheetIOS
@@ -182,26 +182,36 @@ struct InputBar: View {
             }
             #endif
 
-            // Thinking toggle — ON forces thinking; OFF leaves it adaptive.
-            Button { vm.thinkingEnabled.toggle() } label: {
+            // Thinking toggle — cycles: off → adaptive → on → off
+            Button { vm.thinkingMode.cycle() } label: {
                 HStack(spacing: 3) {
                     Image(systemName: "brain.fill")
-                        .font(.system(size: vm.thinkingEnabled ? 10 : 14, weight: .medium))
-                    if vm.thinkingEnabled {
+                        .font(.system(size: vm.thinkingMode == .adaptive ? 14 : 10, weight: .medium))
+                    switch vm.thinkingMode {
+                    case .on:
                         Text("Thinking")
+                            .font(.system(size: 12, weight: .medium))
+                    case .off:
+                        Text("Off")
+                            .font(.system(size: 12, weight: .medium))
+                    case .adaptive:
+                        Text("Auto")
                             .font(.system(size: 12, weight: .medium))
                     }
                 }
-                .foregroundStyle(vm.thinkingEnabled ? Color.appAccent : Color.textSecondary)
-                .padding(.horizontal, vm.thinkingEnabled ? 7 : 0)
-                .frame(minWidth: vm.thinkingEnabled ? 0 : 28, minHeight: 28)
-                .background(vm.thinkingEnabled ? Color.appAccent.opacity(0.12) : Color.clear, in: Capsule())
+                .foregroundStyle(vm.thinkingMode == .on ? Color.appAccent : Color.textSecondary.opacity(0.6))
+                .padding(.horizontal, 7)
+                .frame(minHeight: 28)
+                .background(
+                    vm.thinkingMode == .on ? Color.appAccent.opacity(0.12) : Color.textSecondary.opacity(0.08),
+                    in: Capsule()
+                )
             }
             .buttonStyle(.plain)
             #if os(macOS)
             .focusEffectDisabled()
             #endif
-            .help("Force thinking on. Off = Mira decides automatically.")
+            .help(vm.thinkingMode == .adaptive ? "Mira decides automatically" : vm.thinkingMode == .on ? "Thinking forced on" : "Thinking forced off")
 
             if let project = vm.activeProject {
                 HStack(spacing: 3) {
@@ -298,11 +308,15 @@ struct InputBar: View {
             Divider()
                 .padding(.horizontal, 12)
 
-            Button { vm.thinkingEnabled.toggle() } label: {
-                addToChatRow(icon: "brain.fill", label: "Thinking", trailing: vm.thinkingEnabled ? "On" : nil)
+            Button { vm.thinkingMode.cycle() } label: {
+                addToChatRow(
+                    icon: "brain.fill",
+                    label: "Thinking",
+                    trailing: vm.thinkingMode == .on ? "On" : vm.thinkingMode == .off ? "Off" : "Auto"
+                )
             }
             .buttonStyle(.plain)
-            .foregroundStyle(vm.thinkingEnabled ? Color.appAccent : Color.textPrimary)
+            .foregroundStyle(vm.thinkingMode == .on ? Color.appAccent : Color.textPrimary)
         }
         .frame(width: 320)
         .padding(.vertical, 4)

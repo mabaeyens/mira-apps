@@ -156,33 +156,51 @@ struct MessageListView: View {
 
                     // Collapsible thinking block — open while streaming, collapses on first token
                     if let content = thinkingContent, !content.isEmpty {
-                        DisclosureGroup(isExpanded: $thinkingExpanded) {
-                            ScrollView {
-                                Text(content)
-                                    .font(.system(size: 13, design: .monospaced))
-                                    .foregroundStyle(Color.textSecondary)
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(12)
-                            }
-                            .frame(maxHeight: 220)
-                        } label: {
-                            HStack(spacing: 6) {
-                                if isThinkingActive {
-                                    ProgressView()
-                                    #if os(macOS)
-                                        .controlSize(.small)
-                                    #else
-                                        .scaleEffect(0.65)
-                                    #endif
-                                } else {
-                                    Image(systemName: "brain")
-                                        .font(.system(size: 11))
-                                        .opacity(0.6)
+                        VStack(spacing: 0) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { thinkingExpanded.toggle() }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: thinkingExpanded ? "chevron.down" : "chevron.right")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .frame(width: 12)
+                                        .foregroundStyle(Color.textSecondary.opacity(0.7))
+                                    if isThinkingActive {
+                                        ProgressView()
+                                        #if os(macOS)
+                                            .controlSize(.small)
+                                        #else
+                                            .scaleEffect(0.65)
+                                        #endif
+                                    } else {
+                                        Image(systemName: "brain")
+                                            .font(.system(size: 11))
+                                            .opacity(0.6)
+                                            .foregroundStyle(Color.textSecondary)
+                                    }
+                                    Text(isThinkingActive ? "Thinking…" : "Thought")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.textSecondary)
+                                    Spacer()
                                 }
-                                Text(isThinkingActive ? "Thinking…" : "Thinking")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            #if os(macOS)
+                            .focusEffectDisabled()
+                            #endif
+
+                            if thinkingExpanded {
+                                ScrollView {
+                                    Text(content)
+                                        .font(.system(size: 13, design: .monospaced))
+                                        .foregroundStyle(Color.textSecondary)
+                                        .textSelection(.enabled)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(12)
+                                }
+                                .frame(maxHeight: 220)
                             }
                         }
                         .padding(.horizontal, 20)

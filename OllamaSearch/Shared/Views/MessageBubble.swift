@@ -40,6 +40,18 @@ struct MessageBubble: View {
                 if !message.imageAttachments.isEmpty {
                     thumbnailRow
                 }
+                if !message.attachedFileNames.isEmpty {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        ForEach(message.attachedFileNames, id: \.self) { name in
+                            Label(name, systemImage: "doc.fill")
+                                .font(.caption2)
+                                .foregroundStyle(Color.textSecondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.surfaceBg, in: Capsule())
+                        }
+                    }
+                }
                 if !message.content.isEmpty {
                     Text(message.content)
                         .font(.chatBody)

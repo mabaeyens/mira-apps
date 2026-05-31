@@ -48,7 +48,9 @@ struct ModelPickerView: View {
         #if os(macOS)
         .frame(width: 340)
         #else
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .presentationDetents([.fraction(0.6), .large])
+        .presentationDragIndicator(.visible)
         #endif
         .background(Color.appBg)
         .task { await loadModels() }
