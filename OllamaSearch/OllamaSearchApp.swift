@@ -11,8 +11,9 @@ struct OllamaSearchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MacRootView(chatVM: chatVM)
+            MacRootView()
             .frame(minWidth: 700, minHeight: 500)
+            .environment(chatVM)
             .environment(cloudPrefs)
         }
         .defaultSize(width: 960, height: 680)
@@ -33,7 +34,8 @@ struct OllamaSearchApp: App {
         .windowResizability(.contentSize)
 
         MenuBarExtra {
-            MenuBarContent(chatVM: chatVM)
+            MenuBarContent()
+                .environment(chatVM)
         } label: {
             Image(systemName: "sparkle")
                 .symbolRenderingMode(.hierarchical)
@@ -67,8 +69,8 @@ struct OllamaSearchApp: App {
                 if !splashDone {
                     iOSSplashView(status: splashStatus)
                 } else if let url = activeURL {
-                    iOSConnectedView(chatVM: chatVM, serverURL: url,
-                                    isReachable: isReachable, reconnectMessage: reconnectMessage) {
+                    iOSConnectedView(serverURL: url,
+                                     isReachable: isReachable, reconnectMessage: reconnectMessage) {
                         showingConnectionSettings = true
                     }
                     .sheet(isPresented: $showingConnectionSettings) {
@@ -110,6 +112,7 @@ struct OllamaSearchApp: App {
                 guard phase == .active, splashDone, activeURL != nil else { return }
                 startReconnect()
             }
+            .environment(chatVM)
             .environment(cloudPrefs)
         }
     }
@@ -340,7 +343,7 @@ private struct AboutCommand: View {
 /// @Observable property access on MacConnectionManager is correctly tracked and
 /// triggers re-renders when state changes.
 struct MacRootView: View {
-    var chatVM: ChatViewModel
+    @Environment(ChatViewModel.self) private var chatVM
 
     private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
@@ -355,10 +358,10 @@ struct MacRootView: View {
         Group {
             if showMain {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    ConversationListView(vm: chatVM)
+                    ConversationListView()
                         .frame(minWidth: 200)
                 } detail: {
-                    ChatView(vm: chatVM)
+                    ChatView()
                 }
                 .task {
                     await chatVM.loadBackend()
@@ -382,7 +385,7 @@ struct MacRootView: View {
 }
 
 struct MenuBarContent: View {
-    let chatVM: ChatViewModel
+    @Environment(ChatViewModel.self) private var chatVM
     private let connection = MacConnectionManager.shared
 
     var body: some View {
@@ -442,7 +445,7 @@ struct iOSSplashView: View {
                 MiraLogoView(size: 140, animated: true, playIntro: true)
                 Spacer().frame(height: 28)
                 Text("Mira")
-                    .font(.bookerly(size: 38, weight: .semibold))
+                    .font(.bookerlyTitle)
                     .foregroundStyle(Color.textPrimary)
                 Spacer().frame(height: 16)
                 Text(status.isEmpty ? " " : status)
@@ -458,7 +461,7 @@ struct iOSSplashView: View {
 
 #if os(iOS)
 struct iOSConnectedView: View {
-    let chatVM: ChatViewModel
+    @Environment(ChatViewModel.self) private var chatVM
     let serverURL: URL
     var isReachable: Bool = true
     var reconnectMessage: String? = nil
@@ -501,7 +504,7 @@ struct iOSConnectedView: View {
                 // NavigationStack — iOS 26 treats a toolbar on the root as a column
                 // anchor and shows both root and destination side-by-side.
                 NavigationSplitView(columnVisibility: $columnVisibility) {
-                    ConversationListView(vm: chatVM, onTap: { _ in
+                    ConversationListView(onTap: { _ in
                         columnVisibility = .detailOnly
                     })
                         .toolbar {
@@ -514,13 +517,12 @@ struct iOSConnectedView: View {
                             }
                         }
                 } detail: {
-                    ChatView(vm: chatVM)
+                    ChatView()
                 }
             } else {
                 // iPhone portrait: ZStack overlay — sidebar slides in from the left.
                 // No NavigationStack root needed; avoids iOS 26 split-column trap.
                 iOSPortraitView(
-                    chatVM: chatVM,
                     isReachable: isReachable,
                     connectionIcon: connectionIcon,
                     onSettings: onSettings
@@ -600,7 +602,7 @@ struct iOSConnectedView: View {
 // WelcomeView shown when no conversation is active; ChatView otherwise.
 
 private struct iOSPortraitView: View {
-    let chatVM: ChatViewModel
+    @Environment(ChatViewModel.self) private var chatVM
     var isReachable: Bool
     var connectionIcon: String
     let onSettings: () -> Void
@@ -625,13 +627,11 @@ private struct iOSPortraitView: View {
             Group {
                 if chatVM.currentConvId.isEmpty && !chatVM.isStreaming && chatVM.messages.isEmpty {
                     WelcomeView(
-                        vm: chatVM,
                         onMenu: openSidebar
                     )
                     .transition(.opacity)
                 } else {
                     ChatView(
-                        vm: chatVM,
                         onBack: { openSidebar() }
                     )
                     .transition(.opacity)
@@ -647,7 +647,6 @@ private struct iOSPortraitView: View {
                     .transition(.opacity)
 
                 ConversationListView(
-                    vm: chatVM,
                     onTap: { convId in
                         chatVM.selectConversation(convId)
                         closeSidebar()

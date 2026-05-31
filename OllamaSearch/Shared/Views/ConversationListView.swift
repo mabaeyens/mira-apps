@@ -3,7 +3,7 @@ import SwiftUI
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 
 struct ConversationListView: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
     var onTap: ((String) -> Void)? = nil
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
@@ -61,7 +61,7 @@ struct ConversationListView: View {
         }
         #endif
         .sheet(isPresented: $showAddProject) {
-            AddProjectSheet(vm: vm, isPresented: $showAddProject)
+            AddProjectSheet(isPresented: $showAddProject)
         }
         .sheet(isPresented: $showMemories) {
             MemoriesView()
@@ -77,9 +77,9 @@ struct ConversationListView: View {
         let formatted = RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
         return HStack(spacing: 6) {
             Image(systemName: "icloud.slash")
-                .font(.system(size: 11))
+                .font(Font.sidebarMeta)
             Text("Offline · cached \(formatted)")
-                .font(.system(size: 11))
+                .font(Font.sidebarMeta)
         }
         .foregroundStyle(Color.textSecondary)
         .frame(maxWidth: .infinity)
@@ -131,7 +131,7 @@ struct ConversationListView: View {
                                 .foregroundStyle(Color.textPrimary)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.iconSmall)
                                 .foregroundStyle(Color.textSecondary)
                         }
                         .padding(.vertical, 10)
@@ -165,7 +165,7 @@ struct ConversationListView: View {
                         HStack(spacing: 4) {
                             sectionHeader("Projects")
                             Image(systemName: prefs.projectsExpanded ? "chevron.down" : "chevron.right")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.iconSmall)
                                 .foregroundStyle(Color.textSecondary)
                             Spacer()
                         }
@@ -255,12 +255,7 @@ struct ConversationListView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
-            #if os(macOS)
-            .font(Font.sidebarMeta)
-            #else
-            .font(Font.sidebarMeta.weight(.semibold))
-            #endif
-            .foregroundStyle(Color.textSecondary)
+            .miraSecondaryCaption()
     }
 
     // ── Project rows ──────────────────────────────────────────────────────────
@@ -282,15 +277,14 @@ struct ConversationListView: View {
                         .foregroundStyle(Color.textPrimary)
                     if let sub = project.subtitle {
                         Text(sub)
-                            .font(Font.sidebarSubtitle)
-                            .foregroundStyle(Color.textSecondary)
+                            .miraTimestamp()
                             .lineLimit(1)
                     }
                 }
                 Spacer()
                 if project.conversationCount > 0 {
                     Text("\(project.conversationCount)")
-                        .font(Font.sidebarMeta.weight(.medium))
+                        .font(Font.sidebarMeta)
                         .foregroundStyle(Color.textSecondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -497,13 +491,12 @@ struct ConversationListView: View {
                                 .foregroundStyle(Color.appAccent.opacity(0.7))
                         } else {
                             Text(relativeDate(conv.updatedAt))
-                                .font(Font.sidebarSubtitle)
-                                .foregroundStyle(Color.textSecondary)
+                                .miraTimestamp()
                         }
                         #if os(iOS)
                         if let proj = project {
                             Text(proj.name)
-                                .font(Font.sidebarMeta.weight(.medium))
+                                .font(Font.sidebarMeta)
                                 .foregroundStyle(Color.appAccent.opacity(0.8))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
@@ -575,7 +568,7 @@ struct ConversationListView: View {
 // ── Add Project sheet ─────────────────────────────────────────────────────────
 
 struct AddProjectSheet: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
     @Binding var isPresented: Bool
 
     @State private var name = ""

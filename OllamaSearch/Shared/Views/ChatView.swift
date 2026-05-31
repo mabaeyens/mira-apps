@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Main chat content view — message list + input bar.
 struct ChatView: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
     #if os(iOS)
     var onBack: (() -> Void)? = nil
     @State private var showAttachSheet = false
@@ -78,9 +78,9 @@ struct ChatView: View {
 
             // ── Input bar ─────────────────────────────────────────────────
             #if os(iOS)
-            InputBar(vm: vm, showSheetExternal: $showAttachSheet)
+            InputBar(showSheetExternal: $showAttachSheet)
             #else
-            InputBar(vm: vm)
+            InputBar()
             #endif
         }
         .background(Color.appBg)

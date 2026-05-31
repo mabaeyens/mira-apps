@@ -178,7 +178,7 @@ struct InlineCodeChip: View {
                 Text(code)
                     .font(.system(.footnote, design: .monospaced))
                 Image(systemName: copied ? "checkmark" : "square.on.square")
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .opacity(0.7)
             }
             .padding(.horizontal, 6)
