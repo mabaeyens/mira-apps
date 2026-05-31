@@ -663,7 +663,7 @@ private struct iOSPortraitView: View {
                     }
                 )
                 .frame(width: UIScreen.main.bounds.width * 0.85)
-                .background(Color.sidebarBg)
+                .background(Color.appBg)
                 .transition(.move(edge: .leading))
                 .zIndex(2)
             }

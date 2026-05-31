@@ -45,7 +45,7 @@ struct ConversationListView: View {
         #if os(macOS)
         .background(.clear)
         #else
-        .background(Color.sidebarBg)
+        .background(Color.appBg)
         #endif
         #if os(macOS)
         .navigationTitle("Mira")
@@ -140,7 +140,7 @@ struct ConversationListView: View {
                     .buttonStyle(.plain)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 2, leading: 10, bottom: 2, trailing: 10))
+                    .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
                 }
             }
             #endif
@@ -188,7 +188,7 @@ struct ConversationListView: View {
                         .tag(conv.id)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 2, leading: 10, bottom: 2, trailing: 10))
+                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
                 }
                 if vm.projects.isEmpty {
                     addProjectButton
@@ -337,22 +337,22 @@ struct ConversationListView: View {
                     .font(Font.sidebarTitle.weight(.medium))
                     .padding(.leading, 14)
                     .padding(.trailing, 4)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 7)
                 }
                 .buttonStyle(.plain)
 
                 Button(action: { showMemories = true }) {
                     Image(systemName: "person.text.rectangle")
                         .foregroundStyle(Color.textSecondary)
-                        .font(Font.sidebarMeta)
-                        .frame(width: 20, height: 20)
+                        .font(Font.sidebarTitle)
+                        .frame(width: 24, height: 24)
                         .padding(.horizontal, 6)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 7)
                 }
                 .buttonStyle(.plain)
                 .help("Memories")
             }
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(.clear)
 
             Divider()
         }
@@ -439,7 +439,7 @@ struct ConversationListView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
-        .background(Color.sidebarBg)
+        .background(Color.appBg)
     }
 
     private var iosNewChatPill: some View {
@@ -465,7 +465,7 @@ struct ConversationListView: View {
             Spacer()
         }
         .padding(.vertical, 16)
-        .background(Color.sidebarBg)
+        .background(Color.appBg)
     }
     #endif
 
@@ -523,7 +523,7 @@ struct ConversationListView: View {
             }
         }
         .padding(.vertical, 10)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 20)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(rowFill)

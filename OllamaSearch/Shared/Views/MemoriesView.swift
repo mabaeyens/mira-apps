@@ -1,18 +1,29 @@
+import Combine
 import SwiftUI
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 
-@Observable @MainActor
-final class MemoriesViewModel {
-    var memories: [MemoryItem] = []
-    var isLoading = false
-    var errorMessage: String? = nil
+@MainActor
+final class MemoriesViewModel: ObservableObject {
+    @Published var memories: [MemoryItem] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String? = nil
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: "cachedMemories"),
+           let items = try? JSONDecoder().decode([MemoryItem].self, from: data) {
+            memories = items
+        }
+    }
 
     func load() async {
         isLoading = true
         errorMessage = nil
         do {
-            memories = try await APIClient.shared.fetchMemories()
+            let fetched = try await APIClient.shared.fetchMemories()
+            if !fetched.isEmpty || memories.isEmpty {
+                memories = fetched
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -41,17 +52,14 @@ final class MemoriesViewModel {
 
 struct MemoriesView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var vm = MemoriesViewModel()
+    @StateObject private var vm = MemoriesViewModel()
     @State private var showingAddSheet = false
     @State private var prefillText = ""
 
     var body: some View {
         NavigationStack {
             Group {
-                if vm.isLoading && vm.memories.isEmpty {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if vm.memories.isEmpty {
+                if vm.memories.isEmpty {
                     emptyState
                 } else {
                     List {
@@ -76,6 +84,17 @@ struct MemoriesView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+                #if os(macOS)
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        prefillText = ""
+                        showingAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .disabled(vm.memories.count >= 30)
+                }
+                #else
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         prefillText = ""
@@ -85,10 +104,10 @@ struct MemoriesView: View {
                     }
                     .disabled(vm.memories.count >= 30)
                 }
+                #endif
             }
             .background(Color.appBg)
             .task { await vm.load() }
-            .onAppear { Task { await vm.load() } }
             .sheet(isPresented: $showingAddSheet) {
                 AddMemorySheet(prefill: prefillText) { text in
                     Task { await vm.add(text) }
@@ -102,6 +121,9 @@ struct MemoriesView: View {
             } message: {
                 Text(vm.errorMessage ?? "")
             }
+            #if os(macOS)
+            .frame(minWidth: 440, minHeight: 480)
+            #endif
         }
     }
 
@@ -200,6 +222,9 @@ struct AddMemorySheet: View {
             }
             .background(Color.appBg)
             .onAppear { text = prefill }
+            #if os(macOS)
+            .frame(minWidth: 440, minHeight: 300)
+            #endif
         }
     }
 }
@@ -253,6 +278,9 @@ struct RememberThisSheet: View {
             }
             .background(Color.appBg)
             .onAppear { text = messageText }
+            #if os(macOS)
+            .frame(minWidth: 440, minHeight: 300)
+            #endif
         }
     }
 }

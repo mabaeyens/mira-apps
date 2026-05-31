@@ -96,7 +96,7 @@ struct ConversationMessage: Decodable {
 struct MemoryItem: Codable, Identifiable {
     let id: Int
     let text: String
-    let createdAt: Int
+    let createdAt: Double
 
     enum CodingKeys: String, CodingKey {
         case id, text

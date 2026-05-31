@@ -4,6 +4,20 @@ import SwiftUI
 
 private let logger = Logger(subsystem: "com.mab.mira", category: "ChatViewModel")
 
+enum ThinkingMode: String, CaseIterable {
+    case adaptive  // omit thinking_enabled — server heuristic decides
+    case off       // send thinking_enabled = "false"
+    case on        // send thinking_enabled = "true"
+
+    mutating func cycle() {
+        switch self {
+        case .off:      self = .adaptive
+        case .adaptive: self = .on
+        case .on:       self = .off
+        }
+    }
+}
+
 /// Drives the main chat view. All mutations happen on @MainActor (the main thread).
 ///
 /// Memory safety:
@@ -30,7 +44,7 @@ final class ChatViewModel {
     }
     var isStreaming: Bool = false
     var inputText: String = ""
-    var thinkingEnabled: Bool = false
+    var thinkingMode: ThinkingMode = .adaptive
     var thinkingContent: String? = nil
     var isThinkingActive: Bool = false
     var currentBackend: String = "ollama"
@@ -153,6 +167,10 @@ final class ChatViewModel {
             if case .fileData(_, let data, let mime) = att, mime.hasPrefix("image/") { return data }
             return nil
         }
+        let fileNames = attachments.compactMap { att -> String? in
+            if case .fileData(let name, _, let mime) = att, !mime.hasPrefix("image/") { return name }
+            return nil
+        }
 
         // Track before appending: if no user messages exist yet, this is the first.
         // finishStreaming() uses this to auto-title the conversation when the server's
@@ -162,7 +180,7 @@ final class ChatViewModel {
         receivedTitleDuringStream = false
 
         // Add user bubble immediately
-        messages.append(Message(role: .user, content: text, imageAttachments: imageData))
+        messages.append(Message(role: .user, content: text, imageAttachments: imageData, attachedFileNames: fileNames))
 
         // Add an empty streaming assistant bubble
         let assistantMsg = Message(role: .assistant)
@@ -208,8 +226,7 @@ final class ChatViewModel {
                 message: text,
                 conversationId: self.currentConvId,
                 attachments: attachments,
-                // ON = force thinking; OFF = adaptive (server heuristic decides).
-                thinkingEnabled: self.thinkingEnabled
+                thinkingMode: self.thinkingMode
             )
             do {
                 for try await event in self.sse.stream(request: request) {
@@ -301,7 +318,7 @@ final class ChatViewModel {
 
     func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
-        thinkingEnabled = false
+        thinkingMode = .adaptive
         Task {
             do {
                 let convId = try await api.createConversation(projectId: projectId)

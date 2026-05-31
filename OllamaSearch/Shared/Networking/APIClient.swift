@@ -217,7 +217,7 @@ final class APIClient {
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload] = [],
-        thinkingEnabled: Bool = false
+        thinkingMode: ThinkingMode = .adaptive
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
@@ -229,7 +229,7 @@ final class APIClient {
             message: message,
             conversationId: conversationId,
             attachments: attachments,
-            thinkingEnabled: thinkingEnabled,
+            thinkingMode: thinkingMode,
             boundary: boundary
         )
         return request
@@ -406,12 +406,13 @@ final class APIClient {
         authed(&req)
         let (data, _) = try await session.data(for: req)
         let item = try JSONDecoder().decode(MemoryItem.self, from: data)
-        if let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
-           var items = try? JSONDecoder().decode([MemoryItem].self, from: cached) {
-            items.insert(item, at: 0)
-            if let encoded = try? JSONEncoder().encode(items) {
-                UserDefaults.standard.set(encoded, forKey: "cachedMemories")
-            }
+        var existing: [MemoryItem] = []
+        if let data = UserDefaults.standard.data(forKey: "cachedMemories") {
+            existing = (try? JSONDecoder().decode([MemoryItem].self, from: data)) ?? []
+        }
+        existing.insert(item, at: 0)
+        if let encoded = try? JSONEncoder().encode(existing) {
+            UserDefaults.standard.set(encoded, forKey: "cachedMemories")
         }
         return item
     }
@@ -439,7 +440,7 @@ final class APIClient {
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload],
-        thinkingEnabled: Bool = false,
+        thinkingMode: ThinkingMode = .adaptive,
         boundary: String
     ) -> Data {
         var body = Data()
@@ -458,7 +459,11 @@ final class APIClient {
 
         field("message", message)
         field("conversation_id", conversationId)
-        field("thinking_enabled", thinkingEnabled ? "true" : "false")
+        switch thinkingMode {
+        case .on:       field("thinking_enabled", "true")
+        case .off:      field("thinking_enabled", "false")
+        case .adaptive: break
+        }
 
         for attachment in attachments {
             switch attachment {
