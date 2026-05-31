@@ -345,21 +345,11 @@ struct MacRootView: View {
     private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @Environment(CloudPreferences.self) private var prefs
-
-    // When pinned, the binding always reports .all and ignores writes so
-    // SwiftUI navigation actions can't collapse the sidebar automatically.
-    private var visibilityBinding: Binding<NavigationSplitViewVisibility> {
-        Binding(
-            get: { prefs.sidebarPinned ? .all : columnVisibility },
-            set: { if !prefs.sidebarPinned { columnVisibility = $0 } }
-        )
-    }
 
     var body: some View {
         Group {
             if case .ready = connection.state, splashMinimumElapsed {
-                NavigationSplitView(columnVisibility: visibilityBinding) {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     ConversationListView(vm: chatVM)
                         .frame(minWidth: 200)
                 } detail: {
@@ -490,8 +480,7 @@ struct iOSConnectedView: View {
             switchStatusMessage: chatVM.switchStatusMessage,
             liveModelName: chatVM.modelName,
             liveContextWindow: chatVM.contextWindow,
-            onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) },
-            thinkingEnabled: Bindable(chatVM).thinkingEnabled
+            onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) }
         )
     }
 

@@ -9,7 +9,6 @@ struct ModelPickerView: View {
     let liveModelName: String
     let liveContextWindow: Int
     let onSwitch: (String, String) async -> Void  // (backend, modelId)
-    @Binding var thinkingEnabled: Bool
 
     @State private var pendingEntry: ModelEntry? = nil
     @State private var models: ModelsResponse? = nil
@@ -138,25 +137,6 @@ struct ModelPickerView: View {
                     modelSections
                 }
 
-                Divider().padding(.horizontal, 16)
-
-                // Thinking toggle
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Thinking")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color.textPrimary)
-                        Text("Reasons before answering")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.textSecondary)
-                    }
-                    Spacer()
-                    Toggle("", isOn: $thinkingEnabled)
-                        .labelsHidden()
-                        .tint(Color.appAccent)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
             }
         }
         .frame(maxHeight: 440)
@@ -451,7 +431,6 @@ private struct AddModelView: View {
         switchStatusMessage: "",
         liveModelName: "Gemma 4 26B",
         liveContextWindow: 65536,
-        onSwitch: { _, _ in },
-        thinkingEnabled: .constant(false)
+        onSwitch: { _, _ in }
     )
 }
