@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// Paper-clip button that opens NSOpenPanel (multi-select, filtered extensions).
 /// Injects selected files as `AttachmentPayload.fileData` into the view model.
 struct MacAttachButton: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
 
     private let allowedTypes: [UTType] = [
         .pdf, .plainText, .html, .png, .jpeg, .gif, .webP, .bmp
@@ -16,7 +16,7 @@ struct MacAttachButton: View {
             openPanel()
         } label: {
             Image(systemName: "paperclip")
-                .font(.system(size: 16))
+                .font(.iconMedium)
                 .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)

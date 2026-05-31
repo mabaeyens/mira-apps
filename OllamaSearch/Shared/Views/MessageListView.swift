@@ -83,7 +83,7 @@ struct MessageListView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: topContentInset)
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0) {
                     ForEach(messages) { msg in
                         let isLastStreamingEmpty = msg.id == messages.last?.id
                             && msg.isStreaming && msg.content.isEmpty

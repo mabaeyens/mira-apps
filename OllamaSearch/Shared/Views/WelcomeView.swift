@@ -4,7 +4,7 @@ import SwiftUI
 /// Shown on iPhone portrait when no conversation is selected.
 /// Full-screen dark canvas with Mira logo, a prompt label, and the input bar at the bottom.
 struct WelcomeView: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
     var onMenu: () -> Void
 
     var body: some View {
@@ -30,7 +30,7 @@ struct WelcomeView: View {
             Spacer()
 
             // ── Input bar ──────────────────────────────────────────────────
-            InputBar(vm: vm)
+            InputBar()
         }
         .background(Color.appBg.ignoresSafeArea())
     }

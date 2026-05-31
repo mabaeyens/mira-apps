@@ -7,39 +7,21 @@ struct SourcesPanel: View {
     @State private var isExpanded = true
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(fetches) { fetch in
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "globe")
-                            .foregroundStyle(Color.appAccent)
-                            .font(.caption)
-                            .frame(width: 14)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(fetch.url)
-                                .font(.caption)
-                                .foregroundStyle(Color.appAccent)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                            Text(fetch.preview)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                        }
-                    }
-                }
-            }
-            .padding(.top, 4)
-        } label: {
-            Label("Pages read (\(fetches.count))", systemImage: "doc.text.magnifyingglass")
-                .font(.caption.weight(.semibold))
+        DisclosureListPanel(
+            isExpanded: $isExpanded,
+            header: "Pages read (\(fetches.count))",
+            headerIcon: "doc.text.magnifyingglass",
+            itemIcon: "globe",
+            items: fetches,
+            vStackSpacing: 4
+        ) { fetch in
+            Text(fetch.url)
+                .font(.caption)
                 .foregroundStyle(Color.appAccent)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Text(fetch.preview)
+                .miraMetadataLabel()
         }
-        .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.appAccent.opacity(0.07))
-                .stroke(Color.appAccent.opacity(0.25), lineWidth: 1)
-        )
     }
 }

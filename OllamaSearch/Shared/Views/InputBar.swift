@@ -8,7 +8,7 @@ import PhotosUI
 /// Two-row card: top row is the text field; bottom row has +, chips, model pill, and send/stop.
 /// Tapping + opens an "Add to Chat" sheet with file attachment and thinking toggle.
 struct InputBar: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
     @Environment(CloudPreferences.self) private var prefs
 
     // Optional external binding lets the pill + button in ChatView trigger this sheet.
@@ -28,124 +28,13 @@ struct InputBar: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            // ── Staged attachment chips ───────────────────────────────────────
-            if !vm.stagedAttachmentNames.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(Array(vm.stagedAttachmentNames.enumerated()), id: \.offset) { idx, name in
-                            attachmentChip(name: name, index: idx)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-            }
+            attachmentChipsRow()
 
             // ── Two-row card ──────────────────────────────────────────────────
             VStack(spacing: 0) {
-                // Top: text field
-                TextField("Message…", text: $vm.inputText, axis: .vertical)
-                    .lineLimit(1...6)
-                    .textFieldStyle(.plain)
-                    .font(.chatBody)
-                    .foregroundStyle(Color.textPrimary)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 13)
-                    .padding(.bottom, 11)
-                    .focused($isFocused)
-                    .onSubmit {
-                        guard !vm.isStreaming else { return }
-                        isFocused = false
-                        vm.send()
-                    }
-                    .keyboardShortcut(.return, modifiers: .command)
-
-                // Thin divider between rows
+                textFieldRow()
                 Color.borderSubtle.opacity(0.4).frame(height: 0.5)
-
-                // Bottom: + | chips | spacer | model▾ | send/stop
-                HStack(alignment: .center, spacing: 8) {
-                    // + button
-                    Button { showAddToChat.wrappedValue = true } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(Color.textSecondary)
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.plain)
-                    #if os(macOS)
-                    .focusEffectDisabled()
-                    .popover(isPresented: showAddToChat, arrowEdge: .bottom) {
-                        addToChatPopoverMac
-                    }
-                    #endif
-
-                    // Thinking toggle — ON forces thinking; OFF leaves it adaptive.
-                    // Always visible: muted brain icon when off, accent "Thinking" chip when on.
-                    Button { vm.thinkingEnabled.toggle() } label: {
-                        HStack(spacing: 3) {
-                            Image(systemName: "brain.fill")
-                                .font(.system(size: vm.thinkingEnabled ? 10 : 14, weight: .medium))
-                            if vm.thinkingEnabled {
-                                Text("Thinking")
-                                    .font(.system(size: 12, weight: .medium))
-                            }
-                        }
-                        .foregroundStyle(vm.thinkingEnabled ? Color.appAccent : Color.textSecondary)
-                        .padding(.horizontal, vm.thinkingEnabled ? 7 : 0)
-                        .frame(minWidth: vm.thinkingEnabled ? 0 : 28, minHeight: 28)
-                        .background(vm.thinkingEnabled ? Color.appAccent.opacity(0.12) : Color.clear, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    #if os(macOS)
-                    .focusEffectDisabled()
-                    #endif
-                    .help("Force thinking on. Off = Mira decides automatically.")
-
-                    // Active project chip — read-only indicator
-                    if let project = vm.activeProject {
-                        HStack(spacing: 3) {
-                            Image(systemName: project.localPath != nil ? "folder" : "network")
-                                .font(.system(size: 9, weight: .medium))
-                            Text(project.name)
-                                .font(.system(size: 12, weight: .medium))
-                                .lineLimit(1)
-                        }
-                        .foregroundStyle(Color.appAccent)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Color.appAccent.opacity(0.12), in: Capsule())
-                    }
-
-                    Spacer()
-
-                    Button { vm.showModelPicker = true } label: {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(modelStatusColor)
-                                .frame(width: 6, height: 6)
-                            Text(vm.modelName.isEmpty
-                                ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : "Ollama")
-                                : vm.modelDisplayName)
-                                .font(.system(size: 13))
-                                .foregroundStyle(Color.textPrimary)
-                                .lineLimit(1)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.surfaceBg)
-                                .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(vm.isSwitchingBackend || vm.isStreaming)
-
-                    micButton
-                    actionButton
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                toolbarRow()
             }
             .background(
                 RoundedRectangle(cornerRadius: 14)
@@ -237,6 +126,132 @@ struct InputBar: View {
             Text(sr.error ?? "")
         }
         #endif
+    }
+
+    // ── Attachment chips row ──────────────────────────────────────────────────────
+
+    @ViewBuilder
+    private func attachmentChipsRow() -> some View {
+        if !vm.stagedAttachmentNames.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(vm.stagedAttachmentNames.enumerated()), id: \.offset) { idx, name in
+                        attachmentChip(name: name, index: idx)
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    // ── Text field row ────────────────────────────────────────────────────────────
+
+    private func textFieldRow() -> some View {
+        TextField("Message…", text: Bindable(vm).inputText, axis: .vertical)
+            .lineLimit(1...6)
+            .textFieldStyle(.plain)
+            .font(.chatBody)
+            .foregroundStyle(Color.textPrimary)
+            .padding(.horizontal, 14)
+            .padding(.top, 13)
+            .padding(.bottom, 11)
+            .focused($isFocused)
+            .onSubmit {
+                guard !vm.isStreaming else { return }
+                isFocused = false
+                vm.send()
+            }
+            .keyboardShortcut(.return, modifiers: .command)
+    }
+
+    // ── Toolbar row ───────────────────────────────────────────────────────────────
+
+    private func toolbarRow() -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            Button { showAddToChat.wrappedValue = true } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color.textSecondary)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.plain)
+            #if os(macOS)
+            .focusEffectDisabled()
+            .popover(isPresented: showAddToChat, arrowEdge: .bottom) {
+                addToChatPopoverMac
+            }
+            #endif
+
+            // Thinking toggle — ON forces thinking; OFF leaves it adaptive.
+            Button { vm.thinkingEnabled.toggle() } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "brain.fill")
+                        .font(.system(size: vm.thinkingEnabled ? 10 : 14, weight: .medium))
+                    if vm.thinkingEnabled {
+                        Text("Thinking")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                }
+                .foregroundStyle(vm.thinkingEnabled ? Color.appAccent : Color.textSecondary)
+                .padding(.horizontal, vm.thinkingEnabled ? 7 : 0)
+                .frame(minWidth: vm.thinkingEnabled ? 0 : 28, minHeight: 28)
+                .background(vm.thinkingEnabled ? Color.appAccent.opacity(0.12) : Color.clear, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            #if os(macOS)
+            .focusEffectDisabled()
+            #endif
+            .help("Force thinking on. Off = Mira decides automatically.")
+
+            if let project = vm.activeProject {
+                HStack(spacing: 3) {
+                    Image(systemName: project.localPath != nil ? "folder" : "network")
+                        .font(.system(size: 9, weight: .medium))
+                    Text(project.name)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                }
+                .foregroundStyle(Color.appAccent)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Color.appAccent.opacity(0.12), in: Capsule())
+            }
+
+            Spacer()
+
+            modelPill()
+            micButton
+            actionButton
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    // ── Model pill ────────────────────────────────────────────────────────────────
+
+    private func modelPill() -> some View {
+        Button { vm.showModelPicker = true } label: {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(modelStatusColor)
+                    .frame(width: 6, height: 6)
+                Text(vm.modelName.isEmpty
+                    ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : "Ollama")
+                    : vm.modelDisplayName)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.textPrimary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(Color.surfaceBg)
+                    .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isSwitchingBackend || vm.isStreaming)
     }
 
     // ── "Add to Chat" popover — macOS ────────────────────────────────────────────

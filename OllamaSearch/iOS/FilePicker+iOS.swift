@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 
 /// Paper-clip button using UIDocumentPickerViewController for iOS.
 struct iOSAttachButton: View {
-    @Bindable var vm: ChatViewModel
+    @Environment(ChatViewModel.self) private var vm
     @State private var isPresented = false
 
     private let allowedTypes: [UTType] = [

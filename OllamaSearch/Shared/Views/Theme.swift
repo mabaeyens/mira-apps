@@ -81,6 +81,15 @@ extension Font {
         .custom("Bookerly", size: size).weight(weight)
     }
 
+    /// Canonical Bookerly title — app name display / splash screens. Fixed size, no Dynamic Type.
+    static let bookerlyTitle: Font = .bookerly(size: 36, weight: .semibold)
+
+    /// Icon sizing — apply via .font() on Image(systemName:) to decouple icons from surrounding text.
+    static let iconSmall:  Font = .system(size: 13, weight: .regular)
+    static let iconMedium: Font = .system(size: 17, weight: .regular)
+    static let iconLarge:  Font = .system(size: 22, weight: .regular)
+    static let iconXL:     Font = .system(size: 28, weight: .regular)
+
     /// Body size used in chat bubbles, streaming text, and the input field.
     /// iOS uses .body (Dynamic Type, 17pt at default) so SwiftUI–UIKit font
     /// bridging is consistent across Text, TextField(axis:.vertical)/UITextView,
@@ -89,14 +98,14 @@ extension Font {
     static let chatBody: Font = .body
     static let sidebarTitle: Font = .subheadline
     static let sidebarSubtitle: Font = .caption
-    static let sidebarMeta: Font = .caption2
+    static let sidebarMeta: Font = .caption2.weight(.medium)
     #else
     static let chatBody: Font = .system(size: 16)
     // macOS system semantic sizes are small (caption=11pt, caption2=10pt);
     // use fixed sizes so sidebar feels proportionate to the 16pt chat body.
     static let sidebarTitle: Font = .system(size: 14)
     static let sidebarSubtitle: Font = .system(size: 12)
-    static let sidebarMeta: Font = .system(size: 11)
+    static let sidebarMeta: Font = .system(size: 11, weight: .medium)
     #endif
 }
 

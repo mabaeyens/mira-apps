@@ -88,7 +88,7 @@ struct AboutView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.iconXL)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.textSecondary)
             }
