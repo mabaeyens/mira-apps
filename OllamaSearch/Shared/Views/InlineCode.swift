@@ -234,6 +234,17 @@ struct HighlightedCodeView: View {
         "json": "json",
         "sql": "sql",
         "md": "markdown", "markdown": "markdown",
+        "rust": "rust",
+        "go": "go", "golang": "go",
+        "c": "c",
+        "cpp": "cpp", "c++": "cpp", "cxx": "cpp",
+        "kotlin": "kotlin", "kt": "kotlin",
+        "ruby": "ruby", "rb": "ruby",
+        "php": "php",
+        "java": "java",
+        "r": "r",
+        "css": "css",
+        "dockerfile": "dockerfile",
     ]
 
     var body: some View {
@@ -355,43 +366,35 @@ struct MarkdownTableBlock: View {
     let headers: [String]
     let rows: [[String]]
 
-    // Each cell: 140pt content + 10pt padding on each side = 160pt; plus 1pt dividers between cols
-    private var tableWidth: CGFloat {
-        let cols = CGFloat(headers.count)
-        return cols * 160 + max(cols - 1, 0)
-    }
-
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 0) {
-                tableRow(cells: headers, isHeader: true)
-                divider(opacity: 0.2)
-                ForEach(Array(rows.enumerated()), id: \.offset) { r, row in
-                    tableRow(cells: padded(row), isHeader: false)
-                        .background(r % 2 == 1 ? Color.primary.opacity(0.03) : Color.clear)
-                    divider(opacity: 0.08)
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            tableRow(cells: headers, isHeader: true)
+            divider(opacity: 0.2)
+            ForEach(Array(rows.enumerated()), id: \.offset) { r, row in
+                tableRow(cells: padded(row), isHeader: false)
+                    .background(r % 2 == 1 ? Color.primary.opacity(0.03) : Color.clear)
+                divider(opacity: 0.08)
             }
-            .frame(width: tableWidth, alignment: .leading)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .padding(.vertical, 4)
         }
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
     private func tableRow(cells: [String], isHeader: Bool) -> some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 0) {
             ForEach(Array(cells.enumerated()), id: \.offset) { i, cell in
                 Text(attrCell(cell))
-                    .font(isHeader ? .system(size: 13, weight: .semibold) : .system(size: 13))
+                    .font(isHeader ? .chatBody.weight(.semibold) : .chatBody)
                     .foregroundStyle(Color.textPrimary)
-                    .frame(width: 140, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
+                    .lineLimit(nil)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                 if i < cells.count - 1 {
                     Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
                 }
