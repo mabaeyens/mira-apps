@@ -45,7 +45,11 @@ struct ModelPickerView: View {
                 modelListView
             }
         }
+        #if os(macOS)
         .frame(width: 340)
+        #else
+        .frame(maxWidth: .infinity)
+        #endif
         .background(Color.appBg)
         .task { await loadModels() }
         .onChange(of: isSwitching) { _, switching in

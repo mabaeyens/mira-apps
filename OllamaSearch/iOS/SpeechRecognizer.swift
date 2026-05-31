@@ -1,4 +1,3 @@
-#if os(iOS)
 import Speech
 import AVFoundation
 import SwiftUI
@@ -60,9 +59,11 @@ final class SpeechRecognizer {
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         recognitionRequest?.shouldReportPartialResults = true
 
+        #if os(iOS)
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.record, mode: .measurement, options: .duckOthers)
         try session.setActive(true, options: .notifyOthersOnDeactivation)
+        #endif
 
         let inputNode = audioEngine.inputNode
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputNode.outputFormat(forBus: 0)) { [weak self] buf, _ in
@@ -107,8 +108,9 @@ final class SpeechRecognizer {
         recognitionRequest = nil
         recognitionTask = nil
         audioEngine = AVAudioEngine()
+        #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
         isRecording = false
     }
 }
-#endif
