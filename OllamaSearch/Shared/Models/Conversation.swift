@@ -84,6 +84,11 @@ struct Conversation: Decodable, Identifiable {
 struct ConversationMessage: Decodable {
     let role: String
     let content: String
+    let thinkingContent: String?
+    enum CodingKeys: String, CodingKey {
+        case role, content
+        case thinkingContent = "thinking_content"
+    }
 }
 
 // ── Memory ────────────────────────────────────────────────────────────────────
