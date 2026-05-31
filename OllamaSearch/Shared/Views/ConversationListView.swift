@@ -357,16 +357,6 @@ struct ConversationListView: View {
             .buttonStyle(.plain)
             .help("Memories")
 
-            Button(action: { prefs.sidebarPinned.toggle() }) {
-                Image(systemName: prefs.sidebarPinned ? "pin.fill" : "pin")
-                    .foregroundStyle(prefs.sidebarPinned ? Color.appAccent : Color.textSecondary)
-                    .font(Font.sidebarMeta)
-                    .frame(width: 20, height: 20)
-                    .padding(.trailing, 16)
-                    .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-            .help(prefs.sidebarPinned ? "Sidebar always visible — click to auto-hide" : "Sidebar auto-hides — click to keep visible")
         }
         .background(.clear)
     }

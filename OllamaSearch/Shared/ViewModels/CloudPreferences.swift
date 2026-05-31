@@ -8,11 +8,12 @@ final class CloudPreferences {
     private let kv = NSUbiquitousKeyValueStore.default
     @ObservationIgnored private var isLoading = false
 
-    var sidebarPinned: Bool = true {
-        didSet { if !isLoading { kv.set(sidebarPinned, forKey: "cp_sidebarPinned") } }
-    }
     var projectsExpanded: Bool = true {
         didSet { if !isLoading { kv.set(projectsExpanded, forKey: "cp_projectsExpanded") } }
+    }
+
+    var speechLanguage: String = "auto" {
+        didSet { if !isLoading { kv.set(speechLanguage, forKey: "cp_speechLanguage") } }
     }
 
     init() {
@@ -27,11 +28,11 @@ final class CloudPreferences {
 
     private func reload() {
         isLoading = true
-        if kv.object(forKey: "cp_sidebarPinned") != nil {
-            sidebarPinned = kv.bool(forKey: "cp_sidebarPinned")
-        }
         if kv.object(forKey: "cp_projectsExpanded") != nil {
             projectsExpanded = kv.bool(forKey: "cp_projectsExpanded")
+        }
+        if kv.object(forKey: "cp_speechLanguage") != nil {
+            speechLanguage = kv.string(forKey: "cp_speechLanguage") ?? "auto"
         }
         isLoading = false
     }
