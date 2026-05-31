@@ -48,6 +48,7 @@ struct ChatView: View {
             ZStack(alignment: .top) {
                 MessageListView(
                     messages: vm.messages,
+                    conversationId: vm.currentConvId.isEmpty ? nil : vm.currentConvId,
                     isStreaming: vm.isStreaming,
                     currentSearchQuery: vm.currentSearchQuery,
                     isFetching: vm.isFetching,
@@ -141,7 +142,11 @@ struct ChatView: View {
         HStack(spacing: 10) {
             ProgressView()
                 .tint(Color.accent)
+            #if os(macOS)
+                .controlSize(.small)
+            #else
                 .scaleEffect(0.75)
+            #endif
             Text("Model loading…")
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
@@ -183,7 +188,11 @@ struct ChatView: View {
         HStack(spacing: 10) {
             ProgressView()
                 .tint(.yellow)
+            #if os(macOS)
+                .controlSize(.small)
+            #else
                 .scaleEffect(0.75)
+            #endif
             Text(vm.switchStatusMessage.isEmpty ? "Starting \(modelLabel)…" : vm.switchStatusMessage)
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
