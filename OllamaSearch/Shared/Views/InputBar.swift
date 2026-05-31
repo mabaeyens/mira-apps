@@ -79,23 +79,27 @@ struct InputBar: View {
                     }
                     #endif
 
-                    // Thinking chip — visible when thinking is enabled
-                    if vm.thinkingEnabled {
-                        Button { vm.thinkingEnabled = false } label: {
-                            HStack(spacing: 3) {
-                                Image(systemName: "brain.fill")
-                                    .font(.system(size: 10))
+                    // Thinking toggle — ON forces thinking; OFF leaves it adaptive.
+                    // Always visible: muted brain icon when off, accent "Thinking" chip when on.
+                    Button { vm.thinkingEnabled.toggle() } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "brain.fill")
+                                .font(.system(size: vm.thinkingEnabled ? 10 : 14, weight: .medium))
+                            if vm.thinkingEnabled {
                                 Text("Thinking")
                                     .font(.system(size: 12, weight: .medium))
                             }
-                            .foregroundStyle(Color.appAccent)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(Color.appAccent.opacity(0.12), in: Capsule())
                         }
-                        .buttonStyle(.plain)
-                        .transition(.scale.combined(with: .opacity))
+                        .foregroundStyle(vm.thinkingEnabled ? Color.appAccent : Color.textSecondary)
+                        .padding(.horizontal, vm.thinkingEnabled ? 7 : 0)
+                        .frame(minWidth: vm.thinkingEnabled ? 0 : 28, minHeight: 28)
+                        .background(vm.thinkingEnabled ? Color.appAccent.opacity(0.12) : Color.clear, in: Capsule())
                     }
+                    .buttonStyle(.plain)
+                    #if os(macOS)
+                    .focusEffectDisabled()
+                    #endif
+                    .help("Force thinking on. Off = Mira decides automatically.")
 
                     // Active project chip — read-only indicator
                     if let project = vm.activeProject {
