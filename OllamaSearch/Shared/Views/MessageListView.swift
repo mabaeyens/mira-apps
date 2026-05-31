@@ -154,7 +154,7 @@ struct MessageListView: View {
                     }
 
                     // Collapsible thinking block — open while streaming, collapses on first token
-                    if let content = thinkingContent {
+                    if let content = thinkingContent, !content.isEmpty {
                         DisclosureGroup(isExpanded: $thinkingExpanded) {
                             ScrollView {
                                 Text(content)
