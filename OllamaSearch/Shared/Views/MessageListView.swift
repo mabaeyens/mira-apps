@@ -4,6 +4,7 @@ import SwiftUI
 /// Shows a welcome screen when the conversation is empty.
 struct MessageListView: View {
     let messages: [Message]
+    var conversationId: String? = nil
     let isStreaming: Bool
     let currentSearchQuery: String?
     let isFetching: Bool
@@ -168,7 +169,12 @@ struct MessageListView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 if isThinkingActive {
-                                    ProgressView().scaleEffect(0.65)
+                                    ProgressView()
+                                    #if os(macOS)
+                                        .controlSize(.small)
+                                    #else
+                                        .scaleEffect(0.65)
+                                    #endif
                                 } else {
                                     Image(systemName: "brain")
                                         .font(.system(size: 11))
@@ -212,15 +218,15 @@ struct MessageListView: View {
             .onAppear {
                 scrollToBottom(proxy: proxy)
             }
-            .onChange(of: messages.first?.id) {
+            .onChange(of: conversationId) {
                 scrollPinned = true
-                scrollToBottom(proxy: proxy)
+                scrollToBottom(proxy: proxy, animated: true)
             }
             .onChange(of: messages.count) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
             }
             .onChange(of: messages.last?.content) {
-                if scrollPinned { scrollToBottom(proxy: proxy) }
+                if scrollPinned && isStreaming { scrollToBottom(proxy: proxy) }
             }
             .onChange(of: thinkingContent) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
@@ -237,26 +243,27 @@ struct MessageListView: View {
             // This prevents the button from flickering at the threshold and,
             // crucially, stops the button from reappearing after it's tapped
             // (the button tap itself no longer sets scrollPinned = false).
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentSize.height
                     - geometry.contentOffset.y
                     - geometry.containerSize.height
-                    - geometry.contentInsets.bottom
-            } action: { _, distance in
-                if distance <= 80 {
-                    scrollPinned = true
-                } else if distance > 120 {
-                    scrollPinned = false
-                }
+                    - geometry.contentInsets.bottom <= 80
+            } action: { _, isNearBottom in
+                if isNearBottom { scrollPinned = true }
             }
-            // safeAreaInset shrinks the scroll view's visible area so the button
-            // never floats over message text — Apple-recommended pattern for
-            // "scroll to bottom" affordances per HIG.
-            .safeAreaInset(edge: .bottom, spacing: 0) {
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentSize.height
+                    - geometry.contentOffset.y
+                    - geometry.containerSize.height
+                    - geometry.contentInsets.bottom > 120
+            } action: { _, isFarFromBottom in
+                if isFarFromBottom { scrollPinned = false }
+            }
+            .overlay(alignment: .bottom) {
                 if !scrollPinned && !messages.isEmpty {
                     Button {
                         scrollPinned = true
-                        scrollToBottom(proxy: proxy)
+                        scrollToBottom(proxy: proxy, animated: true)
                     } label: {
                         Label("Jump to bottom", systemImage: "arrow.down.circle.fill")
                             .font(.caption)
@@ -264,17 +271,25 @@ struct MessageListView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(Color.accent)
                     .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .background(Color.appBg.opacity(0.01)) // zero-opacity hit area
                 }
             }
         }
         .background(Color.appBg)
     }
 
-    private func scrollToBottom(proxy: ScrollViewProxy) {
-        withAnimation(.easeOut(duration: 0.15)) {
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = false) {
+        if animated {
+            withAnimation(.easeOut(duration: 0.15)) {
+                proxy.scrollTo(bottomAnchor, anchor: .bottom)
+            }
+        } else {
+            #if os(macOS)
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) { proxy.scrollTo(bottomAnchor, anchor: .bottom) }
+            #else
             proxy.scrollTo(bottomAnchor, anchor: .bottom)
+            #endif
         }
     }
 
@@ -283,7 +298,12 @@ struct MessageListView: View {
             Image(systemName: icon)
             Text(text)
             Spacer()
-            ProgressView().scaleEffect(0.7)
+            ProgressView()
+            #if os(macOS)
+                .controlSize(.small)
+            #else
+                .scaleEffect(0.7)
+            #endif
         }
         .font(.caption)
         .foregroundStyle(Color.textSecondary)

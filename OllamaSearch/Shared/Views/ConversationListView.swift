@@ -386,7 +386,12 @@ struct ConversationListView: View {
                 } label: {
                     Group {
                         if isRefreshing {
-                            ProgressView().scaleEffect(0.7)
+                            ProgressView()
+                            #if os(macOS)
+                                .controlSize(.small)
+                            #else
+                                .scaleEffect(0.7)
+                            #endif
                         } else {
                             Image(systemName: "arrow.clockwise")
                                 .font(.system(size: 15, weight: .medium))
@@ -510,7 +515,11 @@ struct ConversationListView: View {
             Spacer()
             if isLoading {
                 ProgressView()
+                #if os(macOS)
+                    .controlSize(.small)
+                #else
                     .scaleEffect(0.7)
+                #endif
             }
         }
         .padding(.vertical, 10)
@@ -667,7 +676,12 @@ struct AddProjectSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSubmitting {
-                        ProgressView().scaleEffect(0.8)
+                        ProgressView()
+                        #if os(macOS)
+                            .controlSize(.small)
+                        #else
+                            .scaleEffect(0.8)
+                        #endif
                     } else {
                         Button("Add") { submit() }
                             .disabled(!canSubmit)

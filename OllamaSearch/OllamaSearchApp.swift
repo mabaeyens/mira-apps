@@ -34,8 +34,7 @@ struct OllamaSearchApp: App {
         .windowResizability(.contentSize)
 
         MenuBarExtra {
-            MenuBarContent()
-                .environment(chatVM)
+            MenuBarContent(onNewConversation: { chatVM.newConversation() })
         } label: {
             Image(systemName: "sparkle")
                 .symbolRenderingMode(.hierarchical)
@@ -385,14 +384,14 @@ struct MacRootView: View {
 }
 
 struct MenuBarContent: View {
-    @Environment(ChatViewModel.self) private var chatVM
+    let onNewConversation: () -> Void
     private let connection = MacConnectionManager.shared
 
     var body: some View {
         Label(statusLabel, systemImage: statusIcon)
             .foregroundStyle(statusColor)
         Divider()
-        Button("New Chat") { chatVM.newConversation() }
+        Button("New Chat") { onNewConversation() }
         Button("Show Window") { NSApplication.shared.activate(ignoringOtherApps: true) }
         if case .failed = connection.state {
             Button("Retry Connection") { connection.retry() }
@@ -578,7 +577,11 @@ struct iOSConnectedView: View {
         if let msg = reconnectMessage {
             HStack(spacing: 10) {
                 ProgressView()
+                #if os(macOS)
+                    .controlSize(.small)
+                #else
                     .scaleEffect(0.75)
+                #endif
                     .tint(Color.accent)
                 Text(msg)
                     .font(.caption)
