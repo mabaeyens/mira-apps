@@ -330,35 +330,38 @@ struct ConversationListView: View {
 
     #if os(macOS)
     private var newChatButton: some View {
-        HStack(spacing: 0) {
-            Button(action: { vm.newConversation() }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "square.and.pencil")
-                        .foregroundStyle(Color.textSecondary)
-                    Text("New Chat")
-                        .foregroundStyle(Color.textPrimary)
-                    Spacer()
-                }
-                .font(Font.sidebarTitle.weight(.medium))
-                .padding(.leading, 14)
-                .padding(.trailing, 4)
-                .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-
-            Button(action: { showMemories = true }) {
-                Image(systemName: "person.text.rectangle")
-                    .foregroundStyle(Color.textSecondary)
-                    .font(Font.sidebarMeta)
-                    .frame(width: 20, height: 20)
-                    .padding(.horizontal, 6)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Button(action: { vm.newConversation() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.pencil")
+                            .foregroundStyle(Color.textSecondary)
+                        Text("New Chat")
+                            .foregroundStyle(Color.textPrimary)
+                        Spacer()
+                    }
+                    .font(Font.sidebarTitle.weight(.medium))
+                    .padding(.leading, 14)
+                    .padding(.trailing, 4)
                     .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-            .help("Memories")
+                }
+                .buttonStyle(.plain)
 
+                Button(action: { showMemories = true }) {
+                    Image(systemName: "person.text.rectangle")
+                        .foregroundStyle(Color.textSecondary)
+                        .font(Font.sidebarMeta)
+                        .frame(width: 20, height: 20)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
+                .help("Memories")
+            }
+            .background(Color(nsColor: .controlBackgroundColor))
+
+            Divider()
         }
-        .background(.clear)
     }
     #endif
 
@@ -523,7 +526,11 @@ struct ConversationListView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(rowFill)
         )
+        #if os(macOS)
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+        #else
         .contentShape(Rectangle())
+        #endif
         .simultaneousGesture(TapGesture().onEnded {
             vm.selectConversation(conv.id)
             onTap?(conv.id)
