@@ -15,11 +15,11 @@ final class SpeechRecognizer {
     private var silenceTimer:       Timer?
     private var hardStopTimer:      Timer?
 
-    func start() async {
+    func start(localeTag: String = "auto") async {
         guard !isRecording else { return }
         guard await requestPermissions() else { return }
         do {
-            try startRecognition()
+            try startRecognition(localeTag: localeTag)
         } catch {
             self.error = "Could not start recording: \(error.localizedDescription)"
             stopRecognition()
@@ -47,8 +47,12 @@ final class SpeechRecognizer {
         return true
     }
 
-    private func startRecognition() throws {
-        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+    private func startRecognition(localeTag: String = "auto") throws {
+        let locale: Locale? = localeTag == "auto" ? nil : Locale(identifier: localeTag)
+        let recognizer: SFSpeechRecognizer? = locale != nil
+            ? SFSpeechRecognizer(locale: locale!)
+            : SFSpeechRecognizer()
+        guard let recognizer, recognizer.isAvailable else {
             error = "Speech recognition is not available right now."
             return
         }
