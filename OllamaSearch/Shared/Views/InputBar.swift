@@ -259,12 +259,18 @@ struct InputBar: View {
             Divider()
                 .padding(.horizontal, 12)
 
-            HStack(spacing: 12) {
-                addToChatRow(
-                    icon: "mic",
-                    label: "Speech language",
-                    trailing: nil
-                )
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.surfaceBg)
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "mic")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Text("Speech language")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Picker("", selection: Bindable(prefs).speechLanguage) {
                     Text("Auto").tag("auto")
@@ -272,10 +278,20 @@ struct InputBar: View {
                     Text("Español").tag("es-ES")
                 }
                 .pickerStyle(.menu)
-                .padding(.trailing, 16)
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+
+            Divider()
+                .padding(.horizontal, 12)
+
+            Button { vm.thinkingEnabled.toggle() } label: {
+                addToChatRow(icon: "brain.fill", label: "Thinking", trailing: vm.thinkingEnabled ? "On" : nil)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(vm.thinkingEnabled ? Color.appAccent : Color.textPrimary)
         }
-        .frame(width: 260)
+        .frame(width: 320)
         .padding(.vertical, 4)
         .background(Color.appBg)
     }

@@ -88,6 +88,7 @@ struct MemoriesView: View {
             }
             .background(Color.appBg)
             .task { await vm.load() }
+            .onAppear { Task { await vm.load() } }
             .sheet(isPresented: $showingAddSheet) {
                 AddMemorySheet(prefill: prefillText) { text in
                     Task { await vm.add(text) }
@@ -106,17 +107,31 @@ struct MemoriesView: View {
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Image(systemName: "person.text.rectangle")
-                .font(.system(size: 40))
-                .foregroundStyle(Color.textSecondary.opacity(0.5))
-            Text("No memories yet")
-                .font(.headline)
-                .foregroundStyle(Color.textPrimary)
-            Text("Add facts about yourself so Mira can personalise responses across all conversations.")
-                .font(.subheadline)
-                .foregroundStyle(Color.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 280)
+            if let err = vm.errorMessage {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.textSecondary.opacity(0.5))
+                Text("Could not load memories")
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+                Text(err)
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 280)
+            } else {
+                Image(systemName: "person.text.rectangle")
+                    .font(.system(size: 40))
+                    .foregroundStyle(Color.textSecondary.opacity(0.5))
+                Text("No memories yet")
+                    .font(.headline)
+                    .foregroundStyle(Color.textPrimary)
+                Text("Add facts about yourself so Mira can personalise responses across all conversations.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 280)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()

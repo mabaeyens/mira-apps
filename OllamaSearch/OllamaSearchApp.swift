@@ -346,9 +346,14 @@ struct MacRootView: View {
     @State private var splashMinimumElapsed = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
+    private var showMain: Bool {
+        if case .ready = connection.state, splashMinimumElapsed { return true }
+        return false
+    }
+
     var body: some View {
         Group {
-            if case .ready = connection.state, splashMinimumElapsed {
+            if showMain {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
                     ConversationListView(vm: chatVM)
                         .frame(minWidth: 200)
@@ -368,6 +373,7 @@ struct MacRootView: View {
                 }
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: showMain)
         .task {
             try? await Task.sleep(for: .milliseconds(1_000))
             splashMinimumElapsed = true

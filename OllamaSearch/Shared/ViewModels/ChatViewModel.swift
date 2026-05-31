@@ -239,6 +239,7 @@ final class ChatViewModel {
         staleConnectionTask = nil
         streamingWaitMessage = nil
         isThinkingActive = false
+        isFetching = false
         currentToolLabel = nil
         // Store (don't fire-and-forget) so send() can await this before the next request.
         cancelTask = Task { [weak self] in

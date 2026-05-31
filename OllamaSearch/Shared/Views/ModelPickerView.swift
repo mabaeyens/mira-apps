@@ -145,23 +145,31 @@ struct ModelPickerView: View {
     @ViewBuilder
     private var modelSections: some View {
         if let m = models {
-            if !m.mlxLm.isEmpty {
+            let validMlx = m.mlxLm.filter {
+                !$0.modelId.trimmingCharacters(in: .whitespaces).isEmpty &&
+                !$0.displayName.trimmingCharacters(in: .whitespaces).isEmpty
+            }
+            let validOllama = m.ollama.filter {
+                !$0.modelId.trimmingCharacters(in: .whitespaces).isEmpty &&
+                !$0.displayName.trimmingCharacters(in: .whitespaces).isEmpty
+            }
+            if !validMlx.isEmpty {
                 sectionHeader("mlx-lm · Apple Silicon")
                 VStack(spacing: 8) {
-                    ForEach(m.mlxLm) { entry in modelRow(entry) }
+                    ForEach(validMlx) { entry in modelRow(entry) }
                 }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 10)
             }
-            if !m.ollama.isEmpty {
+            if !validOllama.isEmpty {
                 sectionHeader("Ollama")
                 VStack(spacing: 8) {
-                    ForEach(m.ollama) { entry in modelRow(entry) }
+                    ForEach(validOllama) { entry in modelRow(entry) }
                 }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 10)
             }
-            if m.mlxLm.isEmpty && m.ollama.isEmpty {
+            if validMlx.isEmpty && validOllama.isEmpty {
                 Text("No models found locally.")
                     .font(.caption)
                     .foregroundStyle(Color.textSecondary)

@@ -34,13 +34,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            RadialGradient(
-                colors: [Color.splashCenter, Color.appBg],
-                center: .center,
-                startRadius: 0,
-                endRadius: 280
-            )
-            .ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
 
             RadialGradient(
                 colors: [Color.accent.opacity(0.10), .clear],
