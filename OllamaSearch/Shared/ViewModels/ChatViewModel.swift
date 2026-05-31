@@ -208,7 +208,8 @@ final class ChatViewModel {
                 message: text,
                 conversationId: self.currentConvId,
                 attachments: attachments,
-                thinkingEnabled: false
+                // ON = force thinking; OFF = adaptive (server heuristic decides).
+                thinkingEnabled: self.thinkingEnabled
             )
             do {
                 for try await event in self.sse.stream(request: request) {
