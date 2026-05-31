@@ -38,3 +38,6 @@ keys/
 
 # Security audit notes (local only)
 SECURITY_AUDIT.md
+
+# Local session specs (pre-coding 5-bullet plans, not for review)
+specs/
