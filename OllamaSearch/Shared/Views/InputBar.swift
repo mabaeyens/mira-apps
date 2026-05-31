@@ -9,6 +9,7 @@ import PhotosUI
 /// Tapping + opens an "Add to Chat" sheet with file attachment and thinking toggle.
 struct InputBar: View {
     @Bindable var vm: ChatViewModel
+    @Environment(CloudPreferences.self) private var prefs
 
     // Optional external binding lets the pill + button in ChatView trigger this sheet.
     var showSheetExternal: Binding<Bool>? = nil
@@ -78,8 +79,8 @@ struct InputBar: View {
                     }
                     #endif
 
-                    // Thinking chip — visible only when ON and backend supports it
-                    if vm.thinkingEnabled && vm.currentBackend != "mlx-lm" {
+                    // Thinking chip — visible when thinking is enabled
+                    if vm.thinkingEnabled {
                         Button { vm.thinkingEnabled = false } label: {
                             HStack(spacing: 3) {
                                 Image(systemName: "brain.fill")
@@ -256,19 +257,19 @@ struct InputBar: View {
 
             HStack(spacing: 12) {
                 addToChatRow(
-                    icon: vm.thinkingEnabled ? "brain.fill" : "brain",
-                    label: "Thinking",
-                    trailing: nil,
-                    iconColor: vm.thinkingEnabled ? Color.appAccent : Color.textSecondary
+                    icon: "mic",
+                    label: "Speech language",
+                    trailing: nil
                 )
                 Spacer()
-                Toggle("", isOn: $vm.thinkingEnabled)
-                    .labelsHidden()
-                    .tint(Color.appAccent)
-                    .padding(.trailing, 16)
-                    .disabled(vm.currentBackend == "mlx-lm")
+                Picker("", selection: Bindable(prefs).speechLanguage) {
+                    Text("Auto").tag("auto")
+                    Text("English").tag("en-US")
+                    Text("Español").tag("es-ES")
+                }
+                .pickerStyle(.menu)
+                .padding(.trailing, 16)
             }
-            .opacity(vm.currentBackend == "mlx-lm" ? 0.4 : 1.0)
         }
         .frame(width: 260)
         .padding(.vertical, 4)
@@ -304,26 +305,11 @@ struct InputBar: View {
             }
             .buttonStyle(.plain)
 
-            Divider().background(Color.borderSubtle.opacity(0.5))
-
-            Button {
-                showAddToChat.wrappedValue = false
-                vm.thinkingEnabled.toggle()
-            } label: {
-                addToChatRow(
-                    icon: vm.thinkingEnabled ? "brain.fill" : "brain",
-                    label: "Thinking",
-                    trailing: vm.thinkingEnabled ? "On" : "Off",
-                    iconColor: vm.thinkingEnabled ? Color.appAccent : Color.textSecondary
-                )
-            }
-            .buttonStyle(.plain)
-
             Spacer()
         }
         .frame(maxWidth: .infinity)
         .background(Color.appBg)
-        .presentationDetents([.height(230)])
+        .presentationDetents([.height(180)])
         .presentationDragIndicator(.hidden)
     }
 
@@ -383,19 +369,18 @@ struct InputBar: View {
 
             Divider().padding(.horizontal, 16)
 
-            // ── Thinking row ──────────────────────────────────────────────────
-            Button {
-                showAddToChat.wrappedValue = false
-                vm.thinkingEnabled.toggle()
-            } label: {
-                addToChatRow(
-                    icon: vm.thinkingEnabled ? "brain.fill" : "brain",
-                    label: "Thinking",
-                    trailing: vm.thinkingEnabled ? "On" : "Off",
-                    iconColor: vm.thinkingEnabled ? Color.appAccent : Color.textSecondary
-                )
+            // ── Speech language row ───────────────────────────────────────────
+            HStack {
+                addToChatRow(icon: "mic.fill", label: "Speech language", trailing: nil)
+                Spacer()
+                Picker("", selection: Bindable(prefs).speechLanguage) {
+                    Text("Auto").tag("auto")
+                    Text("English").tag("en-US")
+                    Text("Español").tag("es-ES")
+                }
+                .pickerStyle(.menu)
+                .padding(.trailing, 16)
             }
-            .buttonStyle(.plain)
 
             Spacer()
         }
@@ -542,7 +527,7 @@ struct InputBar: View {
         Button {
             Task {
                 if sr.isRecording { sr.stop() }
-                else { await sr.start() }
+                else { await sr.start(localeTag: prefs.speechLanguage) }
             }
         } label: {
             Image(systemName: sr.isRecording ? "mic.fill" : "mic")

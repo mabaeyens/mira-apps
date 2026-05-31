@@ -90,6 +90,7 @@ final class ChatViewModel {
     // arrives for >15 s during active streaming.
     private var staleConnectionTask: Task<Void, Never>?
     private var lastEventDate = Date.distantPast
+    private var streamEndedWithError = false
 
     // ── Slow-connection patience messages ─────────────────────────────────────
     // Shown after 3 s of streaming with no tokens yet. Rotates every 6 s.
@@ -174,6 +175,7 @@ final class ChatViewModel {
         agentStepLabel = nil
         thinkingContent = nil
         isThinkingActive = false
+        streamEndedWithError = false
 
         streamingWaitMessage = "Sending…"
 
@@ -186,6 +188,7 @@ final class ChatViewModel {
                 try? await Task.sleep(for: .seconds(5))
                 guard let self, !Task.isCancelled, self.isStreaming else { break }
                 if Date().timeIntervalSince(self.lastEventDate) > 15 {
+                    self.streamEndedWithError = true
                     self.errorMessage = "Connection lost — the server may be sleeping. Tap Resend when it's back."
                     self.stopStreaming()
                     break
@@ -205,7 +208,7 @@ final class ChatViewModel {
                 message: text,
                 conversationId: self.currentConvId,
                 attachments: attachments,
-                thinkingEnabled: self.thinkingEnabled
+                thinkingEnabled: false
             )
             do {
                 for try await event in self.sse.stream(request: request) {
@@ -217,6 +220,7 @@ final class ChatViewModel {
             } catch let urlError as URLError where urlError.code == .cancelled {
                 // URLSession cancelled (app lifecycle) — not an error.
             } catch {
+                self.streamEndedWithError = true
                 self.errorMessage = Self.isNetworkError(error)
                     ? "Connection lost — the server may be sleeping. Tap Resend when it's back."
                     : error.localizedDescription
@@ -315,7 +319,6 @@ final class ChatViewModel {
             currentBackend = info.backend
             modelName = info.model
             contextWindow = info.contextWindow
-            if info.backend == "mlx-lm" { thinkingEnabled = false }
         } catch {
             // Non-fatal — UI defaults to "ollama"
         }
@@ -364,7 +367,6 @@ final class ChatViewModel {
             currentBackend = info.backend
             modelName = info.model
             contextWindow = info.contextWindow
-            if info.backend == "mlx-lm" { thinkingEnabled = false }
             backendReady = true
         } catch {
             errorMessage = "Could not start backend: \(error.localizedDescription)"
@@ -498,8 +500,10 @@ final class ChatViewModel {
                     case "assistant": role = .assistant
                     default:          role = .assistant
                     }
-                    return Message(role: role, content: m.content)
+                    return Message(role: role, content: m.content,
+                                   thinkingContent: m.thinkingContent)
                 }
+                thinkingContent = messages.last(where: { $0.role == .assistant })?.thinkingContent
                 inputTokens = 0; outputTokens = 0; contextPct = 0
             } catch is CancellationError {
                 // 20-second timeout fired or app backgrounded — show a clear message.
@@ -736,6 +740,22 @@ final class ChatViewModel {
         // Always refresh the conversation list — on success to pick up the server
         // title, on error/timeout so the sidebar reflects current server state.
         Task { await loadConversations() }
+
+        if streamEndedWithError, !currentConvId.isEmpty {
+            streamEndedWithError = false
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.errorMessage = nil
+                if let history = try? await self.api.getMessages(conversationId: self.currentConvId), !history.isEmpty {
+                    self.messages = history.map { m in
+                        let role: Message.Role = m.role == "user" ? .user : .assistant
+                        return Message(role: role, content: m.content,
+                                       thinkingContent: m.thinkingContent)
+                    }
+                    self.thinkingContent = self.messages.last(where: { $0.role == .assistant })?.thinkingContent
+                }
+            }
+        }
     }
 
     private static func isNetworkError(_ error: Error) -> Bool {

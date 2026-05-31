@@ -98,8 +98,7 @@ struct ChatView: View {
                 switchStatusMessage: vm.switchStatusMessage,
                 liveModelName: vm.modelName,
                 liveContextWindow: vm.contextWindow,
-                onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) },
-                thinkingEnabled: $vm.thinkingEnabled
+                onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) }
             )
         }
         #endif
