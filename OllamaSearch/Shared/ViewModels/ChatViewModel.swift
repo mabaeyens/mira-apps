@@ -105,6 +105,9 @@ final class ChatViewModel {
     private var staleConnectionTask: Task<Void, Never>?
     private var lastEventDate = Date.distantPast
     private var streamEndedWithError = false
+    // True once this conversation has at least one successfully saved exchange.
+    // Used to decide whether to delete (never sent) or rename (failed send) on error.
+    private var conversationHadSuccessfulSend = false
 
     // ── Slow-connection patience messages ─────────────────────────────────────
     // Shown after 3 s of streaming with no tokens yet. Rotates every 6 s.
@@ -319,7 +322,12 @@ final class ChatViewModel {
     func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
         thinkingMode = .adaptive
+        let staleId = !currentConvId.isEmpty && !conversationHadSuccessfulSend ? currentConvId : nil
+        conversationHadSuccessfulSend = false
         Task {
+            if let id = staleId {
+                try? await api.deleteConversation(id: id)
+            }
             do {
                 let convId = try await api.createConversation(projectId: projectId)
                 currentConvId = convId
@@ -496,8 +504,16 @@ final class ChatViewModel {
     func selectConversation(_ id: String) {
         guard (id != currentConvId || messages.isEmpty), loadingConvId != id else { return }
         streamTask?.cancel()
+        // Delete the current conversation if it was never sent — it would stay as
+        // an empty "New conversation" entry otherwise.
+        let staleId = !currentConvId.isEmpty && !conversationHadSuccessfulSend && id != currentConvId
+            ? currentConvId : nil
+        conversationHadSuccessfulSend = false
         loadingConvId = id
         Task {
+            if let sid = staleId {
+                try? await api.deleteConversation(id: sid)
+            }
             defer { loadingConvId = nil }
             // Task-based timeout: URLRequest.timeoutInterval is unreliable when
             // VPN routing silently drops packets (no TCP RST). Cancelling the
@@ -522,6 +538,7 @@ final class ChatViewModel {
                     return Message(role: role, content: m.content,
                                    thinkingContent: m.thinkingContent)
                 }
+                conversationHadSuccessfulSend = !messages.isEmpty
                 thinkingContent = messages.last(where: { $0.role == .assistant })?.thinkingContent
                 inputTokens = 0; outputTokens = 0; contextPct = 0
             } catch is CancellationError {
@@ -762,6 +779,14 @@ final class ChatViewModel {
 
         if streamEndedWithError, !currentConvId.isEmpty {
             streamEndedWithError = false
+            let isNewConv = !conversationHadSuccessfulSend
+            if isNewConv {
+                let formatter = DateFormatter()
+                formatter.timeStyle = .short
+                formatter.dateStyle = .none
+                let time = formatter.string(from: Date())
+                renameConversation(currentConvId, title: "Pending – Retry \(time)")
+            }
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.errorMessage = nil
@@ -774,6 +799,8 @@ final class ChatViewModel {
                     self.thinkingContent = self.messages.last(where: { $0.role == .assistant })?.thinkingContent
                 }
             }
+        } else {
+            conversationHadSuccessfulSend = true
         }
     }
 
