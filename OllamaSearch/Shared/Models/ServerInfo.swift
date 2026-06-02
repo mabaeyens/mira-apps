@@ -27,6 +27,7 @@ struct ServerInfo: Codable {
         switch backend {
         case "mlx-lm": return "mlx-lm"
         case "omlx":   return "oMLX"
+        case "dflash": return "dFlash"
         default:       return "Ollama"
         }
     }

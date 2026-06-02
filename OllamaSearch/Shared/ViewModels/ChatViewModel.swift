@@ -58,9 +58,10 @@ final class ChatViewModel {
 
     private func backendLabel(_ backend: String) -> String {
         switch backend {
-        case "omlx": return "oMLX"
+        case "omlx":   return "oMLX"
         case "mlx-lm": return "mlx-lm"
-        default: return "Ollama"
+        case "dflash": return "dFlash"
+        default:       return "Ollama"
         }
     }
     var contextWindow: Int = 0

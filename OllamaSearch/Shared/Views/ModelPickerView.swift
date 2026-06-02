@@ -161,7 +161,7 @@ struct ModelPickerView: View {
                 !$0.displayName.trimmingCharacters(in: .whitespaces).isEmpty
             }
             if !validMlx.isEmpty {
-                sectionHeader("mlx-lm · Apple Silicon")
+                sectionHeader("Apple Silicon")
                 VStack(spacing: 8) {
                     ForEach(validMlx) { entry in modelRow(entry) }
                 }
@@ -210,7 +210,7 @@ struct ModelPickerView: View {
     @ViewBuilder
     private func modelRow(_ entry: ModelEntry) -> some View {
         let isActive = entry.backend == currentBackend && entry.modelId == currentModelId
-        let subtitle = sizeLabel(entry) + " · " + (entry.backend == "mlx-lm" ? "mlx-lm" : "Ollama")
+        let subtitle = sizeLabel(entry) + " · " + (entry.backend == "mlx-lm" ? (currentBackend == "dflash" ? "dFlash" : "mlx-lm") : "Ollama")
         Button {
             guard !isActive else { return }
             pendingEntry = entry

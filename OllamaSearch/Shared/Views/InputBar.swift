@@ -246,7 +246,7 @@ struct InputBar: View {
                     .fill(modelStatusColor)
                     .frame(width: 6, height: 6)
                 Text(vm.modelName.isEmpty
-                    ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : "Ollama")
+                    ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : vm.currentBackend == "dflash" ? "dFlash" : "Ollama")
                     : vm.modelDisplayName)
                     .font(.system(size: 13))
                     .foregroundStyle(Color.textPrimary)
