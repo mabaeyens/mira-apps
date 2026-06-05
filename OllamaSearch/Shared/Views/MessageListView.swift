@@ -56,7 +56,7 @@ struct MessageListView: View {
             MiraLogoView(size: 80)
             Spacer().frame(height: 20)
             Text("How can I help?")
-                .font(.bookerly(size: 32, weight: .light))
+                .font(.brand(size: 32, weight: .light))
                 .foregroundStyle(Color.textPrimary)
             Spacer().frame(height: 8)
             #if os(macOS)

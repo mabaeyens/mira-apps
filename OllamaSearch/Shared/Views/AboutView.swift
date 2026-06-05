@@ -19,7 +19,7 @@ struct AboutView: View {
                 Spacer().frame(height: 20)
 
                 Text("Mira")
-                    .font(.bookerly(size: 28, weight: .semibold))
+                    .font(.brand(size: 28, weight: .semibold))
                     .foregroundStyle(Color.textPrimary)
 
                 Text("Version \(version)")
@@ -113,11 +113,11 @@ struct AboutView: View {
             ForEach(rows, id: \.0) { label, value in
                 HStack(alignment: .top) {
                     Text(label)
-                        .font(.bookerly(size: 13, weight: .regular))
+                        .font(.brand(size: 13, weight: .regular))
                         .foregroundStyle(Color.textSecondary)
                         .frame(width: 80, alignment: .leading)
                     Text(value)
-                        .font(.bookerly(size: 13, weight: .regular))
+                        .font(.brand(size: 13, weight: .regular))
                         .foregroundStyle(Color.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)

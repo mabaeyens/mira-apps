@@ -52,7 +52,7 @@ struct SplashView: View {
                 Spacer().frame(height: 26)
 
                 Text("Mira")
-                    .font(.bookerlyTitle)
+                    .font(.brandTitle)
                     .foregroundStyle(Color.textPrimary)
 
                 Spacer().frame(height: 18)
