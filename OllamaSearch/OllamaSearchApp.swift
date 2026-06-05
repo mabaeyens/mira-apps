@@ -444,7 +444,7 @@ struct iOSSplashView: View {
                 MiraLogoView(size: 140, animated: true, playIntro: true)
                 Spacer().frame(height: 28)
                 Text("Mira")
-                    .font(.bookerlyTitle)
+                    .font(.brandTitle)
                     .foregroundStyle(Color.textPrimary)
                 Spacer().frame(height: 16)
                 Text(status.isEmpty ? " " : status)

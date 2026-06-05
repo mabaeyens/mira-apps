@@ -72,17 +72,14 @@ extension Color {
 }
 
 // ── App font ──────────────────────────────────────────────────────────────────
-//
-// Uses Bookerly if installed (download .ttf files, double-click to install via
-// macOS Font Book). Falls back to the system default if not found.
 
 extension Font {
-    static func bookerly(size: CGFloat, weight: Weight = .regular) -> Font {
-        .custom("Bookerly", size: size).weight(weight)
+    static func brand(size: CGFloat, weight: Weight = .regular) -> Font {
+        .custom("Lora", size: size).weight(weight)
     }
 
-    /// Canonical Bookerly title — app name display / splash screens. Fixed size, no Dynamic Type.
-    static let bookerlyTitle: Font = .bookerly(size: 36, weight: .semibold)
+    /// Brand title — app name display / splash screens. Fixed size, no Dynamic Type.
+    static let brandTitle: Font = .brand(size: 36, weight: .semibold)
 
     /// Icon sizing — apply via .font() on Image(systemName:) to decouple icons from surrounding text.
     static let iconSmall:  Font = .system(size: 13, weight: .regular)

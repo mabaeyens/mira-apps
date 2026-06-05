@@ -22,7 +22,7 @@ struct WelcomeView: View {
             VStack(spacing: 18) {
                 MiraLogoView(size: 68)
                 Text("What can I help with?")
-                    .font(.bookerly(size: 26, weight: .light))
+                    .font(.brand(size: 26, weight: .light))
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)

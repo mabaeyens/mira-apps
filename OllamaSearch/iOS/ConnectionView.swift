@@ -40,7 +40,7 @@ struct ConnectionView: View {
                 MiraLogoView(size: 100)
                 Spacer().frame(height: 18)
                 Text("Mira")
-                    .font(.bookerly(size: 32, weight: .semibold))
+                    .font(.brand(size: 32, weight: .semibold))
                     .foregroundStyle(Color.textPrimary)
 
                 Spacer().frame(height: 28)
