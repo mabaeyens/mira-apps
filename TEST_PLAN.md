@@ -50,8 +50,8 @@ Steps:
 **Goal:** Opening a conversation doesn't flash an empty state before scrolling to the bottom.
 
 Steps:
-- [ ] Open any conversation with 10+ messages — the view opens directly at the bottom message; no visible scroll jump from top
-- [ ] iPhone + iPad: same behaviour (tap a conversation in the list → lands at the bottom immediately)
+- [X] Open any conversation with 10+ messages — the view opens directly at the bottom message; no visible scroll jump from top
+- [X] iPhone + iPad: same behaviour (tap a conversation in the list → lands at the bottom immediately)
 
 ---
 
@@ -77,7 +77,7 @@ Steps:
 
 Run only after items 1–6 pass.
 
-- [ ] All changes committed and pushed to `origin main`
+- [X] All changes committed and pushed to `origin main`
 - [ ] Xcode: Product → Clean Build Folder
 - [ ] Xcode: Product → Archive (Any iOS Device destination)
 - [ ] Organizer opens automatically — verify bundle version shows **0.1.38 (38)**
