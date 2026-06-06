@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import CoreText
 
 @main
 struct OllamaSearchApp: App {
@@ -44,7 +45,20 @@ struct OllamaSearchApp: App {
     }
 
     init() {
+        // macOS ignores the Info.plist `UIAppFonts` key (that's iOS-only), so the
+        // bundled Lora variable fonts must be registered manually — otherwise
+        // `.custom("Lora", …)` silently falls back to the system font.
+        Self.registerBundledFonts()
         MacConnectionManager.shared.start()
+    }
+
+    /// Register the bundled Lora variable fonts with the process so the brand
+    /// font resolves on macOS. Idempotent — repeat calls are no-ops.
+    private static func registerBundledFonts() {
+        for name in ["Lora[wght]", "Lora-Italic[wght]"] {
+            guard let url = Bundle.main.url(forResource: name, withExtension: "ttf") else { continue }
+            CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        }
     }
     #endif
 
