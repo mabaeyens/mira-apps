@@ -18,6 +18,24 @@ private struct TransparentTitleBar: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
+// Resets the window to a normal (opaque) title bar — content sits below it, so a
+// floating panel can't be overlapped by the titlebar region. Counterpart to
+// TransparentTitleBar, which the splash applies to the shared window first.
+struct NormalTitleBar: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            guard let w = view.window else { return }
+            w.titlebarAppearsTransparent = false
+            w.titleVisibility = .hidden
+            w.styleMask.remove(.fullSizeContentView)
+            w.backgroundColor = NSColor(Color.appBg)
+        }
+        return view
+    }
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
 struct SplashView: View {
     let state: MacConnectionManager.State
     let onRetry: () -> Void

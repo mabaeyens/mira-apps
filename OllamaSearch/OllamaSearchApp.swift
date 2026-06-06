@@ -361,6 +361,7 @@ struct MacRootView: View {
     private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
     @State private var showSidebar = true
+    @State private var showMemories = false
 
     private var showMain: Bool {
         if case .ready = connection.state, splashMinimumElapsed { return true }
@@ -372,8 +373,14 @@ struct MacRootView: View {
             if showMain {
                 HStack(spacing: 0) {
                     if showSidebar {
+                        // Floating sidebar card (Claude model): all four corners rounded at the
+                        // same radius, even 10pt margin on every side. It sits fully below the
+                        // normal title bar, so nothing overlaps its top corners.
                         ConversationListView()
                             .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .shadow(color: .black.opacity(0.06), radius: 5, x: 0, y: 1)
+                            .padding(10)
                             .transition(.move(edge: .leading))
                     }
                     NavigationStack {
@@ -390,10 +397,33 @@ struct MacRootView: View {
                                     }
                                     .help(showSidebar ? "Hide Sidebar" : "Show Sidebar")
                                 }
+                                ToolbarItem(placement: .navigation) {
+                                    Button {
+                                        chatVM.newConversation()
+                                    } label: {
+                                        Image(systemName: "square.and.pencil")
+                                            .foregroundStyle(Color.textSecondary)
+                                    }
+                                    .help("New Chat")
+                                }
+                                ToolbarItem(placement: .navigation) {
+                                    Button {
+                                        showMemories = true
+                                    } label: {
+                                        Image(systemName: "scroll")
+                                            .foregroundStyle(Color.textSecondary)
+                                    }
+                                    .help("Memories")
+                                }
                             }
                     }
                 }
+                .background(Color.appBg)
+                .background(NormalTitleBar())
                 .toolbarBackground(Color.appBg, for: .windowToolbar)
+                .sheet(isPresented: $showMemories) {
+                    MemoriesView()
+                }
                 .task {
                     await chatVM.loadBackend()
                     await chatVM.refreshBackendHealth()

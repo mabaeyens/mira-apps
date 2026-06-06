@@ -42,12 +42,13 @@ struct ConversationListView: View {
                 sidebarList
             }
         }
-        .background(Color.appBg)
         #if os(macOS)
-        .safeAreaInset(edge: .bottom) {
-            newChatButton
-        }
+        // Subtle warm tint, distinct from the chat area's appBg, so the sidebar
+        // reads as its own surface (Notes / Claude-style separation). New Chat and
+        // Memories live in the window toolbar now, so the list runs to the bottom.
+        .background(Color.sidebarBg)
         #else
+        .background(Color.appBg)
         .safeAreaInset(edge: .top) {
             iosHeader
         }
@@ -205,6 +206,10 @@ struct ConversationListView: View {
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         #if os(macOS)
+        // Drop the List's automatic titlebar inset so it doesn't stack with the card's
+        // own top margin, then add a small fixed breathing space above the first header.
+        .ignoresSafeArea(.container, edges: .top)
+        .safeAreaInset(edge: .top, spacing: 0) { Color.clear.frame(height: 14) }
         .searchable(text: $searchText, prompt: "Search conversations")
         #endif
         .task(id: searchText) {
@@ -238,19 +243,6 @@ struct ConversationListView: View {
             let count = deletingConv?.messageCount ?? 0
             Text("This conversation has \(count) message\(count == 1 ? "" : "s") and cannot be recovered.")
         }
-        #if os(macOS)
-        .mask(
-            LinearGradient(
-                stops: [
-                    .init(color: .black, location: 0.0),
-                    .init(color: .black, location: 0.88),
-                    .init(color: .clear, location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        #endif
     }
 
     private func requestDelete(_ conv: Conversation) {
@@ -328,46 +320,6 @@ struct ConversationListView: View {
         .listRowSeparator(.hidden)
     }
 
-    // ── About / New Chat (macOS) ──────────────────────────────────────────────
-
-    #if os(macOS)
-    private var newChatButton: some View {
-        VStack(spacing: 0) {
-            Divider()
-
-            HStack(spacing: 0) {
-                Button(action: { vm.newConversation() }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "square.and.pencil")
-                            .foregroundStyle(Color.textSecondary)
-                        Text("New Chat")
-                            .foregroundStyle(Color.textPrimary)
-                        Spacer()
-                    }
-                    .font(Font.sidebarTitle.weight(.medium))
-                    .padding(.leading, 14)
-                    .padding(.trailing, 4)
-                    .padding(.vertical, 10)
-                }
-                .buttonStyle(.plain)
-
-                Button(action: { showMemories = true }) {
-                    Image(systemName: "person.text.rectangle")
-                        .foregroundStyle(Color.textSecondary)
-                        .font(Font.sidebarTitle)
-                        .frame(width: 24, height: 24)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 10)
-                }
-                .buttonStyle(.plain)
-                .help("Memories")
-            }
-            .background(.clear)
-            .padding(.bottom, 12)
-        }
-    }
-    #endif
-
     // ── iOS header + new chat pill ────────────────────────────────────────────
 
     #if os(iOS)
@@ -379,7 +331,7 @@ struct ConversationListView: View {
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Button(action: { showMemories = true }) {
-                    Image(systemName: "person.text.rectangle")
+                    Image(systemName: "scroll")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Color.textSecondary)
                         .frame(width: 38, height: 38)
