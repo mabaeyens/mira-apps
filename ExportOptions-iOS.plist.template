@@ -12,5 +12,11 @@
 	<string>automatic</string>
 	<key>destination</key>
 	<string>upload</string>
+	<key>authenticationKeyID</key>
+	<string>YOUR_KEY_ID</string>
+	<key>authenticationKeyIssuerID</key>
+	<string>YOUR_ISSUER_ID</string>
+	<key>authenticationKeyPath</key>
+	<string>/Users/YOUR_USERNAME/.appstoreconnect/private_keys/AuthKey_YOUR_KEY_ID.p8</string>
 </dict>
 </plist>
