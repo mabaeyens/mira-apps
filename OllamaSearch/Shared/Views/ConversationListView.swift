@@ -243,6 +243,18 @@ struct ConversationListView: View {
             let count = deletingConv?.messageCount ?? 0
             Text("This conversation has \(count) message\(count == 1 ? "" : "s") and cannot be recovered.")
         }
+        #if os(macOS)
+        .mask(
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0.0),
+                    .init(color: .black, location: 0.12)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        #endif
     }
 
     private func requestDelete(_ conv: Conversation) {

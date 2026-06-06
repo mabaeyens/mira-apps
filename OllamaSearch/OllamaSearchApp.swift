@@ -362,6 +362,7 @@ struct MacRootView: View {
                 } detail: {
                     ChatView()
                 }
+                .toolbarBackground(Color.appBg, for: .windowToolbar)
                 .task {
                     await chatVM.loadBackend()
                     await chatVM.refreshBackendHealth()
