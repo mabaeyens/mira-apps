@@ -5,66 +5,82 @@ Each release gets its own dated section at the top (newest first).
 
 ---
 
-## v0.1.35 — pending release
+## v0.1.38 — pending release
 
-### 1. Offline Memory Cache
+### 1. macOS Seamless Sidebar
 
-**Goal:** Memories are visible even when the Mac server is unreachable (off-LAN / cellular).
+**Goal:** Sidebar has no visible divider line; background matches the window; toggle works.
 
 Steps:
-- [X] While on home WiFi: open Memories panel → memories load from server → disconnect from WiFi (or turn off Mac server)
-- [X] Re-open Memories panel → cached memories still appear (no error alert)
-- [X] Add a memory while online → reconnect → verify it persists server-side
-- [X] Delete a memory while online → verify removal reflected immediately
-
-Expected: No error alert when offline; cached list shown instead. Online add/delete keep cache in sync.
+- [X] Launch Mira on Mac → sidebar renders with no vertical divider line between sidebar and chat area (compare: it should look like Notes or Claude Desktop, not a split-pane app)
+- [X] Sidebar background is `#FAF9F7` (light) / `#1C1917` (dark) — no desktop wallpaper bleeding through at any point (top, Projects, Conversations sections)
+- [X] Change desktop wallpaper to a bright colour → relaunch → still no bleed visible in sidebar
+- [X] Toolbar background matches sidebar/detail background (no colour seam at the top of the window)
 
 ---
 
-### 2. LAN HTTPS (Certificate Pinning)
+### 2. Sidebar Toggle
 
-**Goal:** iOS can connect to the Mac server over LAN via HTTPS without a device trust profile.
+**Goal:** Sidebar toggle button shows and hides the sidebar with a smooth animation.
 
 Steps:
-- [X] In iOS Connection screen: add `https://192.168.x.x:8443` (replace with Mac's LAN IP)
-- [X] Select that connection → app connects without a certificate error or trust prompt
-- [ ] Send a message — response streams correctly over HTTPS
-- [ ] HTTP LAN alert: verify banner does NOT appear (connection is encrypted)
-- [ ] Tailscale connection (`https://miguels-macbook-pro.tail51ad7d.ts.net:8443`) still works
-
-Expected: Encrypted LAN connection with no user-visible cert warnings; same pinned cert works for both LAN and Tailscale hostnames.
+- [X] Toolbar top-left: sidebar icon (`sidebar.left`) is visible
+- [X] Click it → sidebar slides out to the left with a 0.25s ease-in-out animation; chat expands to fill the full window
+- [X] Click it again → sidebar slides back in; chat shrinks back
+- [X] Hover icon → tooltip reads "Hide Sidebar" when sidebar is visible / "Show Sidebar" when hidden
+- [X] Resize window to minimum width while sidebar is visible → no layout breakage
 
 ---
 
-### 3. macOS Visual Polish
+### 3. New Chat Button at Bottom (macOS)
 
-**Goal:** Welcome screen, message layout, and launch state match new design.
+**Goal:** "New Chat" and Memories buttons are pinned to the bottom of the sidebar, not the top.
 
 Steps:
-- [X] Launch app with existing conversations → welcome screen shown (not auto-jumped into a conversation)
-- [X] Welcome screen: "How can I help?" heading + "Running locally on your Mac" subtitle + 4 suggestion chips visible
-- [X] Tap a suggestion chip → message is sent, conversation starts correctly
-- [X] Open an existing conversation → messages are centered with side margins on a wide window (≥1200pt)
-- [X] Resize window to ~700pt wide → messages fill the available width without clipping
-- [X] First message in a conversation has ~32pt gap below the toolbar
+- [X] Sidebar bottom: "New Chat" button and Memories icon are visible, separated from the list by a horizontal divider *above* them
+- [X] Sidebar top: no "New Chat" header — conversation list starts at the very top (below the toolbar)
+- [X] Button bottom padding: buttons are not flush with the window's rounded bottom corners; there is ~12pt gap
+- [X] Scroll the conversation list downward → items near the bottom fade out softly before reaching the "New Chat" bar (bottom-fade mask)
+- [X] Click "New Chat" → new conversation starts; sidebar highlights it
 
 ---
 
-### 4. Standard Checks
+### 4. Conversation Load Scroll Fix
 
-- [X] Send a short message — response streams correctly (macOS + iOS)
+**Goal:** Opening a conversation doesn't flash an empty state before scrolling to the bottom.
+
+Steps:
+- [ ] Open any conversation with 10+ messages — the view opens directly at the bottom message; no visible scroll jump from top
+- [ ] iPhone + iPad: same behaviour (tap a conversation in the list → lands at the bottom immediately)
+
+---
+
+### 5. iOS Status Bar Gradient
+
+**Goal:** A subtle gradient behind the status bar prevents text/icons clashing with the first chat message.
+
+Steps:
+- [X] iPhone: open a conversation → status bar area has a soft gradient fade matching `appBg` at the top (visible against light-coloured message bubbles)
+- [X] Toggle dark mode → gradient adapts (dark `appBg` fade)
+
+---
+
+### 6. Standard Checks
+
+- [X] Send a short message — response streams correctly (Mac + iPhone + iPad)
 - [X] Memories: add → new conversation → AI reflects it
+- [X] Model pill in toolbar shows correct model name on all three devices
 
 ---
 
-### 4. Archive Checklist (final gate)
+### 7. Archive Checklist (final gate)
 
-Run only after items 1–3 pass.
+Run only after items 1–6 pass.
 
 - [ ] All changes committed and pushed to `origin main`
 - [ ] Xcode: Product → Clean Build Folder
 - [ ] Xcode: Product → Archive (Any iOS Device destination)
-- [ ] Organizer opens automatically — verify bundle version shows correct number
+- [ ] Organizer opens automatically — verify bundle version shows **0.1.38 (38)**
 - [ ] Distribute App → TestFlight → upload
 - [ ] Confirm build appears in App Store Connect within ~10 min
 

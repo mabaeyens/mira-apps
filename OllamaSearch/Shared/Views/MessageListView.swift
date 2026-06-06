@@ -232,20 +232,10 @@ struct MessageListView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
+            .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
-            .onAppear {
-                scrollToBottom(proxy: proxy)
-            }
             .onChange(of: conversationId) {
                 scrollPinned = true
-                // Don't scroll yet — messages haven't loaded from DB
-            }
-            .onChange(of: isLoadingMessages) { _, loading in
-                guard !loading else { return }
-                Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 50_000_000) // one layout pass
-                    scrollToBottom(proxy: proxy)
-                }
             }
             .onChange(of: messages.count) {
                 if scrollPinned { scrollToBottom(proxy: proxy) }
