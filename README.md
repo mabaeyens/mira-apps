@@ -4,10 +4,13 @@ A native macOS and iOS chat app for local AI models, built with SwiftUI.
 
 Mira runs entirely on your own hardware — no cloud, no subscription, no data leaving your machine. It connects to a local Python server (mlx-lm for inference, sentence-transformers for RAG embeddings) and pairs with an iPhone over Bonjour or Tailscale for the same experience on the go.
 
+See [CHANGELOG.md](CHANGELOG.md) for recent changes.
+
 ## Features
 
 - **Local-first** — inference runs on your Mac via mlx-lm; nothing is sent to external APIs
 - **Streaming responses** — server-sent events for real-time token output
+- **Adaptive thinking** — extended reasoning on complex questions; tri-state toggle (off / adaptive / force-on)
 - **RAG** — attach documents and let the model search them before answering
 - **Long-term memory** — save facts across conversations; model uses them automatically
 - **Voice input** — tap the mic to dictate; live transcription via Apple Speech (on-device, iOS only)
