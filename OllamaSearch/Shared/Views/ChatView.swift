@@ -74,6 +74,14 @@ struct ChatView: View {
                 )
                 #if os(iOS)
                 if onBack != nil { floatingPillNav }
+                LinearGradient(
+                    colors: [Color.appBg, Color.appBg.opacity(0)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 72)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
                 #endif
             }
 
