@@ -346,7 +346,7 @@ struct MacRootView: View {
 
     private let connection = MacConnectionManager.shared
     @State private var splashMinimumElapsed = false
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var showSidebar = true
 
     private var showMain: Bool {
         if case .ready = connection.state, splashMinimumElapsed { return true }
@@ -356,11 +356,28 @@ struct MacRootView: View {
     var body: some View {
         Group {
             if showMain {
-                NavigationSplitView(columnVisibility: $columnVisibility) {
-                    ConversationListView()
-                        .frame(minWidth: 200)
-                } detail: {
-                    ChatView()
+                HStack(spacing: 0) {
+                    if showSidebar {
+                        ConversationListView()
+                            .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
+                            .transition(.move(edge: .leading))
+                    }
+                    NavigationStack {
+                        ChatView()
+                            .toolbar {
+                                ToolbarItem(placement: .navigation) {
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            showSidebar.toggle()
+                                        }
+                                    } label: {
+                                        Image(systemName: "sidebar.left")
+                                            .foregroundStyle(Color.textSecondary)
+                                    }
+                                    .help(showSidebar ? "Hide Sidebar" : "Show Sidebar")
+                                }
+                            }
+                    }
                 }
                 .toolbarBackground(Color.appBg, for: .windowToolbar)
                 .task {

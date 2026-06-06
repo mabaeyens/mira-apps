@@ -42,14 +42,9 @@ struct ConversationListView: View {
                 sidebarList
             }
         }
-        #if os(macOS)
-        .background(.clear)
-        #else
         .background(Color.appBg)
-        #endif
         #if os(macOS)
-        .navigationTitle("Mira")
-        .safeAreaInset(edge: .top) {
+        .safeAreaInset(edge: .bottom) {
             newChatButton
         }
         #else
@@ -247,8 +242,9 @@ struct ConversationListView: View {
         .mask(
             LinearGradient(
                 stops: [
-                    .init(color: .clear, location: 0.0),
-                    .init(color: .black, location: 0.12)
+                    .init(color: .black, location: 0.0),
+                    .init(color: .black, location: 0.88),
+                    .init(color: .clear, location: 1.0)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -337,6 +333,8 @@ struct ConversationListView: View {
     #if os(macOS)
     private var newChatButton: some View {
         VStack(spacing: 0) {
+            Divider()
+
             HStack(spacing: 0) {
                 Button(action: { vm.newConversation() }) {
                     HStack(spacing: 6) {
@@ -349,7 +347,7 @@ struct ConversationListView: View {
                     .font(Font.sidebarTitle.weight(.medium))
                     .padding(.leading, 14)
                     .padding(.trailing, 4)
-                    .padding(.vertical, 7)
+                    .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
 
@@ -359,14 +357,13 @@ struct ConversationListView: View {
                         .font(Font.sidebarTitle)
                         .frame(width: 24, height: 24)
                         .padding(.horizontal, 6)
-                        .padding(.vertical, 7)
+                        .padding(.vertical, 10)
                 }
                 .buttonStyle(.plain)
                 .help("Memories")
             }
             .background(.clear)
-
-            Divider()
+            .padding(.bottom, 12)
         }
     }
     #endif
