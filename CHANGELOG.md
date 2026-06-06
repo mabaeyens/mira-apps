@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.38
+
+- macOS sidebar is now seamless — no divider line, solid background (no wallpaper bleed), New Chat moved to the bottom
+- Toolbar button hides and shows the sidebar with a slide animation
+- Fixed blank conversation view on open across all platforms (iOS, iPadOS, macOS)
+
 ## v0.1.37
 
 - Scroll-to-bottom deferred until messages finish loading (eliminates jump on open)
