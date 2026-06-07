@@ -41,12 +41,12 @@ actor ConversationCache {
 
 // ── Private wire types ────────────────────────────────────────────────────────
 
-private struct CachedFile: Codable {
+private nonisolated struct CachedFile: Codable {
     let savedAt: Double
     let conversations: [CachedConv]
 }
 
-private struct CachedConv: Codable {
+private nonisolated struct CachedConv: Codable {
     let id: String
     let title: String
     let createdAt: Int

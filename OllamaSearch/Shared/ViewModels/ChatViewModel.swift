@@ -376,7 +376,7 @@ final class ChatViewModel {
         healthPollTask = Task { [weak self] in
             while !Task.isCancelled {
                 // Poll faster during startup so the loading banner clears promptly.
-                let isReady = await self?.backendReady ?? true
+                let isReady = self?.backendReady ?? true
                 let interval: Duration = isReady ? .seconds(10) : .seconds(3)
                 try? await Task.sleep(for: interval)
                 guard !Task.isCancelled else { break }

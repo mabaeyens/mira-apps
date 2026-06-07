@@ -48,13 +48,17 @@ struct MacAttachButton: View {
                 }
             }
 
+            // Snapshot into immutable values before hopping to the main actor so the
+            // closure doesn't capture the mutable vars (Swift 6 concurrency).
+            let loadedFinal = loaded
+            let failedFinal = failed
             await MainActor.run {
-                for att in loaded {
+                for att in loadedFinal {
                     self.vm.pendingAttachments.append(.fileData(name: att.name, data: att.data, mimeType: att.mime))
                     self.vm.stagedAttachmentNames.append(att.name)
                 }
-                if !failed.isEmpty {
-                    self.vm.errorMessage = "Could not load: \(failed.joined(separator: ", "))"
+                if !failedFinal.isEmpty {
+                    self.vm.errorMessage = "Could not load: \(failedFinal.joined(separator: ", "))"
                 }
             }
         }

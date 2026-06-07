@@ -724,7 +724,7 @@ private struct iOSPortraitView: View {
                         closeSidebar()
                     }
                 )
-                .frame(width: UIScreen.main.bounds.width * 0.85)
+                .containerRelativeFrame(.horizontal) { width, _ in width * 0.85 }
                 .background(Color.appBg)
                 .transition(.move(edge: .leading))
                 .zIndex(2)

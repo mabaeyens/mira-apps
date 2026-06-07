@@ -40,7 +40,9 @@ struct Project: Decodable, Identifiable {
 
 // ── Conversation ──────────────────────────────────────────────────────────────
 
-struct Conversation: Decodable, Identifiable {
+// Pure data model — nonisolated so it can be used from the ConversationCache
+// actor (the project defaults types to @MainActor isolation).
+nonisolated struct Conversation: Decodable, Identifiable {
     let id: String
     let title: String
     let createdAt: Int

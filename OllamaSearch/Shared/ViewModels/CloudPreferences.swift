@@ -22,7 +22,10 @@ final class CloudPreferences {
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
             object: kv,
             queue: .main
-        ) { [weak self] _ in self?.reload() }
+        ) { [weak self] _ in
+            // Delivered on the main queue, so we're already on the main actor.
+            MainActor.assumeIsolated { self?.reload() }
+        }
         kv.synchronize()
     }
 
