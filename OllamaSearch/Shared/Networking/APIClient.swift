@@ -163,6 +163,15 @@ final class APIClient {
         return try decoder.decode(ModelsResponse.self, from: data)
     }
 
+    func fetchBackends() async throws -> [BackendPreset] {
+        let url = baseURL.appendingPathComponent("backends")
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        authed(&req)
+        let (data, _) = try await session.data(for: req)
+        return try JSONDecoder().decode([BackendPreset].self, from: data)
+    }
+
     /// POST /models/switch — stops the current model and starts `modelId` on `backend`.
     /// Blocks until the new server is ready (up to 120 s).
     func switchModel(backend: String, modelId: String) async throws -> BackendInfo {

@@ -101,8 +101,7 @@ struct ChatView: View {
         #if os(macOS)
         .sheet(isPresented: Bindable(vm).showModelPicker) {
             ModelPickerView(
-                currentBackend: vm.currentBackend,
-                currentModelId: vm.modelName,
+                backendPresets: vm.backendPresets,
                 isSwitching: vm.isSwitchingBackend,
                 switchStatusMessage: vm.switchStatusMessage,
                 liveModelName: vm.modelName,

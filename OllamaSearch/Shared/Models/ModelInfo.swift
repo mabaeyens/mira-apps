@@ -37,6 +37,20 @@ struct ModelsResponse: Decodable {
     }
 }
 
+struct BackendPreset: Decodable, Identifiable {
+    let id: String
+    let label: String
+    let backend: String
+    let model: String
+    let contextWindow: Int
+    let active: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, label, backend, model, active
+        case contextWindow = "context_window"
+    }
+}
+
 struct PullProgress: Decodable {
     let type: String
     let percent: Int?

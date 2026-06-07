@@ -2,17 +2,14 @@ import SwiftUI
 
 struct ModelPickerView: View {
     @Environment(\.dismiss) private var dismiss
-    let currentBackend: String
-    let currentModelId: String
+    let backendPresets: [BackendPreset]
     let isSwitching: Bool
     let switchStatusMessage: String
     let liveModelName: String
     let liveContextWindow: Int
     let onSwitch: (String, String) async -> Void  // (backend, modelId)
 
-    @State private var pendingEntry: ModelEntry? = nil
-    @State private var models: ModelsResponse? = nil
-    @State private var loadError: String? = nil
+    @State private var pendingPreset: BackendPreset? = nil
     @State private var showAddModel = false
 
     var body: some View {
@@ -39,7 +36,7 @@ struct ModelPickerView: View {
 
             if isSwitching {
                 switchingView
-            } else if let pending = pendingEntry {
+            } else if let pending = pendingPreset {
                 confirmationView(for: pending)
             } else {
                 modelListView
@@ -53,14 +50,12 @@ struct ModelPickerView: View {
         .presentationDragIndicator(.visible)
         #endif
         .background(Color.appBg)
-        .task { await loadModels() }
         .onChange(of: isSwitching) { _, switching in
-            if switching { pendingEntry = nil }
+            if switching { pendingPreset = nil }
         }
         .sheet(isPresented: $showAddModel) {
-            AddModelView(onAdd: { modelId in
+            AddModelView(onAdd: { _ in
                 showAddModel = false
-                Task { await loadModels() }
             })
         }
     }
@@ -85,20 +80,20 @@ struct ModelPickerView: View {
 
     // ── Confirmation ──────────────────────────────────────────────────────────
 
-    private func confirmationView(for entry: ModelEntry) -> some View {
+    private func confirmationView(for preset: BackendPreset) -> some View {
         VStack(spacing: 16) {
             VStack(spacing: 6) {
-                Text("Switch to \(entry.displayName)?")
+                Text("Switch to \(preset.label)?")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
-                Text("The current model will stop and \(entry.displayName) will load. Chat is paused for 30–60 seconds.")
+                Text("The current model will stop and \(preset.label) will load. Chat is paused for 30–60 seconds.")
                     .font(.caption)
                     .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
             }
             HStack(spacing: 10) {
-                Button("Cancel") { pendingEntry = nil }
+                Button("Cancel") { pendingPreset = nil }
                     .buttonStyle(.plain)
                     .font(.system(size: 14))
                     .foregroundStyle(Color.textSecondary)
@@ -110,9 +105,9 @@ struct ModelPickerView: View {
                     )
 
                 Button("Switch") {
-                    let e = entry
-                    pendingEntry = nil
-                    Task { await onSwitch(e.backend, e.modelId) }
+                    let p = preset
+                    pendingPreset = nil
+                    Task { await onSwitch(p.backend, p.model) }
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 14, weight: .medium))
@@ -129,72 +124,35 @@ struct ModelPickerView: View {
     private var modelListView: some View {
         ScrollView {
             VStack(spacing: 0) {
-                if let err = loadError {
-                    Text(err)
+                if backendPresets.isEmpty {
+                    Text("No backends configured.\nAdd entries to mira.yaml on the server.")
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
+                        .multilineTextAlignment(.center)
                         .padding(20)
-                } else if models == nil {
-                    ProgressView()
-                        .tint(.yellow)
-                        .frame(maxWidth: .infinity)
-                        .padding(28)
                 } else {
-                    modelSections
+                    sectionHeader("Models")
+                    VStack(spacing: 8) {
+                        ForEach(backendPresets) { preset in presetRow(preset) }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 10)
                 }
 
+                Button {
+                    showAddModel = true
+                } label: {
+                    Label("Download a model", systemImage: "arrow.down.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.appAccent)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
             }
         }
         .frame(maxHeight: 440)
         .background(Color.appBg)
-    }
-
-    @ViewBuilder
-    private var modelSections: some View {
-        if let m = models {
-            let validMlx = m.mlxLm.filter {
-                !$0.modelId.trimmingCharacters(in: .whitespaces).isEmpty &&
-                !$0.displayName.trimmingCharacters(in: .whitespaces).isEmpty
-            }
-            let validOllama = m.ollama.filter {
-                !$0.modelId.trimmingCharacters(in: .whitespaces).isEmpty &&
-                !$0.displayName.trimmingCharacters(in: .whitespaces).isEmpty
-            }
-            if !validMlx.isEmpty {
-                sectionHeader("Apple Silicon")
-                VStack(spacing: 8) {
-                    ForEach(validMlx) { entry in modelRow(entry) }
-                }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 10)
-            }
-            if !validOllama.isEmpty {
-                sectionHeader("Ollama")
-                VStack(spacing: 8) {
-                    ForEach(validOllama) { entry in modelRow(entry) }
-                }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 10)
-            }
-            if validMlx.isEmpty && validOllama.isEmpty {
-                Text("No models found locally.")
-                    .font(.caption)
-                    .foregroundStyle(Color.textSecondary)
-                    .padding(20)
-            }
-
-            // Add model button (mlx-lm only)
-            Button {
-                showAddModel = true
-            } label: {
-                Label("Download a model", systemImage: "arrow.down.circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.appAccent)
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-        }
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -208,27 +166,27 @@ struct ModelPickerView: View {
     }
 
     @ViewBuilder
-    private func modelRow(_ entry: ModelEntry) -> some View {
-        let isActive = entry.backend == currentBackend && entry.modelId == currentModelId
-        let subtitle = sizeLabel(entry) + " · " + (entry.backend == "mlx-lm" ? (currentBackend == "dflash" ? "dFlash" : "mlx-lm") : "Ollama")
+    private func presetRow(_ preset: BackendPreset) -> some View {
+        let ctxLabel = preset.active && liveContextWindow > 0
+            ? "\(liveContextWindow / 1024)k ctx"
+            : "\(preset.contextWindow / 1024)k ctx"
+        let subtitle = backendTag(preset.backend) + " · " + ctxLabel
         Button {
-            guard !isActive else { return }
-            pendingEntry = entry
+            guard !preset.active else { return }
+            pendingPreset = preset
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(isActive && !liveModelName.isEmpty ? liveModelName : entry.displayName)
+                    Text(preset.active && !liveModelName.isEmpty ? liveModelName : preset.label)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Color.textPrimary)
                         .lineLimit(1)
-                    Text(isActive && liveContextWindow > 0
-                         ? "\(subtitle) · \(liveContextWindow / 1024)k ctx"
-                         : subtitle)
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
                 }
                 Spacer()
-                if isActive {
+                if preset.active {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.appAccent)
                 }
@@ -237,32 +195,27 @@ struct ModelPickerView: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isActive ? Color.appAccent.opacity(0.08) : Color.surfaceBg)
+                    .fill(preset.active ? Color.appAccent.opacity(0.08) : Color.surfaceBg)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .strokeBorder(
-                                isActive ? Color.appAccent.opacity(0.35) : Color.borderSubtle,
+                                preset.active ? Color.appAccent.opacity(0.35) : Color.borderSubtle,
                                 lineWidth: 1
                             )
                     )
             )
         }
         .buttonStyle(.plain)
-        .disabled(isActive || isSwitching)
+        .disabled(preset.active || isSwitching)
     }
 
-    private func sizeLabel(_ entry: ModelEntry) -> String {
-        entry.sizeGb > 0 ? String(format: "%.1f GB", entry.sizeGb) : "? GB"
-    }
-
-    // ── Data loading ──────────────────────────────────────────────────────────
-
-    private func loadModels() async {
-        do {
-            models = try await APIClient.shared.fetchModels()
-            loadError = nil
-        } catch {
-            loadError = "Could not load models: \(error.localizedDescription)"
+    private func backendTag(_ backend: String) -> String {
+        switch backend {
+        case "omlx": return "omlx"
+        case "dflash": return "dFlash"
+        case "mlx-lm": return "mlx-lm"
+        case "ollama": return "Ollama"
+        default: return backend
         }
     }
 }
@@ -440,12 +393,15 @@ private struct AddModelView: View {
 
 #Preview {
     ModelPickerView(
-        currentBackend: "mlx-lm",
-        currentModelId: "mlx-community/gemma-4-26b-a4b-it-4bit",
+        backendPresets: [
+            BackendPreset(id: "omlx-qwen3", label: "Qwen3.6 35B", backend: "omlx", model: "Qwen3.6-35B-A3B", contextWindow: 131072, active: true),
+            BackendPreset(id: "dflash-qwen3", label: "Qwen3.6 35B (dFlash)", backend: "dflash", model: "mlx-community/Qwen3.6-35B-A3B-4bit", contextWindow: 65536, active: false),
+            BackendPreset(id: "ollama-gemma4", label: "Gemma 4 26B", backend: "ollama", model: "gemma4:26b", contextWindow: 65536, active: false),
+        ],
         isSwitching: false,
         switchStatusMessage: "",
-        liveModelName: "Gemma 4 26B",
-        liveContextWindow: 65536,
+        liveModelName: "Qwen3.6 35B",
+        liveContextWindow: 131072,
         onSwitch: { _, _ in }
     )
 }

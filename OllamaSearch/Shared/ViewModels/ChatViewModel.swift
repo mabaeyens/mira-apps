@@ -49,6 +49,7 @@ final class ChatViewModel {
     var isThinkingActive: Bool = false
     var currentBackend: String = "ollama"
     var modelName: String = ""
+    var backendPresets: [BackendPreset] = []
 
     var modelDisplayName: String {
         // Strip org prefix and -it-* suffix: mlx-community/gemma-4-26b-a4b-it-4bit → gemma-4-26b-a4b
@@ -350,6 +351,15 @@ final class ChatViewModel {
         } catch {
             // Non-fatal — UI defaults to "ollama"
         }
+        await loadBackendPresets()
+    }
+
+    func loadBackendPresets() async {
+        do {
+            backendPresets = try await APIClient.shared.fetchBackends()
+        } catch {
+            // Non-fatal — picker falls back to empty list
+        }
     }
 
     /// Check Mira health and update backendReady. Call once on connect, then poll.
@@ -433,6 +443,7 @@ final class ChatViewModel {
             if !currentConvId.isEmpty {
                 messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
             }
+            await loadBackendPresets()
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"
@@ -470,6 +481,7 @@ final class ChatViewModel {
             if !currentConvId.isEmpty {
                 messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
             }
+            await loadBackendPresets()
         } catch {
             statusTask.cancel()
             errorMessage = "Failed to switch model: \(error.localizedDescription)"

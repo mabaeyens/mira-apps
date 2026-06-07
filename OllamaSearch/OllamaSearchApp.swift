@@ -544,8 +544,7 @@ struct iOSConnectedView: View {
     @ViewBuilder
     private var modelPickerSheet: some View {
         ModelPickerView(
-            currentBackend: chatVM.currentBackend,
-            currentModelId: chatVM.modelName,
+            backendPresets: chatVM.backendPresets,
             isSwitching: chatVM.isSwitchingBackend,
             switchStatusMessage: chatVM.switchStatusMessage,
             liveModelName: chatVM.modelName,
