@@ -232,10 +232,10 @@ private struct AddModelView: View {
     @State private var pullError: String? = nil
 
     private let presets: [(id: String, label: String, size: String)] = [
-        ("mlx-community/gemma-3-4b-it-4bit",          "Gemma 3 4B (4-bit)",   "2.5 GB"),
-        ("mlx-community/gemma-3-12b-it-4bit",         "Gemma 3 12B (4-bit)",  "7.3 GB"),
-        ("mlx-community/Mistral-7B-Instruct-v0.3-4bit","Mistral 7B (4-bit)",  "4.1 GB"),
-        ("mlx-community/Qwen2.5-14B-Instruct-4bit",   "Qwen 2.5 14B (4-bit)", "8.5 GB"),
+        ("mlx-community/gemma-4-26b-a4b-it-4bit",     "Gemma 4 26B (4-bit)",  "15.6 GB"),
+        ("mlx-community/gemma-3-12b-it-4bit",         "Gemma 3 12B (4-bit)",   "7.3 GB"),
+        ("mlx-community/Qwen2.5-14B-Instruct-4bit",   "Qwen 2.5 14B (4-bit)",  "8.5 GB"),
+        ("mlx-community/Mistral-7B-Instruct-v0.3-4bit","Mistral 7B (4-bit)",   "4.1 GB"),
     ]
 
     var body: some View {
@@ -395,7 +395,7 @@ private struct AddModelView: View {
     ModelPickerView(
         backendPresets: [
             BackendPreset(id: "omlx-qwen3", label: "Qwen3.6 35B", backend: "omlx", model: "Qwen3.6-35B-A3B", contextWindow: 131072, active: true),
-            BackendPreset(id: "dflash-qwen3", label: "Qwen3.6 35B (dFlash)", backend: "dflash", model: "mlx-community/Qwen3.6-35B-A3B-4bit", contextWindow: 65536, active: false),
+            BackendPreset(id: "omlx-gemma4", label: "Gemma 4 26B", backend: "omlx", model: "gemma4-26b", contextWindow: 131072, active: false),
             BackendPreset(id: "ollama-gemma4", label: "Gemma 4 26B", backend: "ollama", model: "gemma4:26b", contextWindow: 65536, active: false),
         ],
         isSwitching: false,

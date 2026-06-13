@@ -142,7 +142,7 @@ struct ChatView: View {
     // ── Backend banners ───────────────────────────────────────────────────────
 
     private var modelLabel: String {
-        vm.currentBackend == "omlx" ? "Qwen3.6 (oMLX)" : "Qwen3.6 (Ollama)"
+        vm.modelDisplayName.isEmpty ? vm.currentBackend : vm.modelDisplayName
     }
 
     private var backendLoadingBanner: some View {
