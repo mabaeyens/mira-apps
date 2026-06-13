@@ -5,6 +5,9 @@
 - macOS sidebar is now seamless — no divider line, solid background (no wallpaper bleed), New Chat moved to the bottom
 - Toolbar button hides and shows the sidebar with a slide animation
 - Fixed blank conversation view on open across all platforms (iOS, iPadOS, macOS)
+- Model picker now reads backend presets from the server — adding a new model in `mira.yaml` appears in the picker without an app update
+- Backend status banners ("X is not running", "Starting X…") show the actual active model name
+- Gemma 4 26B added to the model download list (requires oMLX 0.4.3+)
 
 ## v0.1.37
 
