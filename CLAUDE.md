@@ -23,7 +23,7 @@ Native apps (iOS + macOS) for Mira.
 ## Build Targets
 
 - `OllamaSearch` (main scheme) — iOS + macOS
-- Destinations: iOS Simulator, macOS, iPhone Miguel (sideload via id=68256925-7395-58B9-BC9C-7A403153C7CB)
+- Destinations: iOS Simulator, macOS, physical iPhone (sideload — set device ID in Xcode)
 
 ## Validation & Release
 
