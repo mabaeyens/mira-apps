@@ -262,12 +262,19 @@ final class APIClient {
         }
     }
 
-    func reset() async throws -> (convId: String, title: String) {
+    /// Starts a fresh conversation. Phase 3: pass the current `conversationId` to
+    /// inherit its project (sent as a form field); omit/empty for a project-less chat.
+    func reset(conversationId: String = "") async throws -> (convId: String, title: String) {
         guard let url = URL(string: "/reset", relativeTo: baseURL) else {
             throw APIError.invalidURL
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        if !conversationId.isEmpty {
+            req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            let encoded = conversationId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? conversationId
+            req.httpBody = "conversation_id=\(encoded)".data(using: .utf8)
+        }
         authed(&req)
         let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(ResetResponse.self, from: data)
