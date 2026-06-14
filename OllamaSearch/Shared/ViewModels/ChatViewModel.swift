@@ -151,9 +151,13 @@ final class ChatViewModel {
 
         if text.lowercased() == "/compact" {
             inputText = ""
+            guard !currentConvId.isEmpty else {
+                messages.append(.info("Nothing to compact yet."))
+                return
+            }
             Task {
                 do {
-                    let msg = try await api.compact()
+                    let msg = try await api.compact(conversationId: currentConvId)
                     messages.append(.info(msg))
                 } catch {
                     errorMessage = "Compact failed: \(error.localizedDescription)"
@@ -266,7 +270,7 @@ final class ChatViewModel {
         // Store (don't fire-and-forget) so send() can await this before the next request.
         cancelTask = Task { [weak self] in
             guard let self else { return }
-            await self.api.cancel()
+            await self.api.cancel(conversationId: self.currentConvId)
         }
         flushPendingTokens()
         if let idx = messages.indices.last, messages[idx].role == .assistant {

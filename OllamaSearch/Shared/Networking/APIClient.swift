@@ -244,10 +244,15 @@ final class APIClient {
         return request
     }
 
-    func cancel() async {
+    /// Phase 3: pass the active `conversationId` so the cancel scopes to this
+    /// conversation's in-flight turn only. An empty id sends no scope, which the
+    /// server treats as "cancel everything" (back-compat).
+    func cancel(conversationId: String) async {
         guard let url = URL(string: "/cancel", relativeTo: baseURL) else { return }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONEncoder().encode(["conversation_id": conversationId])
         authed(&req)
         do {
             _ = try await session.data(for: req)
@@ -270,12 +275,17 @@ final class APIClient {
     }
 
     /// Returns the banner message from the server ("Nothing to compact yet." or the summary notice).
-    func compact() async throws -> String {
+    /// Phase 3: the server compacts the given conversation, so `conversation_id` is
+    /// required (sent as a form field — the endpoint reads it via FastAPI `Form`).
+    func compact(conversationId: String) async throws -> String {
         guard let url = URL(string: "/compact", relativeTo: baseURL) else {
             throw APIError.invalidURL
         }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        let encoded = conversationId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? conversationId
+        req.httpBody = "conversation_id=\(encoded)".data(using: .utf8)
         authed(&req)
         let (data, _) = try await session.data(for: req)
         let obj = try JSONDecoder().decode(CompactResponse.self, from: data)
