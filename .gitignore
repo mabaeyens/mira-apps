@@ -1,6 +1,7 @@
 # ASC credentials — use *.plist.template instead
 ExportOptions-iOS.plist
 ExportOptions-macOS.plist
+ExportOptions-macOS-direct.plist
 
 # Xcode
 *.xcodeproj/xcuserdata/
