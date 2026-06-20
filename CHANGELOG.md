@@ -2,6 +2,7 @@
 
 ## v0.1.38
 
+- Deleting a project is now guarded — the app shows the server's message and keeps the project while its files still exist (delete the local folder or GitHub repo first)
 - macOS sidebar is now seamless — no divider line, solid background (no wallpaper bleed), New Chat moved to the bottom
 - Toolbar button hides and shows the sidebar with a slide animation
 - Fixed blank conversation view on open across all platforms (iOS, iPadOS, macOS)

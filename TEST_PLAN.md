@@ -65,7 +65,19 @@ Steps:
 
 ---
 
-### 6. Standard Checks
+### 6. Project Deletion Guard
+
+**Goal:** A project can no longer be deleted from the app while its files still exist — the server refuses (409) and the app explains why, so an accidental tap can't drop a live project and its conversation history.
+
+Steps:
+- [ ] Long-press / right-click a project whose local folder still exists → "Delete project" → an alert appears with the server message ("Project files still exist at … Delete the local folder (or its GitHub repo) manually first")
+- [ ] Confirm the project **remains** in the sidebar after the alert (not optimistically removed)
+- [ ] Delete the project's local folder (or GitHub repo) manually, then "Delete project" again → it is removed cleanly, no alert
+- [ ] Repeat on Mac + iPhone + iPad
+
+---
+
+### 7. Standard Checks
 
 - [X] Send a short message — response streams correctly (Mac + iPhone + iPad)
 - [X] Memories: add → new conversation → AI reflects it
@@ -73,9 +85,9 @@ Steps:
 
 ---
 
-### 7. Archive Checklist (final gate)
+### 8. Archive Checklist (final gate)
 
-Run only after items 1–6 pass.
+Run only after items 1–7 pass.
 
 - [X] All changes committed and pushed to `origin main`
 - [ ] Xcode: Product → Clean Build Folder

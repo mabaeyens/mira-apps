@@ -364,7 +364,13 @@ final class APIClient {
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
         authed(&req)
-        _ = try await session.data(for: req)
+        let (data, response) = try await session.data(for: req)
+        // The server refuses deletion (409) while the project's local folder still
+        // exists — surface its message so the user knows to delete the folder/repo first.
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.detail ?? "Server error \(http.statusCode)"
+            throw APIError.serverError(msg)
+        }
     }
 
     func renameConversation(id: String, title: String) async throws {
