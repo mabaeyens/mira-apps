@@ -10,6 +10,8 @@ See [CHANGELOG.md](CHANGELOG.md) for recent changes.
 
 The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyens/mira-core)** — the local FastAPI server that does inference, RAG, web search, and tool calling. The server must be running for the apps to work; see [askmira.es](https://askmira.es) for an overview and TestFlight access.
 
+**Testing it?** Tell me what's useful and what broke in [Discussions](https://github.com/mabaeyens/mira-core/discussions); I read everything.
+
 ## Features
 
 - **Local-first** — inference runs on your Mac via oMLX (or dFlash / mlx-lm / Ollama); nothing is sent to external APIs
