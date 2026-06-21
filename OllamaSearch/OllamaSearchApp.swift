@@ -529,7 +529,17 @@ struct iOSConnectedView: View {
     let onSettings: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var columnVisibility: NavigationSplitViewVisibility = .detailOnly
+    /// iPad sidebar visibility, persisted across launches and conversations.
+    /// The user controls hiding via the toolbar toggle; opening a conversation
+    /// no longer force-collapses the sidebar.
+    @AppStorage("ipadSidebarVisible") private var sidebarVisible = true
+
+    private var columnVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { sidebarVisible ? .all : .detailOnly },
+            set: { sidebarVisible = ($0 != .detailOnly) }
+        )
+    }
 
     /// "Tailscale" for 100.x addresses or *.ts.net hostnames, "Local" otherwise.
     private var connectionLabel: String {
@@ -563,10 +573,8 @@ struct iOSConnectedView: View {
                 // IMPORTANT: do NOT add .toolbar to ConversationListView inside a
                 // NavigationStack — iOS 26 treats a toolbar on the root as a column
                 // anchor and shows both root and destination side-by-side.
-                NavigationSplitView(columnVisibility: $columnVisibility) {
-                    ConversationListView(onTap: { _ in
-                        columnVisibility = .detailOnly
-                    })
+                NavigationSplitView(columnVisibility: columnVisibility) {
+                    ConversationListView()
                         .toolbar {
                             ToolbarItem(placement: .navigationBarLeading) {
                                 Button { onSettings() } label: {
@@ -574,6 +582,17 @@ struct iOSConnectedView: View {
                                         .foregroundStyle(isReachable ? Color.accent : .orange)
                                 }
                                 .help(isReachable ? connectionLabel : "\(connectionLabel) — reconnecting…")
+                            }
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        sidebarVisible.toggle()
+                                    }
+                                } label: {
+                                    Image(systemName: "sidebar.left")
+                                        .foregroundStyle(Color.textSecondary)
+                                }
+                                .help(sidebarVisible ? "Hide Sidebar" : "Show Sidebar")
                             }
                         }
                 } detail: {
@@ -611,21 +630,9 @@ struct iOSConnectedView: View {
                 if chatVM.currentConvId.isEmpty, let first = chatVM.conversations.first {
                     chatVM.selectConversation(first.id)
                 }
-                columnVisibility = .all
+                // Sidebar visibility is driven by the persisted `sidebarVisible`
+                // preference — opening a conversation no longer collapses it.
             }
-        }
-        .onChange(of: chatVM.currentConvId) { _, newId in
-            if !newId.isEmpty && horizontalSizeClass == .regular {
-                columnVisibility = .detailOnly
-            }
-        }
-        .onAppear {
-            if horizontalSizeClass == .regular {
-                columnVisibility = .all
-            }
-        }
-        .onChange(of: horizontalSizeClass) { _, newClass in
-            columnVisibility = (newClass == .regular) ? .all : .detailOnly
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             reconnectBanner
