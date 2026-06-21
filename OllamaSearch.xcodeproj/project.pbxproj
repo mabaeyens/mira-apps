@@ -281,7 +281,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "OllamaSearch/OllamaSearch-iOS.entitlements";
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "OllamaSearch/OllamaSearch-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 37;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = HTVGRBVW58;
 				ENABLE_APP_SANDBOX = YES;
@@ -330,7 +330,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]" = "OllamaSearch/OllamaSearch-iOS.entitlements";
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "OllamaSearch/OllamaSearch-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 37;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = HTVGRBVW58;
 				ENABLE_APP_SANDBOX = YES;
