@@ -170,7 +170,7 @@ struct ModelPickerView: View {
         let ctxLabel = preset.active && liveContextWindow > 0
             ? "\(liveContextWindow / 1024)k ctx"
             : "\(preset.contextWindow / 1024)k ctx"
-        let subtitle = backendTag(preset.backend) + " · " + ctxLabel
+        let subtitle = ctxLabel
         Button {
             guard !preset.active else { return }
             pendingPreset = preset
@@ -209,15 +209,6 @@ struct ModelPickerView: View {
         .disabled(preset.active || isSwitching)
     }
 
-    private func backendTag(_ backend: String) -> String {
-        switch backend {
-        case "omlx": return "omlx"
-        case "dflash": return "dFlash"
-        case "mlx-lm": return "mlx-lm"
-        case "ollama": return "Ollama"
-        default: return backend
-        }
-    }
 }
 
 // ── Add Model sheet ───────────────────────────────────────────────────────────
@@ -317,7 +308,7 @@ private struct AddModelView: View {
                             Text(preset.label)
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundStyle(Color.textPrimary)
-                            Text(preset.size + " · mlx-lm")
+                            Text(preset.size)
                                 .font(.caption)
                                 .foregroundStyle(Color.textSecondary)
                         }
