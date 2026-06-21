@@ -191,7 +191,7 @@ Borrowed patterns should be noted in commit messages.
 - Always `git pull origin main` before any commit or push
 - Commits should be coherent (one feature/fix per commit, not trial-and-error reversals)
 - Use `git rebase -i` to squash commits before pushing if you have many small changes
-- Release commits are tagged with version: `git tag v0.1.25 && git push origin v0.1.25`
+- Release commits are tagged with version: `git tag v0.2.0 && git push origin v0.2.0`
 
 Commit discipline advice: Normal pace is 5-10 commits per day (coherent changes). Sprint pace is 20-30 per day. More than 30 in a day signals trial-and-error coding -- use upfront specs to prevent this.
 

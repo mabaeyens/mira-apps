@@ -34,7 +34,7 @@ Shows the name of the active project (e.g. "Work docs"). Visible only when a pro
 ### Thinking chip
 **Swift name:** Unnamed `HStack` + `Capsule` inside `InputBar`, bottom-left area
 
-Shows a brain icon + "Thinking" label. Visible only when extended thinking is enabled. Tap it to turn thinking off.
+Shows a brain icon with a tri-state label — **Auto** (adaptive heuristic), **Thinking** (forced on), or **Off**. Tap it to cycle between the three. The choice is sent per turn.
 
 ### Attachment chip
 **Swift name:** `attachmentChip(name:index:)` inside `InputBar`

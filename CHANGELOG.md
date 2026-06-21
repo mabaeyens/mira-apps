@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.0
+
+- iPad: the sidebar no longer auto-hides when you open a conversation — you control it with a toolbar button and the choice persists across conversations and launches
+- Model picker: removed the backend tag from the model rows (the active backend is shown on the About screen instead) — cleaner Switch Model and download lists
+
 ## v0.1.38
 
 - Deleting a project is now guarded — the app shows the server's message and keeps the project while its files still exist (delete the local folder or GitHub repo first)
@@ -9,6 +14,7 @@
 - Model picker now reads backend presets from the server — adding a new model in `mira.yaml` appears in the picker without an app update
 - Backend status banners ("X is not running", "Starting X…") show the actual active model name
 - Gemma 4 26B added to the model download list (requires oMLX 0.4.3+)
+- Stop and compact now act only on the open conversation (multi-conversation scoping)
 
 ## v0.1.37
 

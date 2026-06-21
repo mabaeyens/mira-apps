@@ -77,7 +77,35 @@ Steps:
 
 ---
 
-### 7. Standard Checks
+### 7. iPad Sidebar Persistence
+
+**Goal:** On iPad the sidebar no longer auto-hides when a conversation is opened. The user controls visibility with a toolbar button, and the choice persists across conversations and app launches.
+
+Steps:
+- [ ] iPad: launch the app → sidebar reflects its last saved state (visible on a fresh install)
+- [ ] Tap a conversation in the sidebar → sidebar **stays as-is** (does NOT auto-collapse)
+- [ ] Sidebar toolbar (top-right): tap the `sidebar.left` button → sidebar hides with a 0.25s animation; tap again → it returns
+- [ ] Hide the sidebar, force-quit, relaunch → sidebar is **still hidden** (preference persisted)
+- [ ] Open a different conversation → sidebar visibility unchanged
+- [ ] iPhone portrait: unaffected — the slide-in overlay sidebar still behaves as before
+- [ ] macOS: unaffected — its own toggle still works
+
+---
+
+### 8. Think Mode — Turn Control (needs mira-core ≥ v0.8.3)
+
+**Goal:** The brain-icon thinking toggle takes effect per turn on the default oMLX + Qwen3 backend (previously "off" never stuck because omlx was missing from the Qwen3 thinking-control branch).
+
+Steps:
+- [ ] New conversation, mode = **Auto** → ask "what's the weather?" → **no** thinking block appears (adaptive heuristic skips reasoning for trivial queries)
+- [ ] Tap the brain icon to **On** → ask a reasoning question → a thinking block streams
+- [ ] Tap the brain icon to **Off** → ask again → **no** thinking block (off now sticks per turn)
+- [ ] Toggle on/off between turns in the same conversation → each turn honours the current setting
+- [ ] Confirm the server is running mira-core v0.8.3+ (the fix is server-side)
+
+---
+
+### 9. Standard Checks
 
 - [X] Send a short message — response streams correctly (Mac + iPhone + iPad)
 - [X] Memories: add → new conversation → AI reflects it
@@ -85,9 +113,9 @@ Steps:
 
 ---
 
-### 8. Archive Checklist (final gate)
+### 10. Archive Checklist (final gate)
 
-Run only after items 1–7 pass.
+Run only after items 1–9 pass.
 
 - [X] All changes committed and pushed to `origin main`
 - [ ] Xcode: Product → Clean Build Folder
@@ -98,7 +126,7 @@ Run only after items 1–7 pass.
 
 ---
 
-## v0.1.34 — pending release
+## v0.1.34 — shipped
 
 ### 1. In-App Model Browser
 
