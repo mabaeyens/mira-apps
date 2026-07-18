@@ -35,8 +35,8 @@ The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyen
 | Component | Version |
 |-----------|---------|
 | Xcode | 26+ |
-| macOS (dev machine) | 26+ |
-| iOS (device) | 26+ |
+| macOS (dev machine) | 15+ |
+| iOS (device) | 18+ |
 | Swift | 6 |
 | Python | 3.12+ (for the server) |
 | oMLX | 0.4.3+ (default inference backend) |
@@ -110,6 +110,8 @@ This approach demonstrates the ability to direct advanced AI tools to accelerate
 ## Contributing
 
 Issues, ideas, and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup and conventions. Found a security issue? Please follow [SECURITY.md](SECURITY.md) rather than opening a public issue. Feel free to fork this project and build your own.
+
+See [PRIVACY.md](PRIVACY.md) for the privacy policy — no data is collected.
 
 ## License
 
