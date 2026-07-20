@@ -87,6 +87,18 @@ final class ChatViewModel {
     var agentStepLabel: String? = nil
 
     var errorMessage: String? = nil
+
+    // ── Destructive-action approvals ──────────────────────────────────────────
+    // Queue of refused destructive actions awaiting a user decision; the sheet
+    // shows `first`. A queue rather than a single value because one turn can
+    // refuse several actions.
+    var pendingApprovals: [PendingApproval] = []
+    /// Tokens the user has explicitly approved, staged for the *next* request
+    /// only. Deliberately a plain in-memory array: never persisted, never
+    /// written from model output, and drained on read so a retry cannot reuse
+    /// one. Populated solely by `approve(_:)`.
+    private var approvedTokens: [String] = []
+
     /// Non-nil while a conversation's message history is being fetched.
     /// The value is the ID being loaded, used to show a per-row spinner.
     var loadingConvId: String? = nil
@@ -171,6 +183,11 @@ final class ChatViewModel {
         pendingAttachments = []
         stagedAttachmentNames = []
 
+        // Drain: tokens ride exactly one request. A Resend after this point
+        // carries none, which is the intended behaviour — re-approving is a tap.
+        let tokens = approvedTokens
+        approvedTokens = []
+
         // Capture image data for inline thumbnails before clearing attachments
         let imageData = attachments.compactMap { att -> Data? in
             if case .fileData(_, let data, let mime) = att, mime.hasPrefix("image/") { return data }
@@ -235,7 +252,8 @@ final class ChatViewModel {
                 message: text,
                 conversationId: self.currentConvId,
                 attachments: attachments,
-                thinkingMode: self.thinkingMode
+                thinkingMode: self.thinkingMode,
+                approvedTokens: tokens
             )
             do {
                 for try await event in self.sse.stream(request: request) {
@@ -254,6 +272,37 @@ final class ChatViewModel {
             }
             self.finishStreaming(msgId: assistantMsg.id)
         }
+    }
+
+    // ── Approvals ─────────────────────────────────────────────────────────────
+
+    /// The user tapped Approve. Stages the token for the next request only.
+    /// This is the ONLY path that may write `approvedTokens` — approval has to
+    /// originate from a tap, or the gate is worthless.
+    func approve(_ approval: PendingApproval) {
+        pendingApprovals.removeAll { $0.id == approval.id }
+        approvedTokens.append(approval.token)
+        // Wait until every queued action has a decision, so one send carries them all.
+        guard pendingApprovals.isEmpty else { return }
+        // The user may have approved without typing anything; the model still
+        // needs a turn in which to retry the action.
+        if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            inputText = "approved"
+        }
+        send()
+    }
+
+    /// The user tapped Cancel. Drop the token and send nothing — the model
+    /// already has the refusal in context.
+    func decline(_ approval: PendingApproval) {
+        pendingApprovals.removeAll { $0.id == approval.id }
+    }
+
+    /// Drop every pending approval and staged token. Called whenever the
+    /// conversation changes so tokens cannot leak across conversations.
+    private func clearApprovals() {
+        pendingApprovals = []
+        approvedTokens = []
     }
 
     func stopStreaming() {
@@ -320,6 +369,7 @@ final class ChatViewModel {
 
     func prepareForNewConversation() {
         streamTask?.cancel()
+        clearApprovals()
         currentConvId = ""
         messages = []
         inputTokens = 0; outputTokens = 0; contextPct = 0
@@ -327,6 +377,7 @@ final class ChatViewModel {
 
     func newConversation(projectId: String? = nil) {
         streamTask?.cancel()
+        clearApprovals()
         thinkingMode = .adaptive
         let staleId = !currentConvId.isEmpty && !conversationHadSuccessfulSend ? currentConvId : nil
         conversationHadSuccessfulSend = false
@@ -521,6 +572,7 @@ final class ChatViewModel {
     func selectConversation(_ id: String) {
         guard (id != currentConvId || messages.isEmpty), loadingConvId != id else { return }
         streamTask?.cancel()
+        clearApprovals()
         // Delete the current conversation if it was never sent — it would stay as
         // an empty "New conversation" entry otherwise.
         let staleId = !currentConvId.isEmpty && !conversationHadSuccessfulSend && id != currentConvId
@@ -686,6 +738,12 @@ final class ChatViewModel {
 
         case .agentStep(let step, let tool):
             agentStepLabel = "Step \(step)/15 · \(tool)"
+
+        case .approvalRequired(let approval):
+            // Ignore a repeat of an action already queued — the server can refuse
+            // the same command twice in one turn.
+            guard !pendingApprovals.contains(where: { $0.token == approval.token }) else { break }
+            pendingApprovals.append(approval)
 
         case .fetchContext(let fetches):
             isFetching = false

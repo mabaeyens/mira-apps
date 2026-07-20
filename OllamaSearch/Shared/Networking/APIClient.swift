@@ -222,11 +222,15 @@ final class APIClient {
 
     /// Build the URLRequest for POST /chat (multipart).
     /// The caller passes it to `SSEClient.shared.stream(request:)`.
+    /// `approvedTokens` must only ever come from an explicit user tap on the
+    /// confirmation prompt, and only on the request immediately following it —
+    /// the server scopes them per request and does not remember them.
     func chatRequest(
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload] = [],
-        thinkingMode: ThinkingMode = .adaptive
+        thinkingMode: ThinkingMode = .adaptive,
+        approvedTokens: [String] = []
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
@@ -239,6 +243,7 @@ final class APIClient {
             conversationId: conversationId,
             attachments: attachments,
             thinkingMode: thinkingMode,
+            approvedTokens: approvedTokens,
             boundary: boundary
         )
         return request
@@ -473,6 +478,7 @@ final class APIClient {
         conversationId: String,
         attachments: [AttachmentPayload],
         thinkingMode: ThinkingMode = .adaptive,
+        approvedTokens: [String] = [],
         boundary: String
     ) -> Data {
         var body = Data()
@@ -495,6 +501,11 @@ final class APIClient {
         case .on:       field("thinking_enabled", "true")
         case .off:      field("thinking_enabled", "false")
         case .adaptive: break
+        }
+
+        // Repeatable: one part per token, so several approvals can ride one turn.
+        for token in approvedTokens {
+            field("approved_tokens", token)
         }
 
         for attachment in attachments {

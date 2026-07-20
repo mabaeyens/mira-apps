@@ -125,6 +125,25 @@ struct ChatView: View {
             )
         }
         #endif
+        // Destructive-action approval. Both platforms: this is the only control
+        // that can authorise a destructive action, so it must never be skipped.
+        // The `set` closure is intentionally a no-op — an alert can only be
+        // dismissed through one of its buttons, and both buttons clear the
+        // queue entry themselves. Declining here instead would decline the
+        // *next* queued approval when the user approves the current one.
+        .alert(
+            vm.pendingApprovals.first?.title ?? "",
+            isPresented: Binding(
+                get: { vm.pendingApprovals.first != nil },
+                set: { _ in }
+            ),
+            presenting: vm.pendingApprovals.first
+        ) { approval in
+            Button("Cancel", role: .cancel) { vm.decline(approval) }
+            Button("Approve", role: .destructive) { vm.approve(approval) }
+        } message: { approval in
+            Text(approval.detail)
+        }
         // On iOS the error alert lives in iOSConnectedView so it's reachable
         // whether the sidebar or the detail column is currently visible.
         #if os(macOS)

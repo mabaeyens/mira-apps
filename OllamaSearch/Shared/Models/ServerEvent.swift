@@ -44,6 +44,9 @@ enum ServerEvent {
     case toolStart(name: String, label: String)
     case toolDone(name: String, label: String)
     case agentStep(step: Int, tool: String)
+    /// A destructive action the server refused. Carries the token the user can
+    /// approve with; only a user tap may ever send it back.
+    case approvalRequired(PendingApproval)
     case compress(String)
     case warning(String)
     case error(String)
@@ -150,6 +153,20 @@ extension ServerEvent {
             let step = obj["step"] as? Int ?? 0
             let tool = obj["tool"] as? String ?? ""
             return .agentStep(step: step, tool: tool)
+
+        case "approval_required":
+            // No token means nothing can be approved — drop the event rather than
+            // surfacing a control that cannot work.
+            guard let token = obj["approval_token"] as? String, !token.isEmpty else { return nil }
+            let tool = obj["tool"] as? String ?? ""
+            return .approvalRequired(PendingApproval(
+                tool: tool,
+                action: obj["action"] as? String ?? tool,
+                token: token,
+                target: obj["target"] as? String ?? "",
+                matched: obj["matched"] as? String ?? "",
+                message: obj["message"] as? String ?? ""
+            ))
 
         case "compress":
             return .compress(obj["message"] as? String ?? "")
