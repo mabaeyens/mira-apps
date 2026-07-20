@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.1
 
 - Destructive actions (deleting a file, `rm -rf`, merging a PR, deleting a branch) now ask for an explicit tap to approve before they run
 - Deployment targets lowered to iOS 18 / macOS 15 (from 26), widening device compatibility
