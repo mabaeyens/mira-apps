@@ -4,8 +4,17 @@ import MarkdownUI
 // ── Color helpers ──────────────────────────────────────────────────────────────
 
 extension Color {
-    // Color(light:dark:) is provided by SwiftUI since macOS 14 / iOS 17.
-    // No custom init needed — the system version is used directly below.
+    // `Color(light:dark:)` used below is NOT a SwiftUI API, whatever this
+    // comment used to claim. It comes from **MarkdownUI**
+    // (Sources/MarkdownUI/Utility/Color+RGBA.swift), which is why this file
+    // imports MarkdownUI even though only the theme at the bottom renders
+    // markdown. The whole palette therefore depends on a rendering library's
+    // public utility extension. It builds a proper dynamic NSColor/UIColor, so
+    // it behaves correctly; the risk is that it disappears in a MarkdownUI
+    // release and takes every colour in the app with it.
+    //
+    // Verified 2026-07-26: `swiftc` refuses `Color(light:dark:)` with only
+    // SwiftUI imported, at the app's own macOS 15 deployment target.
 
     init(hex: UInt32) {
         self.init(
@@ -53,8 +62,28 @@ extension Color {
         dark:  Color(hex: 0x57534E)
     )
     /// Warm amber — same hue in both modes, slightly deeper in light for contrast.
+    ///
+    /// The `AccentColor` asset holds these same two values, so `Color.accent`
+    /// and `Color.appAccent` resolve identically today and the ~35 uses of the
+    /// former are not a visual bug. They are one colour defined twice: edit one
+    /// and they diverge.
     static let appAccent = Color(
         light: Color(hex: 0xC07A4F),
+        dark:  Color(hex: 0xD09268)
+    )
+
+    /// Accent for body-size text, notably markdown links.
+    ///
+    /// The brand amber is a tint, chosen against the icon and the dark page. As
+    /// text on the light page it measures **3.25:1**, below the 4.5 that normal
+    /// text needs, so links were the one place light mode failed outright. This
+    /// is the same hue (22.8°) and saturation with the value dropped 0.753 to
+    /// 0.625: 4.52 on the page, 4.76 on a card. Dark mode already cleared it at
+    /// 6.66 and is unchanged, so the brand colour itself is untouched.
+    ///
+    /// Measured by `notes/mira-palette-contrast.py` in mira-core.
+    static let linkAccent = Color(
+        light: Color(hex: 0x9F6542),
         dark:  Color(hex: 0xD09268)
     )
     static let textPrimary = Color(
@@ -118,7 +147,7 @@ extension MarkdownUI.Theme {
             ForegroundColor(Color.textPrimary)
         }
         .link {
-            ForegroundColor(Color.accent)
+            ForegroundColor(Color.linkAccent)
         }
         .code {
             FontFamily(.custom("Menlo"))

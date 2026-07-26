@@ -16,15 +16,26 @@ Light mode shipped 2026-05-17 and has no check here, because `backlog.md`
 claimed the app forced dark. It does not. This is the largest untested surface
 in the app.
 
+Contrast was measured 2026-07-26 (mira-core `notes/mira-palette-contrast.py`),
+so the numeric part is done and the link colour is fixed. What is left needs
+eyes.
+
 - [ ] **Mac / iPhone / iPad**: set the system to Light → chat, sidebar and input
-      bar are legible, nothing is beige-on-cream
-- [ ] Inline code and fenced code blocks in Light → the chip is distinguishable
-      from the page (both use `userBubbleBg` over `appBg`, closest pair in the palette)
-- [ ] **Switch appearance with the app already running** → the window background
-      follows, no relaunch needed. Most likely thing to fail
-- [ ] **Mac**: splash screen in Light → the amber radial wash is visible but not muddy
+      bar are legible
+- [ ] **Markdown links in Light** are readable. They were 3.25:1 and are now
+      `#9F6542` at 4.52. The only measured failure in the palette
 - [ ] **iPhone**: reconnect banner and the floating nav circles use
       `.ultraThinMaterial`, designed against dark. Confirm they still read
+- [ ] **Mac**: splash screen in Light → the amber radial wash is visible but not muddy
+- [ ] **Mac**: System Settings → Appearance → set a **non-default accent colour**
+      (blue, pink) → the app stays amber everywhere. 35 places use
+      `Color.accent` rather than `Color.appAccent`; both resolve to the same
+      amber from the asset catalog, but that is asserted, not observed
+- [ ] **Switch appearance with the app already running** → the window background
+      follows, no relaunch. The palette itself was verified to resolve
+      dynamically, so this is about AppKit state held elsewhere
+- [ ] Inline code chips are still visible in Light. Measured at 1.57:1, which is
+      *higher* than GitHub's 1.13, so this is a look check and not a defect hunt
 
 ### B. macOS window chrome — Mac only
 
