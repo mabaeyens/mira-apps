@@ -53,7 +53,8 @@ final class APIClient {
 
     struct HealthResponse {
         let startupStatus: StartupStatus
-        /// True when Mira is up AND the inference backend (oMLX/Ollama) is reachable with its model.
+        /// True when Mira is up AND its configured inference backend, whichever
+        /// one `mira.yaml` names, is reachable with its model loaded.
         let backendReady: Bool
     }
 

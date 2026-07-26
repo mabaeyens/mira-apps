@@ -133,7 +133,7 @@ struct OllamaSearchApp: App {
     /// Called when the app foregrounds. Polls the server for up to 90 s, cycling
     /// through patience messages. Handles three states:
     ///   .ready      → clear banner, reload conversations
-    ///   .starting   → server is up but Ollama is still loading; stay on same URL
+    ///   .starting   → server is up but the model is still loading; stay on same URL
     ///   .unavailable → try other saved connections; keep waiting
     private func startReconnect() {
         guard let current = activeURL else { return }
@@ -168,7 +168,7 @@ struct OllamaSearchApp: App {
                     await chatVM.loadConversations()
                     return
                 case .starting:
-                    // Server is responding (503) — Ollama is loading. Stay on same URL.
+                    // Server is responding (503) — the model is loading. Stay on same URL.
                     reconnectMessage = Self.reconnectMessages.randomElement()
                 case .unavailable:
                     // No response at all — try other saved connections.
@@ -225,21 +225,21 @@ struct OllamaSearchApp: App {
     // ── Server startup / reconnect patience messages ──────────────────────────
 
     private static let reconnectMessages: [String] = [
-        // Server / Ollama startup
+        // Server and model startup
         "Server is starting up…",
-        "Loading the Ollama model into memory…",
-        "Ollama is initializing…",
+        "Loading the model into memory…",
+        "Starting the inference engine…",
         "Warming up the model — this takes a moment after sleep",
         "Model weights are being loaded…",
-        "Ollama needs 15–30 seconds after a long sleep",
+        "A big model takes a moment to load after a long sleep",
         "Server process is coming online…",
         "The model is being pulled into RAM…",
-        "Ollama is preparing your model…",
+        "Preparing your model…",
         "Server startup in progress…",
         "Loading model into memory — almost there",
         "Server is getting ready…",
         "Initializing the language model…",
-        "Ollama is doing its thing…",
+        "The engine is doing its thing…",
         "Model load in progress…",
         // Mac waking up
         "Mac is waking from sleep…",
@@ -305,13 +305,13 @@ struct OllamaSearchApp: App {
         "Mira is starting up…",
         // Connected but loading
         "Connection established — loading model…",
-        "Server responded — Ollama is initializing…",
+        "Server responded — the model is loading…",
         "Almost done starting up…",
         "The hard part is done — model is loading…",
         "Connected to server — warming up model…",
         "Server is online — model loading in progress…",
         "Reached the server — model startup in progress…",
-        "Network is connected — waiting for Ollama…",
+        "Network is connected — waiting for the model…",
         "Found your server — starting the model…",
         "Server located — now loading model…",
         "On the right track — just loading the model",

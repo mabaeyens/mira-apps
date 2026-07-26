@@ -32,7 +32,10 @@ final class MacConnectionManager {
         state = .connecting("Connecting to server…")
         pollTask?.cancel()
         pollTask = Task { [weak self] in
-            // 60s timeout: Ollama warm-up can take up to 25s (5 × 5s retries)
+            // 60s timeout. Measured 2026-07-26 across four restarts with the model
+            // already resident: warm-up took 3.7s to 7.5s. A cold load of a
+            // 19GB model has never been measured and is the case this budget
+            // exists for, so the 60s stays until it is.
             let deadline = Date.now.addingTimeInterval(60)
             while Date.now < deadline {
                 try? await Task.sleep(for: .milliseconds(750))

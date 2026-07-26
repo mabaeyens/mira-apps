@@ -99,11 +99,22 @@ glance, not a hunt.
 
 ---
 
+### G. Startup copy — iPhone and iPad mainly
+
+Spec 5. The reconnect messages are iOS-only; macOS has its own two states.
+
+- [ ] **iPhone**: background the app, put the Mac to sleep, foreground again →
+      the patience messages never name Ollama, and none of them quotes a
+      number of seconds
+- [ ] **Mac**: cold launch while the server is starting → splash reads
+      "Starting Mira…", not "Starting Ollama…"
+
+---
+
 ## Coming from the consistency roadmap
 
 **Do not run these yet.** Not implemented; `specs/ROADMAP.md` tracks the work.
 
-- [ ] **All three**: startup messages do not name Ollama — spec 5
 - [ ] **iPhone / iPad**: assign a conversation to a project → it moves in the
       sidebar and survives relaunch — spec 6 (server side is done, app is not)
 

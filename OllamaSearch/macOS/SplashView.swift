@@ -178,7 +178,10 @@ struct SplashView: View {
 }
 
 #Preview("Connecting") { SplashView(state: .connecting("Connecting to server…"), onRetry: {}) }
-#Preview("Starting")   { SplashView(state: .connecting("Starting Ollama…"), onRetry: {}) }
+// Both previews use strings ServerManager actually sets, so a copy change here
+// cannot drift from the states the app can really be in. This one said
+// "Starting Ollama…", which was never one of them.
+#Preview("Starting")   { SplashView(state: .connecting("Starting Mira…"), onRetry: {}) }
 #Preview("Failed")     { SplashView(state: .failed("Server not found at localhost:8000."), onRetry: {}) }
 #Preview("Needs token") { SplashView(state: .needsToken, onRetry: {}) }
 #endif
