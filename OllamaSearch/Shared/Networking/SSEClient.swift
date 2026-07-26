@@ -65,7 +65,12 @@ enum SSEError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .httpError(let code): return "Server returned HTTP \(code)"
+        // 401/403 named explicitly: "Server returned HTTP 401" sends people
+        // looking for a server fault when the cause is this app's access token.
+        case .httpError(401), .httpError(403):
+            return "Not authorised — the server rejected this app's access token."
+        case .httpError(let code):
+            return "Server returned HTTP \(code)"
         }
     }
 }
