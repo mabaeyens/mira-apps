@@ -564,6 +564,7 @@ struct iOSConnectedView: View {
             switchStatusMessage: chatVM.switchStatusMessage,
             liveModelName: chatVM.modelName,
             liveContextWindow: chatVM.contextWindow,
+            library: chatVM.modelLibrary,
             onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) }
         )
         #if os(iOS)

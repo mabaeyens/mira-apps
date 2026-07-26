@@ -7,10 +7,25 @@ struct ModelPickerView: View {
     let switchStatusMessage: String
     let liveModelName: String
     let liveContextWindow: Int
+    /// Local library from `GET /models`, for sizes and for hiding models the
+    /// download sheet would otherwise offer to fetch again.
+    var library: ModelsResponse? = nil
     let onSwitch: (String, String) async -> Void  // (backend, modelId)
 
     @State private var pendingPreset: BackendPreset? = nil
     @State private var showAddModel = false
+
+    /// Selectable entries first, then the ones that cannot be switched to.
+    /// The server already puts the running model at the top of `available`.
+    private var selectable: [BackendPreset] { backendPresets.filter(\.available) }
+    private var unselectable: [BackendPreset] { backendPresets.filter { !$0.available } }
+
+    /// Every model id already on disk, so the download sheet does not offer to
+    /// fetch something that is sitting there. It used to list Gemma 4 26B as a
+    /// suggested download on a machine that already had it.
+    private var installedModelIds: Set<String> {
+        Set(library?.backends.flatMap { $0.models.map(\.modelId) } ?? [])
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -54,7 +69,7 @@ struct ModelPickerView: View {
             if switching { pendingPreset = nil }
         }
         .sheet(isPresented: $showAddModel) {
-            AddModelView(onAdd: { _ in
+            AddModelView(installed: installedModelIds, onAdd: { _ in
                 showAddModel = false
             })
         }
@@ -131,12 +146,24 @@ struct ModelPickerView: View {
                         .multilineTextAlignment(.center)
                         .padding(20)
                 } else {
-                    sectionHeader("Models")
-                    VStack(spacing: 8) {
-                        ForEach(backendPresets) { preset in presetRow(preset) }
+                    if !selectable.isEmpty {
+                        sectionHeader("Models")
+                        VStack(spacing: 8) {
+                            ForEach(selectable) { preset in presetRow(preset) }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 10)
+                    // Shown rather than hidden: a user who put an entry in
+                    // mira.yaml deliberately would otherwise think it was lost.
+                    if !unselectable.isEmpty {
+                        sectionHeader("Not available")
+                        VStack(spacing: 8) {
+                            ForEach(unselectable) { preset in presetRow(preset) }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
+                    }
                 }
 
                 Button {
@@ -165,30 +192,69 @@ struct ModelPickerView: View {
             .padding(.bottom, 4)
     }
 
+    /// The model's name, without the parenthetical that mira.yaml labels carry.
+    ///
+    /// Those parentheticals are engineering notes ("vllm-mlx, patched mistral
+    /// tool parser", "mira-mlx, owned server") and they truncated mid-word in a
+    /// 340pt sheet. Everything a user decides with — which engine, how much
+    /// context, how much disk — is on the subtitle line instead, where it fits.
+    private func modelName(_ preset: BackendPreset) -> String {
+        if preset.active, !liveModelName.isEmpty {
+            return liveModelName.split(separator: "/").last.map(String.init) ?? liveModelName
+        }
+        guard let paren = preset.label.firstIndex(of: "(") else { return preset.label }
+        let trimmed = preset.label[..<paren].trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? preset.label : trimmed
+    }
+
+    private func subtitle(_ preset: BackendPreset) -> String {
+        var parts: [String] = []
+        let backend = Backend.label(for: preset.backend)
+        if !backend.isEmpty { parts.append(backend) }
+
+        let ctx = preset.active && liveContextWindow > 0 ? liveContextWindow : preset.contextWindow
+        if ctx > 0 { parts.append("\(ctx / 1024)k ctx") }
+
+        if let gb = library?.sizeGb(backend: preset.backend, model: preset.model), gb > 0 {
+            parts.append(String(format: "%.1f GB", gb))
+        }
+        return parts.joined(separator: " · ")
+    }
+
     @ViewBuilder
     private func presetRow(_ preset: BackendPreset) -> some View {
-        let ctxLabel = preset.active && liveContextWindow > 0
-            ? "\(liveContextWindow / 1024)k ctx"
-            : "\(preset.contextWindow / 1024)k ctx"
-        let subtitle = ctxLabel
         Button {
-            guard !preset.active else { return }
+            guard !preset.active, preset.available else { return }
             pendingPreset = preset
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(preset.active && !liveModelName.isEmpty ? liveModelName : preset.label)
+                    Text(modelName(preset))
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.textPrimary)
+                        .foregroundStyle(preset.available ? Color.textPrimary : Color.textSecondary)
                         .lineLimit(1)
-                    Text(subtitle)
+                    Text(subtitle(preset))
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
+                    // Why it cannot be selected, in the user's terms: "Ollama is
+                    // installed but not responding" rather than a row that
+                    // simply fails when tapped.
+                    if !preset.available, !preset.detail.isEmpty {
+                        Text(preset.detail)
+                            .font(.caption2)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 Spacer()
                 if preset.active {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(Color.appAccent)
+                } else if !preset.available {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
                 }
             }
             .padding(.horizontal, 14)
@@ -204,9 +270,10 @@ struct ModelPickerView: View {
                             )
                     )
             )
+            .opacity(preset.available ? 1 : 0.65)
         }
         .buttonStyle(.plain)
-        .disabled(preset.active || isSwitching)
+        .disabled(preset.active || !preset.available || isSwitching)
     }
 
 }
@@ -215,6 +282,10 @@ struct ModelPickerView: View {
 
 private struct AddModelView: View {
     @Environment(\.dismiss) private var dismiss
+    /// Model ids already on disk. Filtered out of the suggestions below, since
+    /// offering to download something the machine already has is noise at best
+    /// and a redownload at worst.
+    var installed: Set<String> = []
     let onAdd: (String) -> Void
 
     @State private var customId = ""
@@ -222,12 +293,16 @@ private struct AddModelView: View {
     @State private var pullPercent: Int = 0
     @State private var pullError: String? = nil
 
-    private let presets: [(id: String, label: String, size: String)] = [
+    private static let allSuggestions: [(id: String, label: String, size: String)] = [
         ("mlx-community/gemma-4-26b-a4b-it-4bit",     "Gemma 4 26B (4-bit)",  "15.6 GB"),
         ("mlx-community/gemma-3-12b-it-4bit",         "Gemma 3 12B (4-bit)",   "7.3 GB"),
         ("mlx-community/Qwen2.5-14B-Instruct-4bit",   "Qwen 2.5 14B (4-bit)",  "8.5 GB"),
         ("mlx-community/Mistral-7B-Instruct-v0.3-4bit","Mistral 7B (4-bit)",   "4.1 GB"),
     ]
+
+    private var presets: [(id: String, label: String, size: String)] {
+        Self.allSuggestions.filter { !installed.contains($0.id) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -291,6 +366,7 @@ private struct AddModelView: View {
         .padding(28)
     }
 
+    @ViewBuilder
     private var presetSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("POPULAR MODELS")
@@ -298,6 +374,14 @@ private struct AddModelView: View {
                 .foregroundStyle(Color.textSecondary)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
+
+            if presets.isEmpty {
+                Text("Every suggested model is already installed. Use a repo id below to download something else.")
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+            }
 
             ForEach(presets, id: \.id) { preset in
                 Button {
@@ -385,14 +469,22 @@ private struct AddModelView: View {
 #Preview {
     ModelPickerView(
         backendPresets: [
-            BackendPreset(id: "omlx-qwen3", label: "Qwen3.6 35B", backend: "omlx", model: "Qwen3.6-35B-A3B", contextWindow: 131072, active: true),
-            BackendPreset(id: "omlx-gemma4", label: "Gemma 4 26B", backend: "omlx", model: "gemma4-26b", contextWindow: 131072, active: false),
-            BackendPreset(id: "ollama-gemma4", label: "Gemma 4 26B", backend: "ollama", model: "gemma4:26b", contextWindow: 65536, active: false),
+            BackendPreset(id: "mira-mlx-qwen3", label: "Qwen3.6 35B", backend: "mira-mlx",
+                          model: "mlx-community/Qwen3.6-35B-A3B-4bit", contextWindow: 131072, active: true),
+            BackendPreset(id: "omlx-gemma4", label: "Gemma 4 26B", backend: "omlx",
+                          model: "gemma4-26b", contextWindow: 65536, active: false),
+            BackendPreset(id: "mlxlm-ministral", label: "Ministral 3 14B (mlx-lm, text-only load)",
+                          backend: "mlx-lm", model: "mlx-community/Ministral-3-14B-Instruct-2512-4bit",
+                          contextWindow: 65536, active: false),
+            BackendPreset(id: "ollama-ministral", label: "Ministral 3 14B (Ollama)", backend: "ollama",
+                          model: "ministral-3:14b", contextWindow: 131072, active: false,
+                          available: false,
+                          detail: "Ollama is installed but not responding, start it to see its models"),
         ],
         isSwitching: false,
         switchStatusMessage: "",
-        liveModelName: "Qwen3.6 35B",
-        liveContextWindow: 131072,
+        liveModelName: "mlx-community/Qwen3.6-35B-A3B-4bit",
+        liveContextWindow: 128000,
         onSwitch: { _, _ in }
     )
 }
