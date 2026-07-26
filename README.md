@@ -2,7 +2,7 @@
 
 A native macOS and iOS chat app for local AI models, built with SwiftUI.
 
-Mira runs entirely on your own hardware — no cloud, no subscription, no data leaving your machine. It connects to a local Python server that runs inference on a local backend ([oMLX](https://omlx.ai) by default), embeds documents locally for RAG, and can search the web on your behalf. The iPhone app pairs with the Mac over Bonjour or Tailscale for the same experience on the go.
+Mira runs entirely on your own hardware — no cloud, no subscription, no data leaving your machine. It connects to a local Python server that runs inference on a local backend (mira-core's own [mira-mlx](https://github.com/mabaeyens/mira-core) by default), embeds documents locally for RAG, and can search the web on your behalf. The iPhone app pairs with the Mac over Bonjour or Tailscale for the same experience on the go.
 
 See [CHANGELOG.md](CHANGELOG.md) for recent changes.
 
@@ -14,7 +14,7 @@ The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyen
 
 ## Features
 
-- **Local-first** — inference runs on your Mac via oMLX (or dFlash / mlx-lm / Ollama); nothing is sent to external APIs
+- **Local-first** — inference runs on your Mac via mira-mlx (or oMLX / dFlash / mlx-lm / vllm-mlx / Ollama); nothing is sent to external APIs
 - **Streaming responses** — server-sent events for real-time token output
 - **Adaptive thinking** — extended reasoning on complex questions; tri-state toggle (off / adaptive / force-on)
 - **Web search** — the model can search the web and fetch pages when it needs to; sources surface as clickable links
@@ -23,7 +23,7 @@ The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyen
 - **Voice input** — tap the mic to dictate; live transcription via Apple Speech (on-device, iOS only)
 - **Conversation history** — persistent, named conversations with a sidebar
 - **Markdown rendering** — code blocks, tables, and inline formatting via MarkdownUI
-- **Model picker** — reads available models from the server; adding a model in `mira.yaml` shows up without an app update, and the backend label tracks the active model
+- **Model picker** — reads the server's real library: which backends are installed, which models are on disk and how big they are. Adding a model in `mira.yaml` shows up without an app update, the running model is always listed and marked, and anything that cannot be selected says why
 - **iOS companion** — iPhone app connects to the Mac server over WiFi (Bonjour) or remotely (Tailscale over HTTPS), authenticating with a shared bearer token
 - **Splash screens** — animated Mira logo while the server and model load (macOS and iOS)
 - **About screen** — accessible from the macOS app menu and iOS info button
@@ -39,7 +39,7 @@ The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyen
 | iOS (device) | 18+ |
 | Swift | 6 |
 | Python | 3.12+ (for the server) |
-| oMLX | 0.4.3+ (default inference backend) |
+| Inference backend | mira-mlx by default, ships with mira-core. oMLX 0.4.3+, dFlash, mlx-lm, vllm-mlx and Ollama also selectable |
 
 The server, inference backend, and default model (`Qwen3.6-35B-A3B`) are set up by [mira-core](https://github.com/mabaeyens/mira-core) — see its README for the one-command installer.
 
@@ -47,12 +47,13 @@ The server, inference backend, and default model (`Qwen3.6-35B-A3B`) are set up 
 
 ```
 OllamaSearch/
+├── OllamaSearchApp.swift   # both platforms' scene graph; MacRootView and the iOS root views live in here
 ├── Shared/          # Views, ViewModels, Models, Networking — runs on both platforms
 │   ├── Views/       # ChatView, MiraLogo, AboutView, SplashView helpers, …
 │   ├── ViewModels/
 │   ├── Models/
 │   └── Networking/
-├── macOS/           # ServerManager, MacRootView, SplashView, file picker
+├── macOS/           # ServerManager, TokenStore, SplashView, file picker
 ├── iOS/             # Bonjour discovery, ConnectionView, file picker
 └── Assets.xcassets/ # App icon (light / dark / tinted), accent colour
 Design/
@@ -65,12 +66,12 @@ Design/
 iPhone (Mira iOS)
     └── Bonjour / Tailscale (HTTPS :8443) ──► Mac (Mira macOS)
                                                   └── localhost:8000 ──► Python server (FastAPI, mira-core)
-                                                                            ├── oMLX (inference, port 8080)
+                                                                            ├── mira-mlx (inference, port 8080)
                                                                             ├── nomic-embed-text-v1.5 (RAG embeddings, local)
                                                                             └── web search + page fetch (sources as links)
 ```
 
-The macOS app connects to the Python server ([mira-core](https://github.com/mabaeyens/mira-core)), which runs as a macOS LaunchAgent (`com.mab.mira`) installed separately from the app. oMLX is started and managed by the server. The iOS app discovers the Mac over Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale hostname.
+The macOS app connects to the Python server ([mira-core](https://github.com/mabaeyens/mira-core)), which runs as a macOS LaunchAgent (`com.mab.mira`) installed separately from the app. Whichever backend `mira.yaml` names is started and managed by the server. The iOS app discovers the Mac over Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale hostname.
 
 **The app requires the Mac server to run.** There is no standalone offline mode — inference happens on the Mac. For access outside your home network, install [Tailscale](https://tailscale.com) on both devices and use the **Manual URL** option with your Tailscale hostname (the server listens on HTTPS port `8443` for remote access).
 
