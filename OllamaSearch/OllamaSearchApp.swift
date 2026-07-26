@@ -432,9 +432,11 @@ struct MacRootView: View {
                     await chatVM.loadConversations()
                 }
             } else {
-                SplashView(state: connection.state) {
-                    connection.retry()
-                }
+                SplashView(
+                    state: connection.state,
+                    onRetry: { connection.retry() },
+                    onSubmitToken: { connection.submitToken($0) }
+                )
             }
         }
         .animation(.easeInOut(duration: 0.3), value: showMain)
@@ -466,21 +468,24 @@ struct MenuBarContent: View {
         switch connection.state {
         case .connecting(let msg): return msg
         case .ready:               return "Ready"
+        case .needsToken:          return "Access token needed"
         case .failed:              return "Server not running"
         }
     }
     private var statusIcon: String {
         switch connection.state {
-        case .ready:  return "circle.fill"
-        case .failed: return "exclamationmark.circle.fill"
-        default:      return "circle.dotted"
+        case .ready:      return "circle.fill"
+        case .needsToken: return "key.fill"
+        case .failed:     return "exclamationmark.circle.fill"
+        default:          return "circle.dotted"
         }
     }
     private var statusColor: Color {
         switch connection.state {
-        case .ready:  return .green
-        case .failed: return .red
-        default:      return .secondary
+        case .ready:      return .green
+        case .needsToken: return .orange
+        case .failed:     return .red
+        default:          return .secondary
         }
     }
 }

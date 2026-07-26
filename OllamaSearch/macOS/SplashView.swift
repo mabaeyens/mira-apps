@@ -39,6 +39,10 @@ struct NormalTitleBar: NSViewRepresentable {
 struct SplashView: View {
     let state: MacConnectionManager.State
     let onRetry: () -> Void
+    /// Called with the token the user pasted in the `.needsToken` state.
+    var onSubmitToken: (String) -> Void = { _ in }
+
+    @State private var tokenEntry = ""
 
     private var isConnecting: Bool {
         if case .connecting = state { return true }
@@ -95,6 +99,25 @@ struct SplashView: View {
         case .ready:
             EmptyView()
 
+        case .needsToken:
+            VStack(spacing: 12) {
+                Label("Access token needed", systemImage: "key")
+                    .font(.subheadline.weight(.medium))
+                Text("The server is running but rejected this app. Paste the token from ~/.local/share/mira/token — it is stored in your keychain, so this is asked once.")
+                    .font(.caption)
+                    .foregroundStyle(Color.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 320)
+                SecureField("Access token", text: $tokenEntry)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 320)
+                    .onSubmit { onSubmitToken(tokenEntry) }
+                Button("Connect") { onSubmitToken(tokenEntry) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color.accent)
+                    .disabled(tokenEntry.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+
         case .failed(let msg):
             VStack(spacing: 14) {
                 Label("Server not available", systemImage: "exclamationmark.triangle")
@@ -127,4 +150,5 @@ struct SplashView: View {
 #Preview("Connecting") { SplashView(state: .connecting("Connecting to server…"), onRetry: {}) }
 #Preview("Starting")   { SplashView(state: .connecting("Starting Ollama…"), onRetry: {}) }
 #Preview("Failed")     { SplashView(state: .failed("Server not found at localhost:8000."), onRetry: {}) }
+#Preview("Needs token") { SplashView(state: .needsToken, onRetry: {}) }
 #endif

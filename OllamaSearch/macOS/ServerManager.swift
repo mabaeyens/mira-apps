@@ -1,5 +1,8 @@
 #if os(macOS)
 import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "com.mab.mira", category: "ServerManager")
 
 /// Lightweight connection manager for the macOS thin client.
 /// Polls localhost:8000 until the server (run as a launchd LaunchAgent) is ready.
@@ -10,6 +13,10 @@ final class MacConnectionManager {
     enum State: Equatable {
         case connecting(String)
         case ready
+        /// Server is reachable but this app has no API token, so every request
+        /// would 401. Distinct from `.failed` because the fix is entering a
+        /// token, not retrying a connection.
+        case needsToken
         case failed(String)
     }
 
@@ -33,8 +40,7 @@ final class MacConnectionManager {
                 let status = await APIClient.shared.startupStatus()
                 switch status {
                 case .ready:
-                    self?.loadToken()
-                    self?.state = .ready
+                    self?.state = self?.loadToken() == true ? .ready : .needsToken
                     return
                 case .starting:
                     self?.state = .connecting("Starting Mira…")
@@ -53,12 +59,31 @@ final class MacConnectionManager {
         start()
     }
 
-    private func loadToken() {
-        let path = FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: ".local/share/mira/token")
-        if let raw = try? String(contentsOf: path, encoding: .utf8) {
-            APIClient.shared.authToken = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Populate `APIClient.authToken`. Returns false when no token could be
+    /// found, so the caller can show the entry UI instead of proceeding into a
+    /// wall of 401s.
+    ///
+    /// The previous version read `~/.local/share/mira/token` directly with
+    /// `try?`. Under the App Sandbox that path resolves inside the container and
+    /// never exists, and `try?` discarded the miss, so the app ran permanently
+    /// unauthenticated while reporting itself connected. See TokenStore.
+    @discardableResult
+    private func loadToken() -> Bool {
+        guard let (token, source) = TokenStore.load() else { return false }
+        APIClient.shared.authToken = token
+        if case .file(let path) = source {
+            logger.info("token read from \(path, privacy: .public) and promoted to the keychain")
         }
+        return true
+    }
+
+    /// Store a user-supplied token and re-check the connection.
+    func submitToken(_ token: String) {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        TokenStore.save(trimmed)
+        APIClient.shared.authToken = trimmed
+        start()
     }
 }
 #endif
