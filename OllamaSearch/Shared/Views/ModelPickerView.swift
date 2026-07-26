@@ -37,7 +37,7 @@ struct ModelPickerView: View {
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(.iconLarge)
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(Color.textSecondary)
                 }
@@ -125,7 +125,7 @@ struct ModelPickerView: View {
                     Task { await onSwitch(p.backend, p.model) }
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 14, weight: .medium))
+                .font(.rowTitleDense)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16).padding(.vertical, 8)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.appAccent))
@@ -184,7 +184,7 @@ struct ModelPickerView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
-            .font(.system(size: 11, weight: .medium))
+            .font(.sectionHeader)
             .foregroundStyle(Color.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
@@ -230,7 +230,7 @@ struct ModelPickerView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(modelName(preset))
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.rowTitleDense)
                         .foregroundStyle(preset.available ? Color.textPrimary : Color.textSecondary)
                         .lineLimit(1)
                     Text(subtitle(preset))
@@ -313,7 +313,7 @@ private struct AddModelView: View {
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(.iconLarge)
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(Color.textSecondary)
                 }
@@ -370,7 +370,7 @@ private struct AddModelView: View {
     private var presetSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("POPULAR MODELS")
-                .font(.system(size: 11, weight: .medium))
+                .font(.sectionHeader)
                 .foregroundStyle(Color.textSecondary)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -390,7 +390,7 @@ private struct AddModelView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(preset.label)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.rowTitleDense)
                                 .foregroundStyle(Color.textPrimary)
                             Text(preset.size)
                                 .font(.caption)
@@ -413,7 +413,7 @@ private struct AddModelView: View {
     private var customSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("CUSTOM REPO ID")
-                .font(.system(size: 11, weight: .medium))
+                .font(.sectionHeader)
                 .foregroundStyle(Color.textSecondary)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)

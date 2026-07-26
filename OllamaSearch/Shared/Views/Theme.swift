@@ -111,10 +111,13 @@ extension Font {
     static let brandTitle: Font = .brand(size: 36, weight: .semibold)
 
     /// Icon sizing — apply via .font() on Image(systemName:) to decouple icons from surrounding text.
-    static let iconSmall:  Font = .system(size: 13, weight: .regular)
-    static let iconMedium: Font = .system(size: 17, weight: .regular)
-    static let iconLarge:  Font = .system(size: 22, weight: .regular)
-    static let iconXL:     Font = .system(size: 28, weight: .regular)
+    static let iconSmall:   Font = .system(size: 13, weight: .regular)
+    /// Between small and medium: the compose bar's own controls, which sit in a
+    /// 28pt tap target and would crowd it at 17.
+    static let iconCompact: Font = .system(size: 16, weight: .regular)
+    static let iconMedium:  Font = .system(size: 17, weight: .regular)
+    static let iconLarge:   Font = .system(size: 22, weight: .regular)
+    static let iconXL:      Font = .system(size: 28, weight: .regular)
 
     /// Body size used in chat bubbles, streaming text, and the input field.
     /// iOS uses .body (Dynamic Type, 17pt at default) so SwiftUI–UIKit font
@@ -127,12 +130,55 @@ extension Font {
     static let sidebarMeta: Font = .caption2.weight(.medium)
     #else
     static let chatBody: Font = .system(size: 16)
-    // macOS system semantic sizes are small (caption=11pt, caption2=10pt);
-    // use fixed sizes so sidebar feels proportionate to the 16pt chat body.
+    // macOS system semantic sizes are small. Measured 2026-07-26 on macOS 15:
+    // body 13, callout 12, subheadline 11, footnote 10, caption 10, caption2 10.
+    // (An older comment here said caption was 11; it is 10.) Fixed sizes keep
+    // the sidebar proportionate to the 16pt chat body.
     static let sidebarTitle: Font = .system(size: 14)
     static let sidebarSubtitle: Font = .system(size: 12)
     static let sidebarMeta: Font = .system(size: 11, weight: .medium)
     #endif
+
+    // ── Roles ─────────────────────────────────────────────────────────────────
+    //
+    // Named by what the text IS, not what size it is, so a value can move in one
+    // place instead of across nine files. Every value below is exactly what the
+    // literal it replaces used, on both platforms: this is a rename, not a
+    // restyle.
+    //
+    // Two roles that share a value today are still two roles. `bannerLabel` and
+    // `pillLabel` are both 13; keeping them separate is the whole point, since
+    // moving one later should not drag the other with it.
+    //
+    // KNOWN ISSUE, deliberately not changed here. On iOS these fixed sizes are
+    // exactly the Dynamic Type defaults (11 = caption2, 12 = caption,
+    // 13 = footnote, 15 = subheadline, 17 = body), so they render identically
+    // at the default text size and then refuse to grow, while the neighbouring
+    // `.caption` and `.subheadline` uses do grow. A Larger Text user sees a
+    // layout come apart. Switching these to semantic fonts on iOS is a one-line
+    // change per role now that the roles exist, but it changes behaviour and is
+    // Miguel's call, so it is written up rather than done.
+
+    /// Primary text of a list or sheet row: sidebar entries, option rows.
+    static let rowTitle: Font = .system(size: 15, weight: .medium)
+
+    /// Row title on denser surfaces, currently the model picker's 340pt sheet.
+    static let rowTitleDense: Font = .system(size: 14, weight: .medium)
+
+    /// Uppercase section label above a group of rows ("MODELS", "NOT AVAILABLE").
+    static let sectionHeader: Font = .system(size: 11, weight: .medium)
+
+    /// Text inside an inline banner across the top of the chat.
+    static let bannerLabel: Font = .system(size: 13)
+
+    /// Text inside a capsule control, currently the model pill.
+    static let pillLabel: Font = .system(size: 13)
+
+    /// Token counters and other figures that must not reflow as digits change.
+    static let monoStatus: Font = .system(size: 13, weight: .medium, design: .monospaced)
+    static let monoStatusSmall: Font = .system(size: 11, weight: .medium, design: .monospaced)
+    /// Monospaced detail inside a row, e.g. a search snippet.
+    static let monoDetail: Font = .system(size: 12, design: .monospaced)
 }
 
 // ── Markdown theme ────────────────────────────────────────────────────────────

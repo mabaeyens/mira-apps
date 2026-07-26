@@ -38,7 +38,7 @@ struct WelcomeView: View {
     private func circleButton(icon: String, color: Color = Color.textPrimary, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .medium))
+                .font(.rowTitle)
                 .foregroundStyle(color)
                 .frame(width: 38, height: 38)
                 .background(Color(uiColor: .systemFill), in: Circle())

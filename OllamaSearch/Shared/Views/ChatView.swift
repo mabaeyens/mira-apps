@@ -175,7 +175,7 @@ struct ChatView: View {
                 .scaleEffect(0.75)
             #endif
             Text("Model loading…")
-                .font(.system(size: 13))
+                .font(.bannerLabel)
                 .foregroundStyle(Color.textSecondary)
             Spacer()
         }
@@ -191,9 +191,9 @@ struct ChatView: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
-                .font(.system(size: 13))
+                .font(.bannerLabel)
             Text("\(modelLabel) is not running")
-                .font(.system(size: 13))
+                .font(.bannerLabel)
                 .foregroundStyle(Color.textPrimary)
             Spacer()
             Button("Start") {
@@ -221,7 +221,7 @@ struct ChatView: View {
                 .scaleEffect(0.75)
             #endif
             Text(vm.switchStatusMessage.isEmpty ? "Starting \(modelLabel)…" : vm.switchStatusMessage)
-                .font(.system(size: 13))
+                .font(.bannerLabel)
                 .foregroundStyle(Color.textSecondary)
                 .animation(.default, value: vm.switchStatusMessage)
             Spacer()
@@ -251,7 +251,7 @@ struct ChatView: View {
     private func navCircleButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .medium))
+                .font(.rowTitle)
                 .foregroundStyle(Color.textPrimary)
                 .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial, in: Circle())

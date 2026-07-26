@@ -332,7 +332,7 @@ struct ConversationListView: View {
                 Spacer()
                 Button(action: { showMemories = true }) {
                     Image(systemName: "scroll")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.rowTitle)
                         .foregroundStyle(Color.textSecondary)
                         .frame(width: 38, height: 38)
                         .background(Color(uiColor: .systemFill), in: Circle())
@@ -355,7 +355,7 @@ struct ConversationListView: View {
                             #endif
                         } else {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.rowTitle)
                                 .foregroundStyle(Color.textSecondary)
                         }
                     }
@@ -366,7 +366,7 @@ struct ConversationListView: View {
                 if let onSettings {
                     Button(action: onSettings) {
                         Image(systemName: connectionIcon)
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.rowTitle)
                             .foregroundStyle(isReachable ? Color.appAccent : .orange)
                             .frame(width: 38, height: 38)
                             .background(Color(uiColor: .systemFill), in: Circle())
@@ -570,7 +570,7 @@ struct AddProjectSheet: View {
                     #if os(macOS)
                     HStack(spacing: 8) {
                         Text(localPath.isEmpty ? "No folder selected" : localPath)
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(.monoDetail)
                             .foregroundStyle(localPath.isEmpty ? Color.textSecondary : Color.textPrimary)
                             .lineLimit(1)
                             .truncationMode(.middle)

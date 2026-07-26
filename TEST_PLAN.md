@@ -85,6 +85,18 @@ Build-verified, plus a decode check against live server bytes. **Never run.**
 - [ ] After a switch, the info line in the transcript names the right engine
 - [ ] "Download a model" → does **not** offer Gemma 4 26B, which is installed
 
+### F. Nothing moved — all three
+
+Spec 4 renamed 27 font literals to named roles. Every substitution was checked
+mechanically to resolve to the same size, weight and design, so this is a
+glance, not a hunt.
+
+- [ ] Sidebar rows, chat banners, the model pill, the model card and the token
+      counter all look exactly as they did. Any size change here is a bug
+- [ ] **iPhone**: Settings → Accessibility → Larger Text → text grows. Half the
+      labels will not, which is a **known** issue written up in
+      `specs/type-scale.md`, not a regression from this change
+
 ---
 
 ## Coming from the consistency roadmap

@@ -170,7 +170,7 @@ struct InputBar: View {
         HStack(alignment: .center, spacing: 8) {
             Button { showAddToChat.wrappedValue = true } label: {
                 Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.iconCompact.weight(.medium))
                     .foregroundStyle(Color.textSecondary)
                     .frame(width: 28, height: 28)
             }
@@ -246,7 +246,7 @@ struct InputBar: View {
                     .fill(modelStatusColor)
                     .frame(width: 6, height: 6)
                 Text(vm.modelName.isEmpty ? vm.runningLabel : vm.modelDisplayName)
-                    .font(.system(size: 13))
+                    .font(.pillLabel)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
             }
@@ -286,7 +286,7 @@ struct InputBar: View {
                         .fill(Color.surfaceBg)
                         .frame(width: 40, height: 40)
                     Image(systemName: "mic")
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.iconMedium.weight(.medium))
                         .foregroundStyle(Color.textSecondary)
                 }
                 Text("Speech language")
@@ -421,7 +421,7 @@ struct InputBar: View {
                         .fill(Color.surfaceBg)
                         .frame(width: 40, height: 40)
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.iconMedium.weight(.medium))
                         .foregroundStyle(Color.textSecondary)
                 }
                 Text("Speech language")
@@ -456,7 +456,7 @@ struct InputBar: View {
                 }
                 .frame(height: 72)
                 Text(label)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.rowTitle)
                     .foregroundStyle(Color.textSecondary)
             }
         }
@@ -513,7 +513,7 @@ struct InputBar: View {
                     .fill(Color.surfaceBg)
                     .frame(width: 40, height: 40)
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.iconMedium.weight(.medium))
                     .foregroundStyle(iconColor)
             }
             Text(label)
@@ -588,7 +588,7 @@ struct InputBar: View {
             }
         } label: {
             Image(systemName: sr.isRecording ? "mic.fill" : "mic")
-                .font(.system(size: 16, weight: .medium))
+                .font(.iconCompact.weight(.medium))
                 .foregroundStyle(sr.isRecording ? Color.accent : Color.textSecondary)
                 .frame(width: 28, height: 28)
         }

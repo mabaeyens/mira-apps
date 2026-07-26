@@ -13,9 +13,9 @@ struct StatusBarView: View {
             badge("ctx:\(Int(contextPct))%", color: ctxColor)
         }
         #if os(iOS)
-        .font(.system(size: 13, weight: .medium, design: .monospaced))
+        .font(.monoStatus)
         #else
-        .font(.system(size: 11, weight: .medium, design: .monospaced))
+        .font(.monoStatusSmall)
         #endif
     }
 
