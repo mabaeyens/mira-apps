@@ -2,17 +2,53 @@
 import SwiftUI
 import AppKit
 
+/// Apply title-bar styling to the view's window, idempotently and outside the
+/// current layout pass.
+///
+/// Both callers below mutate the SAME window, and they are mounted in opposite
+/// branches of an `if showMain` that animates over 0.3s. SwiftUI keeps both
+/// branches alive during that transition, so the two would fight over
+/// `styleMask` (one inserting `.fullSizeContentView`, the other removing it)
+/// while the hosting view was mid-layout. Changing `styleMask` forces the window
+/// to re-lay out its content view, which is what produced:
+///
+///   It's not legal to call -layoutSubtreeIfNeeded on a view which is already
+///   being laid out.
+///
+/// Two things keep that from happening. Every property is compared before it is
+/// written, so a no-op transition performs no layout at all; and the work is
+/// scheduled with `RunLoop.main.perform`, which runs at the top of a run-loop
+/// iteration rather than `DispatchQueue.main.async`, whose blocks AppKit can
+/// drain *inside* an active layout transaction.
+private func applyTitleBar(to view: NSView, transparent: Bool) {
+    RunLoop.main.perform(inModes: [.default]) {
+        guard let w = view.window else { return }
+
+        if w.titlebarAppearsTransparent != transparent {
+            w.titlebarAppearsTransparent = transparent
+        }
+        if w.titleVisibility != .hidden {
+            w.titleVisibility = .hidden
+        }
+        if transparent != w.styleMask.contains(.fullSizeContentView) {
+            if transparent {
+                w.styleMask.insert(.fullSizeContentView)
+            } else {
+                w.styleMask.remove(.fullSizeContentView)
+            }
+        }
+        let bg = NSColor(Color.appBg)
+        if w.backgroundColor != bg {
+            w.backgroundColor = bg
+        }
+    }
+}
+
 // Makes the window title bar transparent so the content fills edge-to-edge.
 private struct TransparentTitleBar: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async {
-            guard let w = view.window else { return }
-            w.titlebarAppearsTransparent = true
-            w.titleVisibility = .hidden
-            w.styleMask.insert(.fullSizeContentView)
-            w.backgroundColor = NSColor(Color.appBg)
-        }
+        applyTitleBar(to: view, transparent: true)
         return view
     }
     func updateNSView(_ nsView: NSView, context: Context) {}
@@ -24,13 +60,7 @@ private struct TransparentTitleBar: NSViewRepresentable {
 struct NormalTitleBar: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async {
-            guard let w = view.window else { return }
-            w.titlebarAppearsTransparent = false
-            w.titleVisibility = .hidden
-            w.styleMask.remove(.fullSizeContentView)
-            w.backgroundColor = NSColor(Color.appBg)
-        }
+        applyTitleBar(to: view, transparent: false)
         return view
     }
     func updateNSView(_ nsView: NSView, context: Context) {}
