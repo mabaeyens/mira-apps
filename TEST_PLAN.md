@@ -57,20 +57,32 @@ name themselves instead of surfacing as "The data couldn't be read".
 
 ---
 
+### E. Model card and backend names — all three
+
+Specs 1 and 2, shipped 2026-07-26 (`003463c`, `0fa90bc`, server `76b660f`).
+Build-verified, plus a decode check against live server bytes. **Never run.**
+
+- [ ] Open the model card → the running model is **first and checkmarked**.
+      Before this, nothing was ever checkmarked
+- [ ] Every selectable row shows engine, context window and size on disk, and
+      no title truncates mid-word
+- [ ] **Stop Ollama**, reopen the card → its preset appears under "Not
+      available" with a reason, greyed, and does nothing when tapped
+- [ ] Switch to another model, then switch back → the row you came from is
+      still there. Before this there was no way back
+- [ ] **Mac**: Mira → About Mira → "Backend" reads `mira-mlx`, not "Ollama"
+- [ ] After a switch, the info line in the transcript names the right engine
+- [ ] "Download a model" → does **not** offer Gemma 4 26B, which is installed
+
+---
+
 ## Coming from the consistency roadmap
 
-**Do not run these yet.** Nothing below is implemented; `specs/ROADMAP.md`
-tracks the work. Listed here so the checks exist before the code does.
+**Do not run these yet.** Not implemented; `specs/ROADMAP.md` tracks the work.
 
-- [ ] **All three**: the model card marks the model that is actually running
-      (today nothing is checkmarked) — spec 2
-- [ ] **All three**: no row in the model card fails when tapped — spec 2
-- [ ] **Mac**: About panel "Backend" row reads `mira-mlx`, not "Ollama" — spec 1
-- [ ] **All three**: switching model shows the right backend name in the info
-      line — spec 1
 - [ ] **All three**: startup messages do not name Ollama — spec 5
 - [ ] **iPhone / iPad**: assign a conversation to a project → it moves in the
-      sidebar and survives relaunch — spec 6
+      sidebar and survives relaunch — spec 6 (server side is done, app is not)
 
 ---
 
