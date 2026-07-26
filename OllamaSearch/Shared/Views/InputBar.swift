@@ -474,7 +474,7 @@ struct InputBar: View {
                 } else {
                     List(vm.projects) { project in
                         Button(action: {
-                            // TODO: assign conversation to project (needs backend PATCH)
+                            vm.setProject(project.id, for: vm.currentConvId)
                             showProjectPicker = false
                         }) {
                             HStack(spacing: 12) {

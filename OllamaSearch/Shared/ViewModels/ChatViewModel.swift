@@ -643,6 +643,26 @@ final class ChatViewModel {
         }
     }
 
+    /// File a conversation under a project, or unfile it with `projectId: nil`.
+    ///
+    /// Both lists have to be refreshed: `conversations` because the sidebar
+    /// groups by project and the row has to move, `projects` because the row
+    /// carries a conversation count. Refreshing only the first leaves the count
+    /// stale, which is the bug already sitting in `backlog.md` under "Project
+    /// conversation count".
+    func setProject(_ projectId: String?, for conversationId: String) {
+        guard !conversationId.isEmpty else { return }
+        Task {
+            do {
+                try await api.setConversationProject(id: conversationId, projectId: projectId)
+                await loadConversations()
+                await loadProjects()
+            } catch {
+                errorMessage = "Could not move the conversation: \(error.localizedDescription)"
+            }
+        }
+    }
+
     func deleteConversation(_ id: String) {
         Task {
             do {

@@ -415,6 +415,27 @@ final class APIClient {
         _ = try await send(req)
     }
 
+    /// Move a conversation into a project, or out of every project when
+    /// `projectId` is nil.
+    ///
+    /// Same PATCH as `renameConversation`, deliberately sending **only**
+    /// `project_id`: the server distinguishes an absent key (leave the title
+    /// alone) from a null one (clear the field), so sending both would make a
+    /// reassignment also a rename. `[String: String?]` keeps `nil` encoding as
+    /// JSON null rather than dropping the key, which is what makes unfiling
+    /// possible at all.
+    func setConversationProject(id: String, projectId: String?) async throws {
+        guard let url = URL(string: "/conversations/\(id)", relativeTo: baseURL) else {
+            throw APIError.invalidURL
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PATCH"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(["project_id": projectId])
+        authed(&req)
+        _ = try await send(req)
+    }
+
     func deleteConversation(id: String) async throws {
         guard let url = URL(string: "/conversations/\(id)", relativeTo: baseURL) else {
             throw APIError.invalidURL

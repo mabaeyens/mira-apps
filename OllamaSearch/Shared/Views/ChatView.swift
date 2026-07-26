@@ -116,13 +116,16 @@ struct ChatView: View {
             ConversationOptionsSheet(
                 title: currentTitle,
                 projects: vm.projects,
+                currentProjectId: vm.activeProject?.id,
                 onRename: { newTitle in vm.renameConversation(vm.currentConvId, title: newTitle) },
                 onDelete: {
                     let id = vm.currentConvId
                     onBack?()
                     vm.deleteConversation(id)
                 },
-                onAddToProject: { _ in /* TODO: backend PATCH /conversations/{id} with project_id */ }
+                onAddToProject: { projectId in
+                    vm.setProject(projectId, for: vm.currentConvId)
+                }
             )
         }
         #endif
@@ -269,9 +272,15 @@ struct ChatView: View {
 private struct ConversationOptionsSheet: View {
     let title: String
     let projects: [Project]
+    /// The project this conversation is already in, if any. Drives the
+    /// checkmark and whether "Remove from project" is offered.
+    let currentProjectId: String?
     let onRename: (String) -> Void
     let onDelete: () -> Void
-    let onAddToProject: (String) -> Void
+    /// nil means unfile. The server treats an explicit null as "clear the
+    /// field", so filing is reversible; without this the control would be
+    /// one-way, which is its own kind of trap.
+    let onAddToProject: (String?) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var showRename = false
@@ -365,21 +374,45 @@ private struct ConversationOptionsSheet: View {
                         .foregroundStyle(Color.textSecondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List(projects) { project in
-                        Button(action: {
-                            onAddToProject(project.id)
-                            showProjectPicker = false
-                            dismiss()
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: project.icon)
-                                    .foregroundStyle(Color.appAccent)
-                                    .frame(width: 20)
-                                Text(project.name)
-                                    .foregroundStyle(Color.textPrimary)
+                    List {
+                        ForEach(projects) { project in
+                            Button(action: {
+                                onAddToProject(project.id)
+                                showProjectPicker = false
+                                dismiss()
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: project.icon)
+                                        .foregroundStyle(Color.appAccent)
+                                        .frame(width: 20)
+                                    Text(project.name)
+                                        .foregroundStyle(Color.textPrimary)
+                                    Spacer()
+                                    if project.id == currentProjectId {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(Color.appAccent)
+                                    }
+                                }
                             }
+                            .buttonStyle(.plain)
+                            .disabled(project.id == currentProjectId)
                         }
-                        .buttonStyle(.plain)
+
+                        if currentProjectId != nil {
+                            Button(action: {
+                                onAddToProject(nil)
+                                showProjectPicker = false
+                                dismiss()
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "folder.badge.minus")
+                                        .frame(width: 20)
+                                    Text("Remove from project")
+                                }
+                                .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }
