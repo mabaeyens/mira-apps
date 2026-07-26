@@ -109,14 +109,18 @@ Spec 5. The reconnect messages are iOS-only; macOS has its own two states.
 - [ ] **Mac**: cold launch while the server is starting → splash reads
       "Starting Mira…", not "Starting Ollama…"
 
----
+### H. Projects — iPhone and iPad
 
-## Coming from the consistency roadmap
+Spec 6. The API round trip is verified against the live server; what is not
+verified is the UI reaching it.
 
-**Do not run these yet.** Not implemented; `specs/ROADMAP.md` tracks the work.
-
-- [ ] **iPhone / iPad**: assign a conversation to a project → it moves in the
-      sidebar and survives relaunch — spec 6 (server side is done, app is not)
+- [ ] Open a conversation → ⋯ → Add to project → pick one → it moves under that
+      project in the sidebar, and is still there after a relaunch
+- [ ] Reopen the picker → the current project has a checkmark and is not tappable
+- [ ] "Remove from project" → the conversation returns to the ungrouped list
+- [ ] Rename a filed conversation → it stays in its project. This is the case
+      most likely to break and the hardest to notice
+- [ ] The project row's conversation count is right after filing and unfiling
 
 ---
 
