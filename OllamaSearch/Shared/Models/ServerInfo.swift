@@ -24,12 +24,8 @@ struct ServerInfo: Codable {
     }
 
     var backendDisplayName: String {
-        switch backend {
-        case "mlx-lm": return "mlx-lm"
-        case "omlx":   return "oMLX"
-        case "dflash": return "dFlash"
-        default:       return "Ollama"
-        }
+        let label = Backend.label(for: backend)
+        return label.isEmpty ? "—" : label
     }
 
     var ssdCacheDirShortened: String {

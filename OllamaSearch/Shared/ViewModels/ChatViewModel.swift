@@ -47,9 +47,14 @@ final class ChatViewModel {
     var thinkingMode: ThinkingMode = .adaptive
     var thinkingContent: String? = nil
     var isThinkingActive: Bool = false
-    var currentBackend: String = "ollama"
+    /// Empty until `/backend` answers. It used to default to "ollama", which
+    /// meant the app asserted a backend it had not asked about yet.
+    var currentBackend: String = ""
     var modelName: String = ""
     var backendPresets: [BackendPreset] = []
+    /// The local model library from `GET /models`. Nil until it loads, or when
+    /// the request failed; rows then render without a size rather than lying.
+    var modelLibrary: ModelsResponse? = nil
 
     var modelDisplayName: String {
         // Strip org prefix and -it-* suffix: mlx-community/gemma-4-26b-a4b-it-4bit → gemma-4-26b-a4b
@@ -57,13 +62,17 @@ final class ChatViewModel {
         return base.components(separatedBy: "-it-").first ?? base
     }
 
-    private func backendLabel(_ backend: String) -> String {
-        switch backend {
-        case "omlx":   return "oMLX"
-        case "mlx-lm": return "mlx-lm"
-        case "dflash": return "dFlash"
-        default:       return "Ollama"
-        }
+    /// Label for the running backend, or an empty string before `/backend`
+    /// answers. See `Backend` for why this is not a local switch any more.
+    var backendDisplayName: String { Backend.label(for: currentBackend) }
+
+    /// Best available name for whatever is serving: the model if known, else the
+    /// backend, else a neutral word. Used in the status lines that used to read
+    /// "Starting …" with nothing after the space.
+    var runningLabel: String {
+        if !modelName.isEmpty { return modelName }
+        let backend = backendDisplayName
+        return backend.isEmpty ? "the model" : backend
     }
     var contextWindow: Int = 0
     var isSwitchingBackend: Bool = false
@@ -415,6 +424,19 @@ final class ChatViewModel {
         } catch {
             // Non-fatal — picker falls back to empty list
         }
+        await loadModelLibrary()
+    }
+
+    /// What is actually on disk, used to put a size next to each row.
+    /// `fetchModels()` had existed with no call site since it was written; the
+    /// picker rendered mira.yaml instead and never asked what was installed.
+    func loadModelLibrary() async {
+        do {
+            modelLibrary = try await APIClient.shared.fetchModels()
+        } catch {
+            // Non-fatal — rows simply show no size.
+            modelLibrary = nil
+        }
     }
 
     /// Check Mira health and update backendReady. Call once on connect, then poll.
@@ -454,7 +476,7 @@ final class ChatViewModel {
     func startBackend() async {
         guard !isStartingBackend, !isSwitchingBackend else { return }
         isStartingBackend = true
-        switchStatusMessage = "Starting \(modelName.isEmpty ? currentBackend : modelName)…"
+        switchStatusMessage = "Starting \(runningLabel)…"
         do {
             let info = try await APIClient.shared.startCurrentBackend()
             currentBackend = info.backend
@@ -472,9 +494,8 @@ final class ChatViewModel {
         guard !isSwitchingBackend else { return }
         isSwitchingBackend = true
 
-        let fromName = modelName.isEmpty ? currentBackend : modelName
-        let toBackendLabel = backendLabel(backend)
-        switchStatusMessage = "Stopping \(fromName)…"
+        let toBackendLabel = Backend.label(for: backend)
+        switchStatusMessage = "Stopping \(runningLabel)…"
 
         let statusTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(8))
@@ -496,7 +517,7 @@ final class ChatViewModel {
             contextWindow = info.contextWindow
             showModelPicker = false
             if !currentConvId.isEmpty {
-                messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+                messages.append(.info("— Switched to \(info.model) (\(Backend.label(for: info.backend))). Conversation history is preserved. —"))
             }
             await loadBackendPresets()
         } catch {
@@ -512,7 +533,7 @@ final class ChatViewModel {
         isSwitchingBackend = true
 
         let toLabel = modelId.split(separator: "/").last.map(String.init) ?? modelId
-        switchStatusMessage = "Stopping \(modelName.isEmpty ? currentBackend : modelName)…"
+        switchStatusMessage = "Stopping \(runningLabel)…"
 
         let statusTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(8))
@@ -534,7 +555,7 @@ final class ChatViewModel {
             contextWindow = info.contextWindow
             showModelPicker = false
             if !currentConvId.isEmpty {
-                messages.append(.info("— Switched to \(info.model) (\(backendLabel(info.backend))). Conversation history is preserved. —"))
+                messages.append(.info("— Switched to \(info.model) (\(Backend.label(for: info.backend))). Conversation history is preserved. —"))
             }
             await loadBackendPresets()
         } catch {

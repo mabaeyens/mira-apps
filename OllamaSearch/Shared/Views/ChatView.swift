@@ -106,6 +106,7 @@ struct ChatView: View {
                 switchStatusMessage: vm.switchStatusMessage,
                 liveModelName: vm.modelName,
                 liveContextWindow: vm.contextWindow,
+                library: vm.modelLibrary,
                 onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) }
             )
         }
@@ -161,7 +162,7 @@ struct ChatView: View {
     // ── Backend banners ───────────────────────────────────────────────────────
 
     private var modelLabel: String {
-        vm.modelDisplayName.isEmpty ? vm.currentBackend : vm.modelDisplayName
+        vm.modelDisplayName.isEmpty ? vm.runningLabel : vm.modelDisplayName
     }
 
     private var backendLoadingBanner: some View {

@@ -245,9 +245,7 @@ struct InputBar: View {
                 Circle()
                     .fill(modelStatusColor)
                     .frame(width: 6, height: 6)
-                Text(vm.modelName.isEmpty
-                    ? (vm.currentBackend == "omlx" ? "oMLX" : vm.currentBackend == "mlx-lm" ? "mlx-lm" : vm.currentBackend == "dflash" ? "dFlash" : "Ollama")
-                    : vm.modelDisplayName)
+                Text(vm.modelName.isEmpty ? vm.runningLabel : vm.modelDisplayName)
                     .font(.system(size: 13))
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
