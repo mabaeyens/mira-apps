@@ -306,14 +306,14 @@ struct ConnectionView: View {
         connectingURL = urlString
         rowError = nil
         Task {
-            let ok = await APIClient.shared.probe(url)
+            let result = await APIClient.shared.probeDetailed(url)
             await MainActor.run {
                 connectingURL = nil
-                if ok {
+                if let failure = result.failureMessage(target: urlString) {
+                    rowError = failure
+                } else {
                     store.setActive(urlString)
                     onConnect(url, store.token(for: urlString))
-                } else {
-                    rowError = "Could not reach \(urlString). Check the URL and your connection."
                 }
             }
         }
@@ -354,10 +354,12 @@ struct ConnectionView: View {
         isAddConnecting = true
         addError = nil
         Task {
-            let ok = await APIClient.shared.probe(url)
+            let result = await APIClient.shared.probeDetailed(url)
             await MainActor.run {
                 isAddConnecting = false
-                if ok {
+                if let failure = result.failureMessage() {
+                    addError = failure
+                } else {
                     let label = addLabel.trimmingCharacters(in: .whitespacesAndNewlines)
                     let tokenValue = addToken.trimmingCharacters(in: .whitespacesAndNewlines)
                     let conn = SavedConnection(
@@ -369,8 +371,6 @@ struct ConnectionView: View {
                     store.setActive(trimmedURL)
                     showAddSheet = false
                     onConnect(url, conn.token)
-                } else {
-                    addError = "Could not reach server. Check the URL and your connection."
                 }
             }
         }

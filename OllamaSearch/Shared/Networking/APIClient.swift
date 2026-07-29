@@ -120,27 +120,57 @@ final class APIClient {
     /// A `@MainActor` task group has its children scheduled on the main actor,
     /// where VPN-induced network stalls can prevent sleep continuations from firing.
     nonisolated func probe(_ url: URL, deadline: Double = 5) async -> Bool {
-        guard let healthURL = URL(string: "/health", relativeTo: url) else { return false }
-        return await withTaskGroup(of: Bool.self) { group in
+        if case .ok = await probeDetailed(url, deadline: deadline) { return true }
+        return false
+    }
+
+    /// Outcome of a `/health` probe, keeping "the server answered and refused us"
+    /// distinct from "we never got there".
+    ///
+    /// Collapsing the two into a single `false` is actively misleading: a server
+    /// that rejects the request by `Host` header (Gate 0, see mira-core
+    /// `docs/remote-access.md`) answers `403` on a perfectly good connection, and
+    /// reporting that as "check your connection" sends the user hunting through
+    /// Tailscale and Wi-Fi for a problem that is one line of `mira.yaml`.
+    enum ProbeResult: Equatable {
+        /// `/health` returned 200 — the server is up and willing to talk to us.
+        case ok
+        /// We reached the server and it answered with a non-200 status.
+        case refused(status: Int)
+        /// The request never produced a response (DNS, TLS, routing, timeout).
+        case unreachable(reason: String?)
+    }
+
+    /// Like `probe`, but reports *why* a probe failed. Same hard-deadline
+    /// behaviour and the same `nonisolated` rationale as `probe` above.
+    nonisolated func probeDetailed(_ url: URL, deadline: Double = 5) async -> ProbeResult {
+        guard let healthURL = URL(string: "/health", relativeTo: url) else {
+            return .unreachable(reason: "That URL isn't valid.")
+        }
+        return await withTaskGroup(of: ProbeResult.self) { group in
             group.addTask {
                 var req = URLRequest(url: healthURL)
                 req.timeoutInterval = deadline
                 do {
                     let (_, response) = try await URLSession.shared.data(for: req)
-                    return (response as? HTTPURLResponse)?.statusCode == 200
-                } catch { return false }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    return status == 200 ? .ok : .refused(status: status)
+                } catch {
+                    return .unreachable(reason: (error as? URLError)?.localizedDescription)
+                }
             }
             group.addTask {
                 try? await Task.sleep(for: .seconds(deadline))
-                return false
+                return .unreachable(reason: "The server didn't answer in time.")
             }
-            let result = await group.next() ?? false
+            let result = await group.next() ?? .unreachable(reason: nil)
             group.cancelAll()
             return result
         }
     }
 
     // ── Backend switching ─────────────────────────────────────────────────────
+
 
     func getBackend() async throws -> BackendInfo {
         let url = baseURL.appendingPathComponent("backend")
@@ -632,6 +662,38 @@ private struct MemoryList: Decodable {
 
 private struct APIErrorResponse: Decodable {
     let detail: String
+}
+
+extension APIClient.ProbeResult {
+    /// User-facing explanation, or `nil` when the probe succeeded.
+    ///
+    /// `target` is shown to the user, so pass the address they typed rather than
+    /// the derived `/health` URL.
+    func failureMessage(target: String? = nil) -> String? {
+        let subject = target.map { "\($0)" } ?? "the server"
+        switch self {
+        case .ok:
+            return nil
+        case .refused(let status) where status == 403:
+            // Gate 0 in mira-core rejects any Host header it doesn't recognise,
+            // and a Tailscale MagicDNS name isn't recognised by default.
+            return """
+            \(subject) answered but refused this address. If you're connecting over \
+            Tailscale, add the hostname to allowed_hosts in mira.yaml on your Mac and \
+            restart Mira.
+            """
+        case .refused(let status) where status == 401:
+            return "\(subject) needs a token. Check the Server Token field."
+        case .refused(let status) where status == 503:
+            return "\(subject) is still starting up. Try again in a moment."
+        case .refused(let status):
+            return "\(subject) answered with HTTP \(status)."
+        case .unreachable(let reason):
+            let base = "Could not reach \(subject). Check the URL, and that Tailscale is on."
+            guard let reason, !reason.isEmpty else { return base }
+            return "\(base) (\(reason))"
+        }
+    }
 }
 
 
