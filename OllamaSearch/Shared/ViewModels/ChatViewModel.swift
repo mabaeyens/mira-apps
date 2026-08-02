@@ -257,10 +257,19 @@ final class ChatViewModel {
             _ = await self.cancelTask?.value
             self.cancelTask = nil
             guard !Task.isCancelled else { return }
+            // Shrink oversized images before they are base64'd into the body.
+            // Detached on purpose: this class is @MainActor, so resizing here
+            // would block the UI, and it is a few hundred milliseconds on a
+            // 12 MP photo. It runs after send() has already drawn the message,
+            // so the cost is hidden behind the spinner rather than the tap.
+            let payload = await Task.detached(priority: .userInitiated) {
+                AttachmentImageDownscaler.downscaling(attachments)
+            }.value
+            guard !Task.isCancelled else { return }
             let request = self.api.chatRequest(
                 message: text,
                 conversationId: self.currentConvId,
-                attachments: attachments,
+                attachments: payload,
                 thinkingMode: self.thinkingMode,
                 approvedTokens: tokens
             )
