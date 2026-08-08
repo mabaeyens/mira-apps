@@ -396,7 +396,7 @@ struct ConversationListView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.container))
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
@@ -486,11 +486,11 @@ struct ConversationListView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 20)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Radius.card)
                 .fill(rowFill)
         )
         #if os(macOS)
-        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .contentShape(RoundedRectangle(cornerRadius: Radius.card))
         #else
         .contentShape(Rectangle())
         #endif

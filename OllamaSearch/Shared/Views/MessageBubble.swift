@@ -104,7 +104,7 @@ struct MessageBubble: View {
                 .resizable()
                 .scaledToFill()
                 .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.card))
         }
         #elseif os(macOS)
         if let img = NSImage(data: data) {
@@ -112,7 +112,7 @@ struct MessageBubble: View {
                 .resizable()
                 .scaledToFill()
                 .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.card))
         }
         #endif
     }

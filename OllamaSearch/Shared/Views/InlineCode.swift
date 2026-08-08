@@ -184,10 +184,10 @@ struct InlineCodeChip: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: Radius.badge)
                     .fill(copied ? Color.accent.opacity(0.12) : Color.userBubbleBg)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: Radius.badge)
                             .strokeBorder(copied ? Color.accent : Color.borderSubtle, lineWidth: 1)
                     )
             )
@@ -335,10 +335,10 @@ struct CopyableCodeBlock: View {
                 .padding(12)
         }
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: Radius.control)
                 .fill(Color.surfaceBg)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: Radius.control)
                         .strokeBorder(Color.borderSubtle, lineWidth: 1)
                 )
         )

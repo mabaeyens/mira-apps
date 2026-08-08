@@ -34,7 +34,7 @@ struct DisclosureListPanel<Item: Identifiable, RowContent: View>: View {
         }
         .padding(8)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: Radius.control)
                 .fill(Color.appAccent.opacity(0.07))
                 .stroke(Color.appAccent.opacity(0.25), lineWidth: 1)
         )

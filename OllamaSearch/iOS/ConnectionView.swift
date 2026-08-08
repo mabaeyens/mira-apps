@@ -279,9 +279,9 @@ struct ConnectionView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Radius.card)
                 .fill(Color.surfaceBg)
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.borderSubtle, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: Radius.card).strokeBorder(Color.borderSubtle, lineWidth: 1))
         )
         .padding(.horizontal, 20)
         .padding(.top, 8)

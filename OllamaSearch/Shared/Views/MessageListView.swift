@@ -125,8 +125,8 @@ struct MessageListView: View {
                         }
                         .font(.system(size: 13))
                         .foregroundStyle(Color.textSecondary)
-                        .background(Color.surfaceBg, in: RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
+                        .background(Color.surfaceBg, in: RoundedRectangle(cornerRadius: Radius.control))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.control).strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
                         .padding(.horizontal, 20)
                         .padding(.top, 6)
                         .padding(.bottom, 4)

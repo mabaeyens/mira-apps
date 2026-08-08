@@ -70,10 +70,10 @@ struct AboutView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: Radius.card)
                         .fill(Color.surfaceBg)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: Radius.card)
                                 .strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1)
                         )
                 )

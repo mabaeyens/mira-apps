@@ -181,6 +181,41 @@ extension Font {
     static let monoDetail: Font = .system(size: 12, design: .monospaced)
 }
 
+// ── Corner radii ──────────────────────────────────────────────────────────────
+//
+// Same rule as the type roles above: named by what the shape IS, so a value can
+// move in one place instead of across nine files. Every value here is exactly
+// what the literal it replaced used — a rename, not a restyle.
+//
+// Only values used more than twice earned a name. `3` (one attachment
+// progress bar), `6` (two code-block corners) and `18` (the user message
+// bubble) stay as literals on purpose: a shape used once or twice does not
+// need a role, and inventing one to satisfy a grep is ceremony, not a scale.
+enum Radius {
+    /// Inline pill sitting in a line of text — 2pt vertical padding.
+    /// Token counters, the "copied" confirmation chip.
+    static let badge: CGFloat = 4
+
+    /// The workhorse. Anything small and filled: toolbar buttons, inner
+    /// panels, model-picker rows, code blocks.
+    static let control: CGFloat = 8
+
+    /// A clipped container or an editable surface: the macOS sidebar clip,
+    /// the iOS search field, the memory text editors.
+    ///
+    /// The least coherent of these five — the sidebar clip is a large
+    /// container while the others are input surfaces. They share a value
+    /// today rather than a meaning, so splitting this later is expected.
+    static let container: CGFloat = 10
+
+    /// A padded card, a list row, or an image thumbnail: the connection form,
+    /// About rows, conversation rows, attachment previews.
+    static let card: CGFloat = 12
+
+    /// The compose surface and the attachment tiles in its sheet.
+    static let compose: CGFloat = 14
+}
+
 // ── Markdown theme ────────────────────────────────────────────────────────────
 
 extension MarkdownUI.Theme {

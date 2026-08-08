@@ -37,10 +37,10 @@ struct InputBar: View {
                 toolbarRow()
             }
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: Radius.compose)
                     .fill(Color.surfaceBg)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
+                        RoundedRectangle(cornerRadius: Radius.compose)
                             .strokeBorder(Color.borderSubtle.opacity(0.6), lineWidth: 1)
                     )
             )
@@ -282,7 +282,7 @@ struct InputBar: View {
 
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: Radius.control)
                         .fill(Color.surfaceBg)
                         .frame(width: 40, height: 40)
                     Image(systemName: "mic")
@@ -417,7 +417,7 @@ struct InputBar: View {
             // ── Speech language row ───────────────────────────────────────────
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: Radius.control)
                         .fill(Color.surfaceBg)
                         .frame(width: 40, height: 40)
                     Image(systemName: "mic.fill")
@@ -448,7 +448,7 @@ struct InputBar: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: Radius.compose)
                         .fill(color.opacity(0.14))
                     Image(systemName: icon)
                         .font(.system(size: 26, weight: .medium))
@@ -509,7 +509,7 @@ struct InputBar: View {
     ) -> some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: Radius.control)
                     .fill(Color.surfaceBg)
                     .frame(width: 40, height: 40)
                 Image(systemName: icon)

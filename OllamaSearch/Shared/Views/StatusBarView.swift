@@ -31,7 +31,7 @@ struct StatusBarView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: Radius.badge)
                     .fill(contextPct > 70 ? Color.red.opacity(0.8) :
                           contextPct > 55 ? Color.orange.opacity(0.15) :
                           Color.secondary.opacity(0.12))

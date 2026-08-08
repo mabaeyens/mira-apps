@@ -114,9 +114,9 @@ struct ModelPickerView: View {
                     .foregroundStyle(Color.textSecondary)
                     .padding(.horizontal, 16).padding(.vertical, 8)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: Radius.control)
                             .fill(Color.surfaceBg)
-                            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.borderSubtle, lineWidth: 1))
+                            .overlay(RoundedRectangle(cornerRadius: Radius.control).strokeBorder(Color.borderSubtle, lineWidth: 1))
                     )
 
                 Button("Switch") {
@@ -128,7 +128,7 @@ struct ModelPickerView: View {
                 .font(.rowTitleDense)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.appAccent))
+                .background(RoundedRectangle(cornerRadius: Radius.control).fill(Color.appAccent))
             }
         }
         .padding(20)
@@ -260,10 +260,10 @@ struct ModelPickerView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: Radius.container)
                     .fill(preset.active ? Color.appAccent.opacity(0.08) : Color.surfaceBg)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: Radius.container)
                             .strokeBorder(
                                 preset.active ? Color.appAccent.opacity(0.35) : Color.borderSubtle,
                                 lineWidth: 1

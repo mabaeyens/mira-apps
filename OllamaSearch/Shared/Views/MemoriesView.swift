@@ -196,7 +196,7 @@ struct AddMemorySheet: View {
                     .foregroundStyle(Color.textPrimary)
                     .scrollContentBackground(.hidden)
                     .background(Color.surfaceBg)
-                    .cornerRadius(10)
+                    .cornerRadius(Radius.container)
                     .padding(.horizontal)
                     .frame(minHeight: 120)
 
@@ -252,7 +252,7 @@ struct RememberThisSheet: View {
                     .foregroundStyle(Color.textPrimary)
                     .scrollContentBackground(.hidden)
                     .background(Color.surfaceBg)
-                    .cornerRadius(10)
+                    .cornerRadius(Radius.container)
                     .padding(.horizontal)
                     .frame(minHeight: 120)
 
