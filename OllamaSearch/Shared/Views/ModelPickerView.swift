@@ -260,10 +260,10 @@ struct ModelPickerView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: Radius.container)
+                RoundedRectangle(cornerRadius: Radius.cardDense)
                     .fill(preset.active ? Color.appAccent.opacity(0.08) : Color.surfaceBg)
                     .overlay(
-                        RoundedRectangle(cornerRadius: Radius.container)
+                        RoundedRectangle(cornerRadius: Radius.cardDense)
                             .strokeBorder(
                                 preset.active ? Color.appAccent.opacity(0.35) : Color.borderSubtle,
                                 lineWidth: 1

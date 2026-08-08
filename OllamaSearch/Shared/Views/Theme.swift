@@ -200,13 +200,22 @@ enum Radius {
     /// panels, model-picker rows, code blocks.
     static let control: CGFloat = 8
 
-    /// A clipped container or an editable surface: the macOS sidebar clip,
-    /// the iOS search field, the memory text editors.
+    /// An editable surface: the iOS search field, the memory text editors.
+    static let field: CGFloat = 10
+
+    /// A row on a dense surface — currently the model picker's 340pt sheet,
+    /// the same surface `Font.rowTitleDense` exists for.
     ///
-    /// The least coherent of these five — the sidebar clip is a large
-    /// container while the others are input surfaces. They share a value
-    /// today rather than a meaning, so splitting this later is expected.
-    static let container: CGFloat = 10
+    /// NOTE: this is a row, and `card` (12) is also a row. They do the same
+    /// job at different radii, which is drift, not intent. Merging them would
+    /// change how the picker looks, so it is named honestly and left alone —
+    /// see `specs/type-scale.md`, which forbids restyling under a rename.
+    static let cardDense: CGFloat = 10
+
+    /// The macOS sidebar's clipped corner. One use, but it is load-bearing
+    /// geometry rather than decoration: the sidebar sits inset with an even
+    /// 10pt margin and this radius is what makes that read as deliberate.
+    static let sidebarClip: CGFloat = 10
 
     /// A padded card, a list row, or an image thumbnail: the connection form,
     /// About rows, conversation rows, attachment previews.

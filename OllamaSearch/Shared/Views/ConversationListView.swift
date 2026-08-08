@@ -396,7 +396,7 @@ struct ConversationListView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: Radius.container))
+            .clipShape(RoundedRectangle(cornerRadius: Radius.field))
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }

@@ -381,7 +381,7 @@ struct MacRootView: View {
                         // normal title bar, so nothing overlaps its top corners.
                         ConversationListView()
                             .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
-                            .clipShape(RoundedRectangle(cornerRadius: Radius.container, style: .continuous))
+                            .clipShape(RoundedRectangle(cornerRadius: Radius.sidebarClip, style: .continuous))
                             .shadow(color: .black.opacity(0.06), radius: 5, x: 0, y: 1)
                             .padding(10)
                             .transition(.move(edge: .leading))
