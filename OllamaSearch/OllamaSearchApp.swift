@@ -35,7 +35,10 @@ struct OllamaSearchApp: App {
         .windowResizability(.contentSize)
 
         MenuBarExtra {
-            MenuBarContent(onNewConversation: { chatVM.newConversation() })
+            MenuBarContent(
+                memoryAdvisory: chatVM.memoryAdvisory,
+                onNewConversation: { chatVM.newConversation() }
+            )
         } label: {
             Image(systemName: "sparkle")
                 .symbolRenderingMode(.hierarchical)
@@ -448,12 +451,21 @@ struct MacRootView: View {
 }
 
 struct MenuBarContent: View {
+    /// The server's memory advisory. This is a property of the server's health,
+    /// which is what this menu already reports — not a property of a conversation.
+    var memoryAdvisory: MemoryAdvisory = .unknown
     let onNewConversation: () -> Void
     private let connection = MacConnectionManager.shared
 
     var body: some View {
         Label(statusLabel, systemImage: statusIcon)
             .foregroundStyle(statusColor)
+        // Only the states with something to say render a row at all. `ok` and
+        // `unknown` add nothing here, exactly as they add nothing in the chat.
+        if let advisory = memoryAdvisory.advisoryText {
+            Label(advisory, systemImage: "memorychip")
+                .foregroundStyle(.secondary)
+        }
         Divider()
         Button("New Chat") { onNewConversation() }
         Button("Show Window") { NSApplication.shared.activate(ignoringOtherApps: true) }

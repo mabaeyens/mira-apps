@@ -81,6 +81,16 @@ final class ChatViewModel {
     var backendReady: Bool = true      // optimistic; polling corrects it
     var backendLoadingSince: Date? = nil  // set when backend_ready is first false after connect
     var isStartingBackend: Bool = false
+    /// The server's advisory about its own machine's memory, from `GET /hardware`.
+    ///
+    /// **Advisory only.** Nothing about sending a message may ever consult this.
+    /// The server deliberately refuses nothing on this basis, and if a memory
+    /// advisory could stop the user talking to Mira then another app opening tabs
+    /// could take Mira offline — a worse product than one slow reply.
+    ///
+    /// Starts `.unknown`, which renders as nothing, so a server that never
+    /// reports one is indistinguishable from never having asked.
+    private(set) var memoryAdvisory: MemoryAdvisory = .unknown
     var pendingAttachments: [AttachmentPayload] = []
     var stagedAttachmentNames: [String] = []
 
@@ -464,8 +474,24 @@ final class ChatViewModel {
         }
     }
 
+    /// Refresh the server's system-memory advisory.
+    ///
+    /// Best-effort in every direction: a failure here means "no information", so
+    /// it resets to `.unknown` (which shows nothing) rather than leaving a stale
+    /// warning on screen. It never surfaces an error to the user — a machine that
+    /// cannot report its memory is not a problem the user has to hear about.
+    func refreshMemoryAdvisory() async {
+        do {
+            let hw = try await APIClient.shared.fetchHardware()
+            memoryAdvisory = hw.systemMemory?.advisory ?? .unknown
+        } catch {
+            memoryAdvisory = .unknown
+        }
+    }
+
     /// Start periodic backend health polling every 10 s (cancels on next call).
     private var healthPollTask: Task<Void, Never>?
+    private var memoryPollTask: Task<Void, Never>?
 
     func startHealthPolling() {
         healthPollTask?.cancel()
@@ -477,6 +503,19 @@ final class ChatViewModel {
                 try? await Task.sleep(for: interval)
                 guard !Task.isCancelled else { break }
                 await self?.refreshBackendHealth()
+            }
+        }
+
+        // Separate loop on purpose: the advisory is re-derived server-side every
+        // 30s, so polling it on the 10s health cadence would spend three requests
+        // to read the same value. Folded into this method rather than given its
+        // own start call so it shares one lifecycle with health polling.
+        memoryPollTask?.cancel()
+        memoryPollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.refreshMemoryAdvisory()
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { break }
             }
         }
     }

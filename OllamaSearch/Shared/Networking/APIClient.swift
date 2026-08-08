@@ -206,6 +206,20 @@ final class APIClient {
         return try JSONDecoder().decode(ServerInfo.self, from: data)
     }
 
+    /// GET /hardware — RAM-aware sizing plus `system_memory`, the server's
+    /// advisory about its own machine. Token-authenticated.
+    ///
+    /// The server caches `system_memory` for 5s and the backend only re-derives
+    /// it every 30s, so polling this faster than that cannot see anything new.
+    func fetchHardware() async throws -> HardwareInfo {
+        let url = baseURL.appendingPathComponent("hardware")
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 5
+        authed(&req)
+        let data = try await send(req)
+        return try JSONDecoder().decode(HardwareInfo.self, from: data)
+    }
+
     // ── Model browser ─────────────────────────────────────────────────────────
 
     func fetchModels() async throws -> ModelsResponse {

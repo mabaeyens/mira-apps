@@ -29,6 +29,15 @@ struct ChatView: View {
                 backendStartingBanner
             }
 
+            // ── System-memory advisory ────────────────────────────────────
+            // Gated on backendReady: if the backend is down the user already has
+            // a banner saying so, and a second one about that machine's memory
+            // adds noise without adding information. No animation on purpose —
+            // the advisory can flip in a single poll and this must not flash.
+            if vm.backendReady, let advisory = vm.memoryAdvisory.advisoryText {
+                memoryAdvisoryBanner(advisory)
+            }
+
             // ── Status bar ────────────────────────────────────────────────
             if vm.inputTokens > 0 || vm.outputTokens > 0 {
                 HStack {
@@ -211,6 +220,29 @@ struct ChatView: View {
         .background(Color.orange.opacity(0.10))
         .overlay(alignment: .bottom) {
             Color.orange.opacity(0.25).frame(height: 1)
+        }
+    }
+
+    /// The memory advisory. Deliberately has no button: there is nothing for the
+    /// user to do here and nothing for them to dismiss. The first reply after an
+    /// eviction decompresses the model, so this clears itself — silently, with no
+    /// congratulation, because the user did nothing to fix it.
+    private func memoryAdvisoryBanner(_ text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "memorychip")
+                .foregroundStyle(Color.textSecondary)
+                .font(.bannerLabel)
+            Text(text)
+                .font(.bannerLabel)
+                .foregroundStyle(Color.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(Color.secondary.opacity(0.08))
+        .overlay(alignment: .bottom) {
+            Color.secondary.opacity(0.18).frame(height: 1)
         }
     }
 
