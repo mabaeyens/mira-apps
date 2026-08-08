@@ -124,29 +124,27 @@ verified is the UI reaching it.
 
 ### I. Memory advisory — iPhone against the Mac, plus the Mac itself
 
-The banner has never been seen on screen. Everything under it is verified —
-decoding against the live payload and eight degraded shapes, all five advisories
-mapping to known cases, polling starting at all four call sites, a failed poll
-clearing rather than freezing — but nothing has rendered a pixel of it.
+- [x] **iPhone and Mac**: the `evicted` banner renders from a real advisory
+      during a real conversation. Confirmed by Miguel 2026-08-08 on both, which
+      also settles the live path — the 30s poll does flip the state, and the copy
+      reads correctly on a phone that has plenty of memory itself
 
-The two `#Preview`s in `ChatView.swift` cover layout in both appearances at
-320pt. What they cannot show is the live path: that the poll flips the state and
-that it clears itself. That is the whole of this section.
+Verified underneath it: decoding against the live payload and eight degraded
+shapes, all five advisories mapping to known cases, polling starting at all four
+call sites, and a failed poll clearing rather than freezing a stale banner. The
+two `#Preview`s in `ChatView.swift` cover layout in both appearances at 320pt.
 
-`critical` is the cheap trigger. It shares the entire code path with `evicted`
-and differs only in the string, so open something large and memory-hungry rather
-than forcing a real eviction — on a 32GB Mac that means pushing a ~19GB model out
-and waiting for the reclaim, with the machine unusable meanwhile. **Ask first.**
+What is left is the tail, not the feature:
 
-- [ ] **iPhone**: banner appears while the Mac is under memory pressure, wraps
-      rather than truncates, and reads as being about the Mac — never as if the
-      phone were short of memory
-- [ ] **iPhone**: it clears by itself within ~30s of the Mac recovering, with no
-      tap and no animation flash
-- [ ] **Mac**: menu bar shows the advisory row. It is built when the menu opens,
-      so it may lag the banner by up to one 30s poll — that is expected
-- [ ] Confirm `backendReady` is true first. While the backend is restarting the
-      banner is suppressed by design, so a check made then proves nothing
+- [ ] It clears by itself within ~30s of the Mac recovering, with no tap and no
+      animation flash
+- [ ] **Mac**: the menu bar advisory row. Built when the menu opens, so it can
+      lag the banner by up to one 30s poll — expected, not a defect
+- [ ] `critical` renders, not only `evicted`. It shares the whole code path and
+      differs only in the string, so this is a copy check. It is also the cheap
+      trigger if a live advisory is ever needed again: forcing a real eviction
+      means pushing a ~19GB model out of a 32GB Mac and waiting for the reclaim,
+      with the machine unusable meanwhile. **Ask first.**
 
 ---
 
