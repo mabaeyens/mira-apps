@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.3.0
+
+**New**
+
+- Mira now says when something else on the Mac has pushed the model out of memory, so a reply that suddenly takes fifteen seconds has a visible cause instead of none. Advisory only — it never blocks sending — and it clears itself once the model is back. Needs mira-core v1.2.0 or newer
+- **iOS: "Add to project" now files the conversation.** The control existed and did nothing: the sheet opened, the projects listed, the row was tappable, the sheet dismissed, and the project stayed empty — with no error, so it read as success
+- The model picker shows the model that is actually running, and hides presets that cannot be selected with a reason why. Before this, every row could come back unselectable, with no row for the model answering you and no way back to it after switching away
+
+**Fixed**
+
+- Backends are named correctly everywhere. mira-mlx has been the default since July and the About panel, the model-switch line and the input bar all still said "Ollama" — three copies of the same mapping, each falling through to the same wrong answer
+- Startup and reconnect messages no longer name an engine that is not running, and no longer promise a 15–30 second wait the logs do not support
+- A server that refused the connection is told apart from one that was never reached. A 403 from the host gate now points at `allowed_hosts` and a 401 at the token field, instead of blaming your network and URL when both were fine
+- HTTP errors surface as errors. A 401 used to arrive as "the data couldn't be read because it is missing", three layers from the cause and reading like data loss
+- Markdown links are legible in light mode — they were at 3.25:1 against the 4.5:1 that normal text needs. Dark mode was already fine and is unchanged
+- **macOS: the app reads its API token from the keychain**, not from a path inside the sandbox container where the file never was. Every authenticated request had been failing, so conversations listed from cache while no messages ever loaded and sending failed. This had never worked in a sandboxed build
+- macOS: fixed the title-bar views fighting over the window during the open animation, which logged an AppKit layout recursion at every launch
+
+**Performance**
+
+- Attached images are downscaled before upload — 3.6× smaller across the test set, 5.5 MB → 1.1 MB on a 12 MP photo. The server already caps images at 1 MP, so the full-size pixels were decoded and thrown away. Orientation is baked in so portrait photos no longer arrive sideways, PNG screenshots stay PNG to keep small text sharp, and the shrunk copy is discarded if it did not actually come out smaller
+
 ## v0.2.1
 
 - Destructive actions (deleting a file, `rm -rf`, merging a PR, deleting a branch) now ask for an explicit tap to approve before they run
