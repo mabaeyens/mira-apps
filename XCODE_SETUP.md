@@ -10,7 +10,7 @@ Follow these steps once Xcode is installed and you have cloned the repo.
 4. Bundle Identifier: `com.yourname.OllamaSearch`
 5. Interface: **SwiftUI**, Language: **Swift**
 6. Uncheck "Use Core Data" and "Include Tests"
-7. Save to: `~/Documents/Projects/OllamaSearch/`
+7. Save to: `~/Projects/mira-apps/`
    - When asked to create a new folder, say **No** — the folder already exists
 
 ## 2. Add the Swift files
