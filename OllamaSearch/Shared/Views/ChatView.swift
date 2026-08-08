@@ -35,7 +35,7 @@ struct ChatView: View {
             // adds noise without adding information. No animation on purpose —
             // the advisory can flip in a single poll and this must not flash.
             if vm.backendReady, let advisory = vm.memoryAdvisory.advisoryText {
-                memoryAdvisoryBanner(advisory)
+                MemoryAdvisoryBanner(text: advisory)
             }
 
             // ── Status bar ────────────────────────────────────────────────
@@ -223,33 +223,6 @@ struct ChatView: View {
         }
     }
 
-    /// The memory advisory. Deliberately has no button: there is nothing for the
-    /// user to do here and nothing for them to dismiss.
-    ///
-    /// It clears itself, silently and with no congratulation, because the user
-    /// did nothing to fix it. What does the fixing changed on 2026-08-08: the
-    /// server now reclaims the model on its own idle branch rather than leaving
-    /// the bill for whoever asks next. Either way the banner's job is the same —
-    /// explain an unexplained slowdown while it lasts, then get out of the way.
-    private func memoryAdvisoryBanner(_ text: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "memorychip")
-                .foregroundStyle(Color.textSecondary)
-                .font(.bannerLabel)
-            Text(text)
-                .font(.bannerLabel)
-                .foregroundStyle(Color.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background(Color.secondary.opacity(0.08))
-        .overlay(alignment: .bottom) {
-            Color.secondary.opacity(0.18).frame(height: 1)
-        }
-    }
-
     private var backendStartingBanner: some View {
         HStack(spacing: 10) {
             ProgressView()
@@ -300,6 +273,84 @@ struct ChatView: View {
         .buttonStyle(.plain)
     }
     #endif
+}
+
+/// The memory advisory. Deliberately has no button: there is nothing for the
+/// user to do here and nothing for them to dismiss.
+///
+/// It clears itself, silently and with no congratulation, because the user did
+/// nothing to fix it. What does the fixing changed on 2026-08-08: the server now
+/// reclaims the model on its own idle branch rather than leaving the bill for
+/// whoever asks next. Either way the banner's job is the same — explain an
+/// unexplained slowdown while it lasts, then get out of the way.
+///
+/// A view of its own rather than a method on `ChatView` so that it can be
+/// previewed. It is a pure function of one string, but the state that produces
+/// that string cannot be reached by using the app: `ChatViewModel.memoryAdvisory`
+/// is `private(set)` and only ever set by a 30s poll of the server's own verdict.
+/// Extracting the view is the cheap way to see it; a settable advisory or a
+/// `#if DEBUG` toggle on the view model would widen a shipping surface to serve
+/// a one-off check.
+struct MemoryAdvisoryBanner: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "memorychip")
+                .foregroundStyle(Color.textSecondary)
+                .font(.bannerLabel)
+            Text(text)
+                .font(.bannerLabel)
+                .foregroundStyle(Color.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(Color.secondary.opacity(0.08))
+        .overlay(alignment: .bottom) {
+            Color.secondary.opacity(0.18).frame(height: 1)
+        }
+    }
+}
+
+/// Every state that renders, at the narrowest width the app supports.
+///
+/// The strings are read from `advisoryText` rather than typed out, so the
+/// preview cannot drift from the shipping copy the way two hand-written copies
+/// of the eviction wording already did across mira-apps and mira-core.
+///
+/// 320pt is deliberate: it is narrower than any supported iPhone, so copy that
+/// wraps cleanly here wraps cleanly everywhere. What this shows and the live
+/// path does not is layout — that the text wraps rather than truncates, and that
+/// the icon stays aligned to the first line rather than centring on a two-line
+/// block. What it cannot show is that the poll actually flips the state, which
+/// is what the device pass in TEST_PLAN.md is for.
+private struct AdvisoryPreview: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            ForEach(MemoryAdvisory.allCases, id: \.rawValue) { advisory in
+                if let text = advisory.advisoryText {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(".\(advisory.rawValue)")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        MemoryAdvisoryBanner(text: text)
+                    }
+                }
+            }
+        }
+        .frame(width: 320)
+        .padding(.vertical, 24)
+    }
+}
+
+#Preview("Memory advisory — light") {
+    AdvisoryPreview().preferredColorScheme(.light)
+}
+
+#Preview("Memory advisory — dark") {
+    AdvisoryPreview().preferredColorScheme(.dark)
 }
 
 // ── Conversation options sheet (iOS) ──────────────────────────────────────────

@@ -6,7 +6,11 @@ import Foundation
 /// `SystemMemory` are for a diagnostics view — re-reading them here to invent a
 /// different verdict would put the threshold logic in two places, and the server
 /// is the half that actually measured it.
-enum MemoryAdvisory: String, Decodable {
+/// `CaseIterable` so that the checks and the preview can enumerate the states
+/// rather than hand-maintaining a second list of them — the drift this feature
+/// has already had once, when the eviction copy was fixed in one place and not
+/// the other.
+enum MemoryAdvisory: String, Decodable, CaseIterable {
     /// Nothing to say. Show nothing.
     case ok
     /// The machine is under memory pressure but the model is still resident.

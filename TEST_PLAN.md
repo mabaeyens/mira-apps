@@ -122,6 +122,32 @@ verified is the UI reaching it.
       most likely to break and the hardest to notice
 - [ ] The project row's conversation count is right after filing and unfiling
 
+### I. Memory advisory — iPhone against the Mac, plus the Mac itself
+
+The banner has never been seen on screen. Everything under it is verified —
+decoding against the live payload and eight degraded shapes, all five advisories
+mapping to known cases, polling starting at all four call sites, a failed poll
+clearing rather than freezing — but nothing has rendered a pixel of it.
+
+The two `#Preview`s in `ChatView.swift` cover layout in both appearances at
+320pt. What they cannot show is the live path: that the poll flips the state and
+that it clears itself. That is the whole of this section.
+
+`critical` is the cheap trigger. It shares the entire code path with `evicted`
+and differs only in the string, so open something large and memory-hungry rather
+than forcing a real eviction — on a 32GB Mac that means pushing a ~19GB model out
+and waiting for the reclaim, with the machine unusable meanwhile. **Ask first.**
+
+- [ ] **iPhone**: banner appears while the Mac is under memory pressure, wraps
+      rather than truncates, and reads as being about the Mac — never as if the
+      phone were short of memory
+- [ ] **iPhone**: it clears by itself within ~30s of the Mac recovering, with no
+      tap and no animation flash
+- [ ] **Mac**: menu bar shows the advisory row. It is built when the menu opens,
+      so it may lag the banner by up to one 30s poll — that is expected
+- [ ] Confirm `backendReady` is true first. While the backend is restarting the
+      banner is suppressed by design, so a check made then proves nothing
+
 ---
 
 ## Every release

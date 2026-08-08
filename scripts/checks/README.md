@@ -14,7 +14,7 @@ mira-apps.
 |---|---|
 | `radius-check.py` | did a corner-radius change alter what anything renders? |
 | `typescale-check.py` | did a font-role substitution alter (size, weight, design)? |
-| `decode-check.sh` | do the app's model/backend types still decode the live server? |
+| `decode-check.sh` | do the app's model/backend/memory types still decode the live server? |
 | `approval-protocol.md` | notes on the destructive-action approval contract |
 
 All are read-only and safe to run at any time.
@@ -40,6 +40,22 @@ one-file diff and pairs lines from different files on a wide one, reporting
 mismatches that were artefacts of the pairing. `typescale-check.py` still uses
 line pairing and has the same weakness — treat a mismatch it reports on a large
 diff as a prompt to look, not as proof.
+
+`decode-check.sh` covers `/models`, `/backends` and `/hardware`. The third is
+there because it is the only one whose failure is silent: a renamed key in
+`/models` empties a picker and someone notices, while a renamed key inside
+`system_memory` decodes to `.unknown`, renders as nothing, and is
+indistinguishable from a healthy machine — the banner would simply never appear
+again and nothing would report it. So it asserts more than "decoding threw
+nothing": every advisory the server can emit maps to a known case, the states
+that must stay silent stay silent, and absence in all its shapes still passes,
+since an older server, a non-mira-mlx backend and a backend still starting all
+legitimately send nothing.
+
+It reports failures rather than trapping. Compiled at `-O`, a failed
+`precondition` aborts *without printing its message*, so a real failure arrived
+as `Trace/BPT trap: 5` with the reason gone. All assertions now go through a
+`check()` that prints and counts, and the exit code comes from the total.
 
 ## Credentials
 
