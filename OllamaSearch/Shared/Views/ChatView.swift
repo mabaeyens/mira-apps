@@ -224,9 +224,13 @@ struct ChatView: View {
     }
 
     /// The memory advisory. Deliberately has no button: there is nothing for the
-    /// user to do here and nothing for them to dismiss. The first reply after an
-    /// eviction decompresses the model, so this clears itself — silently, with no
-    /// congratulation, because the user did nothing to fix it.
+    /// user to do here and nothing for them to dismiss.
+    ///
+    /// It clears itself, silently and with no congratulation, because the user
+    /// did nothing to fix it. What does the fixing changed on 2026-08-08: the
+    /// server now reclaims the model on its own idle branch rather than leaving
+    /// the bill for whoever asks next. Either way the banner's job is the same —
+    /// explain an unexplained slowdown while it lasts, then get out of the way.
     private func memoryAdvisoryBanner(_ text: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "memorychip")

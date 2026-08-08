@@ -12,9 +12,16 @@ enum MemoryAdvisory: String, Decodable {
     /// The machine is under memory pressure but the model is still resident.
     /// At most a quiet indicator — never interrupt anything for this.
     case busy
-    /// The model has been compressed out of RAM and the next reply pays to bring
-    /// it back. Measured 2026-08-08 on an M5/32GB: 15.37s against a warm 0.47s.
+    /// The model has been compressed out of RAM. Measured 2026-08-08 on an
+    /// M5/32GB: a reply in that state cost 15.37s against a warm 0.47s.
     /// This is the one worth telling someone about.
+    ///
+    /// Who pays that cost is no longer fixed. Since mira-core `13ba3db` the
+    /// server can reclaim the model on its own idle branch, so the next reply
+    /// may well be fast. But it skips that work under critical pressure, on
+    /// battery, without enough headroom, or when `proactive_decompress` is off
+    /// — and it is off by default. Nothing in `system_memory` says which case
+    /// this is, so the copy must not predict one.
     case evicted
     /// macOS reports critical memory pressure.
     case critical
@@ -42,8 +49,13 @@ extension MemoryAdvisory {
     var advisoryText: String? {
         switch self {
         case .evicted:
+            // Deliberately does NOT promise a slow reply. The server may reclaim
+            // the model on idle before the user types anything, in which case a
+            // warning that "the next reply will be slow" is simply false — and a
+            // banner that cries wolf is worse than no banner. "may be slow until
+            // it loads back in" is true whether or not that reclaim happens.
             return "Something else on the Mac running Mira pushed its model out of memory. "
-                 + "The next reply will take longer than usual."
+                 + "Replies may be slow until it loads back in."
         case .critical:
             return "The Mac running Mira is very low on memory. "
                  + "Replies may be slow until something else frees some up."

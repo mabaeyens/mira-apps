@@ -56,3 +56,7 @@ validate-summary.md
 
 # Claude Code instructions (dev-machine-specific, may contain local paths)
 CLAUDE.md
+
+# Python bytecode from scripts/checks/ (regenerated on every run)
+__pycache__/
+*.pyc
