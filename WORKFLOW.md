@@ -177,7 +177,11 @@ Borrowed patterns should be noted in commit messages.
 
 - iOS Simulator: `platform=iOS Simulator,name=iPhone 16 Pro`
 - macOS: `platform=macOS`
-- iPhone Miguel (sideload): `id=68256925-7395-58B9-BC9C-7A403153C7CB`
+- iPhone Miguel (sideload): `id=292EC8B6-0E65-5C2D-8E19-4C26822358D5` — iPhone 17 Pro Max
+  (`iPhone18,2`). **The only phone Mira may be installed on.** Select by ID, never by
+  name: device names are not unique, so a name match can resolve to a device that
+  isn't this one. If it isn't attached, report not-connected — never fall back to
+  whatever else happens to be plugged in.
 
 ### Build Settings
 
