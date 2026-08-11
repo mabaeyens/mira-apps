@@ -52,10 +52,27 @@ From `0208d8b`, which was reasoned from code structure and **never reproduced**.
 From `5a6a56f`. HTTP status is now checked before decoding, so failures should
 name themselves instead of surfacing as "The data couldn't be read".
 
+`scripts/checks/connection-check.sh` now covers the mapping underneath both
+items below — status to error, probe outcome to sentence, and the four
+connection failures staying distinguishable from each other. It needs no server.
+What it cannot show is that the right code path runs on a real device, which is
+what these two are for.
+
 - [ ] Stop the server mid-session, send a message → the error names a connection
       problem, not a decode problem
 - [ ] **Mac**: wrong token in the keychain → the app asks for a token; it does
-      not report itself connected
+      not report itself connected.
+      **This failed by construction until 2026-08-11 and has never passed.** The
+      readiness poll asked `/health`, which mira-core keeps in
+      `_AUTH_OPEN_PATHS` (`server.py:176`), so it answered 200 for a right token,
+      a wrong one, and none at all; `loadToken()` then confirmed only that *a*
+      token existed. A wrong token therefore reported `.ready` and 401'd on
+      every subsequent request. Both platforms now probe `/info`, a guarded
+      route, once `/health` says the server is up. Retest from a genuinely wrong
+      keychain entry, not an empty one — an empty one passed before the fix too
+- [ ] **iPhone**: the same, from the other side — add a connection with a wrong
+      token typed into the Server Token field. It used to save as good, because
+      the field was never validated against anything
 
 ### D. Leftovers
 
@@ -140,11 +157,17 @@ What is left is the tail, not the feature:
       animation flash
 - [ ] **Mac**: the menu bar advisory row. Built when the menu opens, so it can
       lag the banner by up to one 30s poll — expected, not a defect
-- [ ] `critical` renders, not only `evicted`. It shares the whole code path and
-      differs only in the string, so this is a copy check. It is also the cheap
-      trigger if a live advisory is ever needed again: forcing a real eviction
-      means pushing a ~19GB model out of a 32GB Mac and waiting for the reclaim,
-      with the machine unusable meanwhile. **Ask first.**
+- [ ] `critical` renders, not only `evicted`. Largely covered already, and worth
+      knowing why before spending a Mac on it: `AdvisoryPreview` enumerates
+      `MemoryAdvisory.allCases`, so `critical` is one of the two banners both
+      `#Preview`s already draw — its copy and its wrapping at 320pt are checked.
+      It shares the entire code path with `evicted`, which is device-verified
+      above, and differs only in the string. So what is genuinely untested is
+      nothing specific to `critical`, and this is optional rather than owed.
+      It stays listed because it is still the *cheap* trigger if a live advisory
+      is ever needed again: forcing a real eviction means pushing a ~19GB model
+      out of a 32GB Mac and waiting for the reclaim, with the machine unusable
+      meanwhile. **Ask first.**
 
 ---
 

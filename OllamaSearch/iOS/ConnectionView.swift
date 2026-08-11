@@ -305,15 +305,23 @@ struct ConnectionView: View {
         guard let url = URL(string: urlString), connectingURL == nil else { return }
         connectingURL = urlString
         rowError = nil
+        // Read on the main actor, before the Task, so the probe can be handed a
+        // plain value instead of reaching back into the store.
+        let token = store.token(for: urlString)
         Task {
-            let result = await APIClient.shared.probeDetailed(url)
+            var result = await APIClient.shared.probeDetailed(url)
+            // See performAdd: a saved token is no more validated by /health than
+            // a freshly typed one.
+            if result == .ok {
+                result = await APIClient.shared.probeToken(url, token: token)
+            }
             await MainActor.run {
                 connectingURL = nil
                 if let failure = result.failureMessage(target: urlString) {
                     rowError = failure
                 } else {
                     store.setActive(urlString)
-                    onConnect(url, store.token(for: urlString))
+                    onConnect(url, token)
                 }
             }
         }
@@ -353,15 +361,23 @@ struct ConnectionView: View {
         guard let url = URL(string: trimmedURL) else { return }
         isAddConnecting = true
         addError = nil
+        let label = addLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let tokenValue = addToken.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
-            let result = await APIClient.shared.probeDetailed(url)
+            var result = await APIClient.shared.probeDetailed(url)
+            // /health is auth-open in mira-core, so reaching it says nothing
+            // about the token just typed into the field above. Ask a guarded
+            // route, but only once the server is known to be up — otherwise
+            // "still starting" and "wrong token" are indistinguishable.
+            if result == .ok {
+                result = await APIClient.shared.probeToken(
+                    url, token: tokenValue.isEmpty ? nil : tokenValue)
+            }
             await MainActor.run {
                 isAddConnecting = false
                 if let failure = result.failureMessage() {
                     addError = failure
                 } else {
-                    let label = addLabel.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let tokenValue = addToken.trimmingCharacters(in: .whitespacesAndNewlines)
                     let conn = SavedConnection(
                         label: label.isEmpty ? SavedConnection.autoLabel(for: trimmedURL) : label,
                         urlString: trimmedURL,

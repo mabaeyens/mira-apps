@@ -43,7 +43,11 @@ final class MacConnectionManager {
                 let status = await APIClient.shared.startupStatus()
                 switch status {
                 case .ready:
-                    self?.state = self?.loadToken() == true ? .ready : .needsToken
+                    guard self?.loadToken() == true else {
+                        self?.state = .needsToken
+                        return
+                    }
+                    self?.state = await Self.stateForLoadedToken()
                     return
                 case .starting:
                     self?.state = .connecting("Starting Mira…")
@@ -78,6 +82,32 @@ final class MacConnectionManager {
             logger.info("token read from \(path, privacy: .public) and promoted to the keychain")
         }
         return true
+    }
+
+    /// A token that loads is not a token that works.
+    ///
+    /// `loadToken` reports only whether one was *found*, and the readiness poll
+    /// above asks `/health`, which mira-core keeps auth-open (`server.py:176`).
+    /// So a stale or mistyped token in the keychain gave `.ready`, the app
+    /// reported itself connected, and every real request then 401'd — precisely
+    /// the wall of 401s `loadToken`'s own doc comment says it exists to prevent.
+    /// It could not: nothing here had ever asked a route that checks the token.
+    ///
+    /// Only 401 means the token is wrong. 403 is Gate 0 or 1 — an unrecognised
+    /// Host, or a source address outside the allowlist — and asking for a token
+    /// there points the user at the wrong fix entirely.
+    private static func stateForLoadedToken() async -> State {
+        let client = APIClient.shared
+        let result = await client.probeToken(client.baseURL, token: client.authToken)
+        switch result {
+        case .ok:
+            return .ready
+        case .refused(let status) where status == 401:
+            return .needsToken
+        case .refused, .unreachable:
+            return .failed(result.failureMessage(target: "The Mira server")
+                ?? "Could not reach the Mira server at localhost:8000.")
+        }
     }
 
     /// Store a user-supplied token and re-check the connection.

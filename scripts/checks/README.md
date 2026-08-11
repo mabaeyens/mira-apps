@@ -15,6 +15,7 @@ mira-apps.
 | `radius-check.py` | did a corner-radius change alter what anything renders? |
 | `typescale-check.py` | did a font-role substitution alter (size, weight, design)? |
 | `decode-check.sh` | do the app's model/backend/memory types still decode the live server? |
+| `connection-check.sh` | does a failed request still say what actually went wrong? |
 | `approval-protocol.md` | notes on the destructive-action approval contract |
 
 All are read-only and safe to run at any time.
@@ -23,6 +24,7 @@ All are read-only and safe to run at any time.
 scripts/checks/radius-check.py [git-ref]     # default HEAD
 scripts/checks/typescale-check.py [base-ref] # default HEAD
 scripts/checks/decode-check.sh [server-url]  # default http://localhost:8000
+scripts/checks/connection-check.sh           # no server, no token
 ```
 
 ## What they are for
@@ -51,6 +53,25 @@ nothing": every advisory the server can emit maps to a known case, the states
 that must stay silent stay silent, and absence in all its shapes still passes,
 since an older server, a non-mira-mlx backend and a backend still starting all
 legitimately send nothing.
+
+`connection-check.sh` covers the other half of the same problem: not whether a
+success decodes, but whether a *failure* explains itself. It needs no server —
+every input is a constructed status code — because the types it compiles were
+split out of `APIClient.swift` into `ConnectionErrors.swift` for exactly that
+reason. `APIClient` reaches `ThinkingMode` in `ChatViewModel.swift`, which pulls
+in SwiftUI, so nothing in that file could be checked without building the app.
+
+It asserts that 401 points at the token, 403 points at `allowed_hosts`, 503 says
+"starting", an unreachable server names the connection, and that no two of those
+four read the same — collapsing any pair sends the user to the wrong fix. It
+also asserts no message reads as "couldn't be read", which is the wording the
+original bug produced for a 401.
+
+Its last assertion is a grep, not Swift: the number of direct `session.data`
+calls in `APIClient.swift`. `send()` is what inspects the status before anything
+is decoded, and a new call site that skips it reintroduces the bug one endpoint
+at a time. Six are expected and each is listed in the script. A seventh is not
+automatically wrong — it needs a reason, and the count needs updating with it.
 
 It reports failures rather than trapping. Compiled at `-O`, a failed
 `precondition` aborts *without printing its message*, so a real failure arrived

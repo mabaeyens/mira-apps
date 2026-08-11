@@ -35,16 +35,10 @@ final class APIClient {
     private func send(_ req: URLRequest) async throws -> Data {
         let (data, response) = try await session.data(for: req)
         guard let http = response as? HTTPURLResponse else { return data }
-        switch http.statusCode {
-        case 200..<300:
-            return data
-        case 401, 403:
-            throw APIError.unauthorized
-        default:
-            let msg = (try? JSONDecoder().decode(APIErrorResponse.self, from: data))?.detail
-                ?? "Server error \(http.statusCode)"
-            throw APIError.serverError(msg)
-        }
+        // Mapping lives in ConnectionErrors.swift so connection-check.sh can
+        // assert it without a server.
+        if let error = APIError.from(status: http.statusCode, body: data) { throw error }
+        return data
     }
 
     // ── Health ────────────────────────────────────────────────────────────────
@@ -124,23 +118,6 @@ final class APIClient {
         return false
     }
 
-    /// Outcome of a `/health` probe, keeping "the server answered and refused us"
-    /// distinct from "we never got there".
-    ///
-    /// Collapsing the two into a single `false` is actively misleading: a server
-    /// that rejects the request by `Host` header (Gate 0, see mira-core
-    /// `docs/remote-access.md`) answers `403` on a perfectly good connection, and
-    /// reporting that as "check your connection" sends the user hunting through
-    /// Tailscale and Wi-Fi for a problem that is one line of `mira.yaml`.
-    enum ProbeResult: Equatable {
-        /// `/health` returned 200 — the server is up and willing to talk to us.
-        case ok
-        /// We reached the server and it answered with a non-200 status.
-        case refused(status: Int)
-        /// The request never produced a response (DNS, TLS, routing, timeout).
-        case unreachable(reason: String?)
-    }
-
     /// Like `probe`, but reports *why* a probe failed. Same hard-deadline
     /// behaviour and the same `nonisolated` rationale as `probe` above.
     nonisolated func probeDetailed(_ url: URL, deadline: Double = 5) async -> ProbeResult {
@@ -151,6 +128,52 @@ final class APIClient {
             group.addTask {
                 var req = URLRequest(url: healthURL)
                 req.timeoutInterval = deadline
+                do {
+                    let (_, response) = try await URLSession.shared.data(for: req)
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    return status == 200 ? .ok : .refused(status: status)
+                } catch {
+                    return .unreachable(reason: (error as? URLError)?.localizedDescription)
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(deadline))
+                return .unreachable(reason: "The server didn't answer in time.")
+            }
+            let result = await group.next() ?? .unreachable(reason: nil)
+            group.cancelAll()
+            return result
+        }
+    }
+
+    /// Whether `token` is actually accepted — which a `/health` probe cannot say.
+    ///
+    /// mira-core keeps `/health` in `_AUTH_OPEN_PATHS` (`server.py:176`), so it
+    /// answers 200 for a correct token, a wrong one, and none at all. A
+    /// connection accepted on the strength of `probeDetailed` alone therefore
+    /// reports itself connected and then 401s on the first real request — the
+    /// same "wall of 401s" the macOS token loader tried to avoid, which it could
+    /// not do either because it only checked whether a token *existed*. It also
+    /// left the 401 branch of `failureMessage` unreachable: no probe in the app
+    /// could produce one, so the copy was never wrong, just never shown.
+    ///
+    /// `/info` is the cheapest guarded route — a metadata dict built from values
+    /// already in memory, with no `_ready()` dependency, so it does not add a
+    /// spurious 503 while the backend is still loading.
+    ///
+    /// Run this only after `probeDetailed` reports `.ok`. On its own it cannot
+    /// tell "still starting" from "wrong token"; `/health` is what separates them.
+    nonisolated func probeToken(_ url: URL, token: String?, deadline: Double = 5) async -> ProbeResult {
+        guard let infoURL = URL(string: "/info", relativeTo: url) else {
+            return .unreachable(reason: "That URL isn't valid.")
+        }
+        return await withTaskGroup(of: ProbeResult.self) { group in
+            group.addTask {
+                var req = URLRequest(url: infoURL)
+                req.timeoutInterval = deadline
+                if let token, !token.isEmpty {
+                    req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+                }
                 do {
                     let (_, response) = try await URLSession.shared.data(for: req)
                     let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -624,21 +647,7 @@ enum AttachmentPayload {
     case filePath(String)
 }
 
-enum APIError: LocalizedError {
-    case invalidURL
-    case unauthorized
-    case serverError(String)
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:        return "Invalid server URL"
-        case .unauthorized:
-            // Distinct from serverError so callers can offer to fix the token
-            // instead of telling the user to check their connection.
-            return "Not authorised — the server rejected this app's access token."
-        case .serverError(let m): return m
-        }
-    }
-}
+// APIError and ProbeResult live in ConnectionErrors.swift.
 
 private struct NewConversationResponse: Decodable {
     let id: String
@@ -674,40 +683,5 @@ private struct MemoryList: Decodable {
     let memories: [MemoryItem]
 }
 
-private struct APIErrorResponse: Decodable {
-    let detail: String
-}
-
-extension APIClient.ProbeResult {
-    /// User-facing explanation, or `nil` when the probe succeeded.
-    ///
-    /// `target` is shown to the user, so pass the address they typed rather than
-    /// the derived `/health` URL.
-    func failureMessage(target: String? = nil) -> String? {
-        let subject = target.map { "\($0)" } ?? "the server"
-        switch self {
-        case .ok:
-            return nil
-        case .refused(let status) where status == 403:
-            // Gate 0 in mira-core rejects any Host header it doesn't recognise,
-            // and a Tailscale MagicDNS name isn't recognised by default.
-            return """
-            \(subject) answered but refused this address. If you're connecting over \
-            Tailscale, add the hostname to allowed_hosts in mira.yaml on your Mac and \
-            restart Mira.
-            """
-        case .refused(let status) where status == 401:
-            return "\(subject) needs a token. Check the Server Token field."
-        case .refused(let status) where status == 503:
-            return "\(subject) is still starting up. Try again in a moment."
-        case .refused(let status):
-            return "\(subject) answered with HTTP \(status)."
-        case .unreachable(let reason):
-            let base = "Could not reach \(subject). Check the URL, and that Tailscale is on."
-            guard let reason, !reason.isEmpty else { return base }
-            return "\(base) (\(reason))"
-        }
-    }
-}
 
 
