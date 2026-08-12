@@ -4,7 +4,7 @@
 
 **Fixed**
 
-- **Resend replaces the failed answer instead of asking the question twice.** Tapping Resend trimmed the broken exchange from the screen but never told the server, so the question stayed in the conversation's history twice with the failed reply between them — and every later turn was built on both copies. The conversation is reloaded from the server afterwards, so what is on screen is what is actually stored. Needs a mira-core with the `retry` field on `/chat` — landed after v1.2.0 and not yet in a tagged release. An older server ignores the field, which leaves the old behaviour rather than breaking anything
+- **Resend replaces the failed answer instead of asking the question twice.** Tapping Resend trimmed the broken exchange from the screen but never told the server, so the question stayed in the conversation's history twice with the failed reply between them — and every later turn was built on both copies. The conversation is reloaded from the server afterwards, so what is on screen is what is actually stored. Needs mira-core v1.3.0 or newer, which added the `retry` field on `/chat`. An older server ignores the field, which leaves the old behaviour rather than breaking anything
 - **A refused connection says so immediately.** A 403 from the host gate — the address is missing from `allowed_hosts` — was indistinguishable from a sleeping Mac, so the app spent 90 seconds retrying and then went orange with no explanation. The reason now appears on the first attempt and stays up. Retrying continues throughout, so fixing `mira.yaml` on the Mac is picked up without relaunching the app
 
 ## v0.3.0
