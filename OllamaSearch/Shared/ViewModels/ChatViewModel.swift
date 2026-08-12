@@ -159,6 +159,11 @@ final class ChatViewModel {
     private var pendingFirstMessage: String = ""
     private var receivedTitleDuringStream: Bool = false
 
+    // True while a turn sent with `retry=true` is in flight, so finishStreaming()
+    // knows to take the server's copy of the history rather than trusting the two
+    // messages resendLast() trimmed locally. See reloadHistoryFromServer().
+    private var retryInFlight: Bool = false
+
     private let api = APIClient.shared
     private let sse = SSEClient.shared
     // No deinit needed: streamTask/flushTask use [weak self] so self can be
@@ -166,7 +171,11 @@ final class ChatViewModel {
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    func send() {
+    /// `retry` is set only by `resendLast()`. It reaches the server as a form
+    /// field that deletes the previous turn before this one starts, so it must
+    /// never be inferred — asking the same question twice on purpose is a
+    /// legitimate thing to do and must not silently eat history.
+    func send(retry: Bool = false) {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !pendingAttachments.isEmpty else { return }
         guard !isStreaming else { return }
@@ -239,6 +248,7 @@ final class ChatViewModel {
         thinkingContent = nil
         isThinkingActive = false
         streamEndedWithError = false
+        retryInFlight = retry
 
         streamingWaitMessage = "Sending…"
 
@@ -281,7 +291,8 @@ final class ChatViewModel {
                 conversationId: self.currentConvId,
                 attachments: payload,
                 thinkingMode: self.thinkingMode,
-                approvedTokens: tokens
+                approvedTokens: tokens,
+                retry: retry
             )
             do {
                 for try await event in self.sse.stream(request: request) {
@@ -354,6 +365,9 @@ final class ChatViewModel {
             messages[idx].isStreaming = false
         }
         isStreaming = false
+        // Cancelling skips finishStreaming(), so clear the flag here too — it must
+        // not survive into a later turn that was never a retry.
+        retryInFlight = false
     }
 
     /// Non-nil when the last exchange failed (empty assistant response, not streaming).
@@ -379,12 +393,24 @@ final class ChatViewModel {
     }
 
     /// Drops the last exchange and re-sends the same question.
+    ///
+    /// The local trim is optimistic UI only. What actually replaces the turn is
+    /// the `retry` flag on the request: the server drops the last user row and
+    /// everything saved after it, under the conversation lock, before the new
+    /// turn starts. Without the flag `save_messages` appends and the question
+    /// ends up in the database twice with the broken answer between them, which
+    /// every later turn is then built on.
+    ///
+    /// The flag is skipped on a conversation the server has not seen yet — there
+    /// is no previous turn to replace, and an empty id makes the server create a
+    /// fresh conversation that ignores it anyway.
     func resendLast() {
         guard let userMsg = lastUserMessage else { return }
         let text = userMsg.content
+        let replacesServerTurn = !currentConvId.isEmpty
         if messages.count >= 2 { messages.removeLast(2) }
         inputText = text
-        send()
+        send(retry: replacesServerTurn)
     }
 
     /// Drops the last exchange and restores the question to the input field.
@@ -941,6 +967,9 @@ final class ChatViewModel {
         // title, on error/timeout so the sidebar reflects current server state.
         Task { await loadConversations() }
 
+        let wasRetry = retryInFlight
+        retryInFlight = false
+
         if streamEndedWithError, !currentConvId.isEmpty {
             streamEndedWithError = false
             let isNewConv = !conversationHadSuccessfulSend
@@ -954,18 +983,46 @@ final class ChatViewModel {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.errorMessage = nil
-                if let history = try? await self.api.getMessages(conversationId: self.currentConvId), !history.isEmpty {
-                    self.messages = history.map { m in
-                        let role: Message.Role = m.role == "user" ? .user : .assistant
-                        return Message(role: role, content: m.content,
-                                       thinkingContent: m.thinkingContent)
-                    }
-                    self.thinkingContent = self.messages.last(where: { $0.role == .assistant })?.thinkingContent
-                }
+                await self.reloadHistoryFromServer()
             }
         } else {
             conversationHadSuccessfulSend = true
+            // A retry told the server to delete from the last user row forward,
+            // which is not necessarily the two messages resendLast() removed here
+            // — a turn that ran tools saved more than two. The local array and the
+            // database can therefore disagree in a way no local patch can fix, so
+            // the one request it costs to ask the server is worth it. Only on the
+            // retry path: normal sends append on both sides and already agree.
+            if wasRetry, !currentConvId.isEmpty {
+                Task { @MainActor [weak self] in
+                    await self?.reloadHistoryFromServer()
+                }
+            }
         }
+    }
+
+    /// Replaces `messages` with the server's copy of the conversation.
+    ///
+    /// Used at the two points where the local array and the database can
+    /// legitimately disagree: after a stream that failed part-way, and after a
+    /// retry. An empty response is ignored rather than applied — it means the
+    /// fetch failed or raced a delete, and blanking the transcript over that is
+    /// worse than showing something slightly stale.
+    ///
+    /// Image thumbnails and attached file names do not survive this: the server
+    /// stores neither. That is already true of every conversation reopened from
+    /// the sidebar (`selectConversation`), so it is the app's existing behaviour
+    /// rather than something the retry path introduces.
+    private func reloadHistoryFromServer() async {
+        guard !currentConvId.isEmpty else { return }
+        guard let history = try? await api.getMessages(conversationId: currentConvId),
+              !history.isEmpty else { return }
+        messages = history.map { m in
+            let role: Message.Role = m.role == "user" ? .user : .assistant
+            return Message(role: role, content: m.content,
+                           thinkingContent: m.thinkingContent)
+        }
+        thinkingContent = messages.last(where: { $0.role == .assistant })?.thinkingContent
     }
 
     private static func isNetworkError(_ error: Error) -> Bool {

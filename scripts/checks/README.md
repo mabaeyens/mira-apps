@@ -16,6 +16,7 @@ mira-apps.
 | `typescale-check.py` | did a font-role substitution alter (size, weight, design)? |
 | `decode-check.sh` | do the app's model/backend/memory types still decode the live server? |
 | `connection-check.sh` | does a failed request still say what actually went wrong? |
+| `retry-flag-check.sh` | does a resend still tell the server it is a resend — and an ordinary send still not? |
 | `approval-protocol.md` | notes on the destructive-action approval contract |
 
 All are read-only and safe to run at any time.
@@ -25,6 +26,7 @@ scripts/checks/radius-check.py [git-ref]     # default HEAD
 scripts/checks/typescale-check.py [base-ref] # default HEAD
 scripts/checks/decode-check.sh [server-url]  # default http://localhost:8000
 scripts/checks/connection-check.sh           # no server, no token
+scripts/checks/retry-flag-check.sh            # no server, no token
 ```
 
 ## What they are for
@@ -72,6 +74,29 @@ calls in `APIClient.swift`. `send()` is what inspects the status before anything
 is decoded, and a new call site that skips it reintroduces the bug one endpoint
 at a time. Six are expected and each is listed in the script. A seventh is not
 automatically wrong — it needs a reason, and the count needs updating with it.
+
+`retry-flag-check.sh` guards a flag that is destructive in one direction and
+silently corrupting in the other. mira-core's `/chat` takes `retry`, and when it
+is set the server drops the last user message and everything saved after it
+before the new turn starts. Sent by accident it eats a turn the user meant to
+keep; not sent at all — which is what shipped, for as long as Resend has
+existed — the failed exchange stays in the database and the question ends up
+there twice with the broken answer between them, which every later turn is then
+built on. Neither failure shows in the app: the client trims its own array
+either way and looks correct while the database is not.
+
+So it asserts on the bytes of the request rather than on the call site. It builds
+the real `URLRequest` through `APIClient.chatRequest`, parses the multipart body
+back into fields, and checks that a resend carries `retry=true`, that an ordinary
+send carries no `retry` part at all, that the two differ by nothing else, and
+that the flag does not leak into the next request built after one.
+
+Compiling `APIClient.swift` standalone is possible because it imports only
+Foundation and OSLog; `ThinkingMode` is stubbed rather than dragged in through
+`ChatViewModel.swift` and SwiftUI, and a grep asserts the real enum still has the
+three cases the stub covers. A second grep asserts exactly one call site passes
+`retry` to `send()` — the flag must never be inferred, so exactly one place gets
+to decide a turn should be deleted.
 
 It reports failures rather than trapping. Compiled at `-O`, a failed
 `precondition` aborts *without printing its message*, so a real failure arrived

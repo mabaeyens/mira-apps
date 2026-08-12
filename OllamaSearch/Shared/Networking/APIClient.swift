@@ -324,12 +324,17 @@ final class APIClient {
     /// `approvedTokens` must only ever come from an explicit user tap on the
     /// confirmation prompt, and only on the request immediately following it —
     /// the server scopes them per request and does not remember them.
+    ///
+    /// `retry` tells the server this send replaces the previous turn rather than
+    /// following it. It is destructive on the server — `db.drop_last_turn` — so it
+    /// belongs to the resend path alone and defaults to false everywhere else.
     func chatRequest(
         message: String,
         conversationId: String,
         attachments: [AttachmentPayload] = [],
         thinkingMode: ThinkingMode = .adaptive,
-        approvedTokens: [String] = []
+        approvedTokens: [String] = [],
+        retry: Bool = false
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
@@ -343,6 +348,7 @@ final class APIClient {
             attachments: attachments,
             thinkingMode: thinkingMode,
             approvedTokens: approvedTokens,
+            retry: retry,
             boundary: boundary
         )
         return request
@@ -592,6 +598,7 @@ final class APIClient {
         attachments: [AttachmentPayload],
         thinkingMode: ThinkingMode = .adaptive,
         approvedTokens: [String] = [],
+        retry: Bool = false,
         boundary: String
     ) -> Data {
         var body = Data()
@@ -615,6 +622,12 @@ final class APIClient {
         case .off:      field("thinking_enabled", "false")
         case .adaptive: break
         }
+
+        // Only emitted when true. The server defaults it to false, so an absent
+        // part and "false" mean the same thing to it — but not to anyone reading
+        // a captured request: present-means-retry makes the flag checkable in the
+        // body rather than by trusting the call site.
+        if retry { field("retry", "true") }
 
         // Repeatable: one part per token, so several approvals can ride one turn.
         for token in approvedTokens {
