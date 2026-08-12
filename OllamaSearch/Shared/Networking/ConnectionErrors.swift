@@ -62,6 +62,37 @@ extension ProbeResult {
     }
 }
 
+extension ProbeResult {
+    /// A one-line version of `failureMessage`, for the reconnect banner.
+    ///
+    /// Two channels, two lengths. The Add Connection sheet has a multi-line label
+    /// and a user who is already in the settings, so it gets the full instruction.
+    /// The banner is a single truncating line across the top of a conversation;
+    /// its job is only to stop someone waiting for a thing that will not fix
+    /// itself. The actual fix stays in the sheet.
+    ///
+    /// `nil` means "no specific reason worth naming" — the caller should fall back
+    /// to its own progress copy. Both `nil` cases are deliberate: 503 and
+    /// unreachable are exactly what "the server is starting up" already covers,
+    /// and replacing that with a second phrasing would be noise, not information.
+    var bannerMessage: String? {
+        switch self {
+        case .ok:
+            return nil
+        case .refused(let status) where status == 403:
+            return "Refused this address — check allowed_hosts in mira.yaml."
+        case .refused(let status) where status == 401:
+            return "The server rejected this app's token."
+        case .refused(let status) where status == 503:
+            return nil
+        case .refused(let status):
+            return "The server answered with HTTP \(status)."
+        case .unreachable:
+            return nil
+        }
+    }
+}
+
 enum APIError: LocalizedError, Equatable {
     case invalidURL
     case unauthorized

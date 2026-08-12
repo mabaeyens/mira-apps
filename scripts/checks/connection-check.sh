@@ -144,6 +144,52 @@ check(!(ProbeResult.refused(status: 401).failureMessage() ?? "").hasPrefix(" "),
 check((ProbeResult.unreachable(reason: "boom").failureMessage() ?? "").contains("boom"),
       "the underlying URLError reason is dropped")
 
+// ---------------------------------------------------------- probe -> banner
+//
+// The banner is the other channel: a strip across the top of a conversation
+// while the app is reconnecting, not the settings sheet. Two rules make it
+// different from failureMessage, and both are load-bearing.
+//
+// First, it is short. The sheet's 403 copy is two sentences and names a file, a
+// setting and a restart; that is right for someone already in the settings and
+// wrong for a caption-sized strip, which truncates. Second, it returns nil for
+// the states the reconnect loop's own progress copy already covers, so the
+// caller can fall back rather than print a second phrasing of "starting up".
+
+print("\nProbeResult -> bannerMessage")
+let banners: [(String, ProbeResult, Bool)] = [
+    ("ok",           .ok,                          false),
+    ("401",          .refused(status: 401),        true),
+    ("403",          .refused(status: 403),        true),
+    ("503",          .refused(status: 503),        false),
+    ("500",          .refused(status: 500),        true),
+    ("unreachable",  .unreachable(reason: nil),    false),
+]
+for (label, probe, expectMessage) in banners {
+    let msg = probe.bannerMessage
+    print("  \(label) -> \(msg ?? "nil (caller falls back)")")
+    check((msg != nil) == expectMessage,
+          "\(label) bannerMessage was \(msg == nil ? "nil" : "set"), expected the opposite")
+    guard let msg else { continue }
+    // One line of .caption on the narrowest supported iPhone is roughly 60
+    // characters; the banner allows two. Past this the sentence is being
+    // written for a sheet, not for a strip, and the actionable half is what
+    // gets cut.
+    check(msg.count <= 70, "\(label) banner copy is \(msg.count) chars, too long to read: \(msg)")
+}
+
+// The one the whole reconnect change exists for: a 403 must send the user to
+// mira.yaml on the first probe, not to their Wi-Fi.
+let b403 = ProbeResult.refused(status: 403).bannerMessage ?? ""
+check(b403.contains("allowed_hosts"), "the 403 banner must name allowed_hosts: \(b403)")
+// Edge case (d) of the spec: a missing token and a refused host are different
+// fixes and must not share copy in either channel.
+check(ProbeResult.refused(status: 401).bannerMessage != ProbeResult.refused(status: 403).bannerMessage,
+      "401 and 403 now read the same in the banner")
+// 503 falling back is what keeps "still starting up" saying it once.
+check(ProbeResult.refused(status: 503).bannerMessage == nil,
+      "503 must fall back to the reconnect loop's own copy, not add a second phrasing")
+
 if failures > 0 {
     print("\nFAILED — \(failures) assertion(s) above")
     exit(1)

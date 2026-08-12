@@ -77,6 +77,10 @@ struct OllamaSearchApp: App {
     @State private var isReachable = true
     @State private var reconnectTask: Task<Void, Never>?
     @State private var reconnectMessage: String? = nil
+    /// True when the retry window expired on a refusal the user has to fix
+    /// elsewhere. The banner keeps its text but drops the spinner: nothing is
+    /// being retried any more, and a spinner that never resolves is a lie.
+    @State private var reconnectStalled = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -86,7 +90,8 @@ struct OllamaSearchApp: App {
                     iOSSplashView(status: splashStatus)
                 } else if let url = activeURL {
                     iOSConnectedView(serverURL: url,
-                                     isReachable: isReachable, reconnectMessage: reconnectMessage) {
+                                     isReachable: isReachable, reconnectMessage: reconnectMessage,
+                                     reconnectStalled: reconnectStalled) {
                         showingConnectionSettings = true
                     }
                     .sheet(isPresented: $showingConnectionSettings) {
@@ -134,35 +139,53 @@ struct OllamaSearchApp: App {
     }
 
     /// Called when the app foregrounds. Polls the server for up to 90 s, cycling
-    /// through patience messages. Handles three states:
-    ///   .ready      → clear banner, reload conversations
-    ///   .starting   → server is up but the model is still loading; stay on same URL
-    ///   .unavailable → try other saved connections; keep waiting
+    /// through patience messages. Handles four outcomes:
+    ///   .ok                 → clear banner, reload conversations
+    ///   .refused(503)       → server is up but the model is still loading; stay on same URL
+    ///   .refused(anything)  → the server answered and said no; name the reason, keep trying
+    ///   .unreachable        → try other saved connections; keep waiting
+    ///
+    /// Probing with `probeDetailed` rather than `startupStatus()` is the whole
+    /// point of the refusal case: `startupStatus()` folds every non-200, non-503
+    /// answer into `.unavailable`, so a 403 from Gate 0 — the host isn't in
+    /// `allowed_hosts` — was indistinguishable from a sleeping Mac. The app spent
+    /// 90 seconds proving that, then went orange with nothing to show for it,
+    /// while the one sentence naming the fix already existed a layer below.
+    ///
+    /// Retrying continues through a refusal on purpose. It is a state the user
+    /// fixes on the *other* machine, and they will expect the app to notice when
+    /// they do; stopping here would turn a self-healing case into one that needs
+    /// an app restart. What changes is only that the reason is on screen from the
+    /// first probe instead of never.
     private func startReconnect() {
         guard let current = activeURL else { return }
 
         // Quick optimistic probe first — if the server is already up don't flash the banner.
         // Use a short fence so we only show the banner when we actually need it.
         reconnectTask?.cancel()
+        reconnectStalled = false
         reconnectTask = Task {
-            let quickOK = await APIClient.shared.probe(current, deadline: 2)
-            if quickOK {
+            let quick = await APIClient.shared.probeDetailed(current, deadline: 2)
+            if quick == .ok {
                 isReachable = true
                 reconnectMessage = nil
                 return
             }
 
             isReachable = false
-            reconnectMessage = Self.reconnectMessages.randomElement()
+            // Sticky for as long as the refusal lasts: a reason that is overwritten
+            // by the next patience message two seconds later has not been surfaced.
+            var refusal = quick.bannerMessage
+            reconnectMessage = refusal ?? Self.reconnectMessages.randomElement()
 
             let deadline = Date.now.addingTimeInterval(90)
             while Date.now < deadline, !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(2))
                 guard !Task.isCancelled else { break }
 
-                let status = await APIClient.shared.startupStatus()
-                switch status {
-                case .ready:
+                let result = await APIClient.shared.probeDetailed(current, deadline: 5)
+                switch result {
+                case .ok:
                     isReachable = true
                     reconnectMessage = nil
                     await chatVM.loadBackend()
@@ -170,12 +193,17 @@ struct OllamaSearchApp: App {
                     chatVM.startHealthPolling()
                     await chatVM.loadConversations()
                     return
-                case .starting:
+                case .refused(let status) where status == 503:
                     // Server is responding (503) — the model is loading. Stay on same URL.
+                    refusal = nil
                     reconnectMessage = Self.reconnectMessages.randomElement()
-                case .unavailable:
-                    // No response at all — try other saved connections.
-                    reconnectMessage = Self.reconnectMessages.randomElement()
+                default:
+                    // Refused for another reason, or no response at all. Either way
+                    // this URL is not serving us, so still try the other saved
+                    // connections — a 403 on the Tailscale name says nothing about
+                    // whether the LAN address works.
+                    refusal = result.bannerMessage
+                    reconnectMessage = refusal ?? Self.reconnectMessages.randomElement()
                     if let found = await autoConnect() {
                         APIClient.shared.authToken = connectionsStore.token(for: found.absoluteString)
                         APIClient.shared.baseURL = found
@@ -191,8 +219,17 @@ struct OllamaSearchApp: App {
                 }
             }
 
-            // Gave up — clear banner, icon stays orange.
-            reconnectMessage = nil
+            // Cancelled means a newer connection took over (the Add Connection
+            // sheet cancels this task and clears the banner) — leaving a stale
+            // refusal behind would undo that.
+            guard !Task.isCancelled else { return }
+
+            // Gave up. A refusal is kept on screen — it is the one case where the
+            // orange dot has an explanation and the user can act on it. Anything
+            // else clears as before: "still trying" with nothing behind it is
+            // worse than silence.
+            reconnectStalled = refusal != nil
+            reconnectMessage = refusal
         }
     }
 
@@ -543,6 +580,8 @@ struct iOSConnectedView: View {
     let serverURL: URL
     var isReachable: Bool = true
     var reconnectMessage: String? = nil
+    /// The banner is showing a reason rather than progress — no spinner.
+    var reconnectStalled: Bool = false
     let onSettings: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -662,17 +701,26 @@ struct iOSConnectedView: View {
     private var reconnectBanner: some View {
         if let msg = reconnectMessage {
             HStack(spacing: 10) {
-                ProgressView()
-                #if os(macOS)
-                    .controlSize(.small)
-                #else
-                    .scaleEffect(0.75)
-                #endif
-                    .tint(Color.accent)
+                if reconnectStalled {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else {
+                    ProgressView()
+                    #if os(macOS)
+                        .controlSize(.small)
+                    #else
+                        .scaleEffect(0.75)
+                    #endif
+                        .tint(Color.accent)
+                }
                 Text(msg)
                     .font(.caption)
                     .foregroundStyle(Color.textSecondary)
-                    .lineLimit(1)
+                    // Two lines: the patience messages are one-liners either way,
+                    // but a refusal reason names a file and a setting and is worth
+                    // more room than "…mira.ya".
+                    .lineLimit(2)
                 Spacer()
             }
             .padding(.horizontal, 16)
