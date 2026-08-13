@@ -1,5 +1,4 @@
 import SwiftUI
-import Highlightr
 
 // MARK: - Message segment model (code fences vs prose)
 
@@ -247,10 +246,24 @@ struct HighlightedCodeView: View {
         "dockerfile": "dockerfile",
     ]
 
+    private var mappedLang: String? {
+        language.flatMap { Self.languageMap[$0.lowercased()] }
+    }
+
     var body: some View {
+        // nil for a language we don't highlight — those keep the plain monospaced
+        // fallback and never touch the engine.
+        let key = mappedLang.map {
+            HighlightCache.Key(code: code, lang: $0, dark: colorScheme == .dark)
+        }
+        // Synchronous cache read on the main thread (~microseconds): a recycled
+        // cell highlighted before renders highlighted at once, so scrolling back
+        // to a code block no longer flashes plain text or blanks the list.
+        let attr = highlighted ?? key.flatMap { HighlightCache.shared.get($0) }
+
         ScrollView(.horizontal, showsIndicators: false) {
             Group {
-                if let attr = highlighted {
+                if let attr {
                     Text(attr)
                         .textSelection(.enabled)
                 } else {
@@ -263,29 +276,19 @@ struct HighlightedCodeView: View {
             .fixedSize(horizontal: true, vertical: false)
             .frame(minWidth: 0, alignment: .leading)
         }
-        .task(id: colorScheme) { highlighted = computeHighlighted() }
-    }
-
-    private func computeHighlighted() -> AttributedString? {
-        guard let lang = language.flatMap({ Self.languageMap[$0.lowercased()] }) else { return nil }
-        let h = Highlightr()
-        h?.setTheme(to: colorScheme == .dark ? "atom-one-dark" : "atom-one-light")
-        #if os(macOS)
-        h?.theme.setCodeFont(NSFont(name: "Menlo", size: 16)
-            ?? NSFont.monospacedSystemFont(ofSize: 16, weight: .regular))
-        #else
-        h?.theme.setCodeFont(UIFont(name: "Menlo", size: 16)
-            ?? UIFont.monospacedSystemFont(ofSize: 16, weight: .regular))
-        #endif
-        guard let ns = h?.highlight(code, as: lang) else { return nil }
-        let mutable = NSMutableAttributedString(attributedString: ns)
-        mutable.removeAttribute(.backgroundColor,
-                                range: NSRange(location: 0, length: mutable.length))
-        #if os(macOS)
-        return try? AttributedString(mutable, including: \.appKit)
-        #else
-        return try? AttributedString(mutable, including: \.uiKit)
-        #endif
+        // Re-keys on content or theme change. Cache hit returns immediately; a
+        // miss highlights off the main thread (see CodeHighlighter) and fills in.
+        .task(id: key) {
+            highlighted = nil
+            guard let key else { return }
+            if let hit = HighlightCache.shared.get(key) { highlighted = hit; return }
+            let a = await CodeHighlighter.shared.highlight(
+                code: key.code, lang: key.lang, dark: key.dark)
+            if let a {
+                HighlightCache.shared.set(key, a)
+                highlighted = a
+            }
+        }
     }
 }
 
