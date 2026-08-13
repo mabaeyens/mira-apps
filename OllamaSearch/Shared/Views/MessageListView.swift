@@ -261,14 +261,18 @@ struct MessageListView: View {
             // lands on ESTIMATED cell heights; as the lazy markdown/code cells
             // render their real (taller) heights the true bottom moves down and
             // the view is left stranded mid-content. Snap to the true bottom on
-            // appear and again on every content-height change while pinned — the
-            // same re-pin streaming already relies on, which the initial load lacked.
+            // appear and again as the lazy cells settle.
             .onAppear {
                 scrollPinned = true
                 scrollToBottom(proxy: proxy)
             }
+            // Re-pin only for that opening settle — gated on !isStreaming. During a
+            // turn the token/thinking onChanges below already keep us pinned; firing
+            // here on every height change would also fire on each search/fetch
+            // activity-row toggle, re-scrolling the lazy list mid-turn and blanking
+            // it until the next event.
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { old, new in
-                if scrollPinned && new != old { scrollToBottom(proxy: proxy) }
+                if scrollPinned && !isStreaming && new != old { scrollToBottom(proxy: proxy) }
             }
             .onScrollPhaseChange { _, phase in
                 isUserScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
