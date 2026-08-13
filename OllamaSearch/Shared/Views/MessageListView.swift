@@ -266,13 +266,15 @@ struct MessageListView: View {
                 scrollPinned = true
                 scrollToBottom(proxy: proxy)
             }
-            // Re-pin only for that opening settle — gated on !isStreaming. During a
-            // turn the token/thinking onChanges below already keep us pinned; firing
-            // here on every height change would also fire on each search/fetch
-            // activity-row toggle, re-scrolling the lazy list mid-turn and blanking
-            // it until the next event.
+            // Re-pin only for that opening settle. Gated on !isStreaming (a live
+            // turn's token/thinking onChanges below already keep us pinned, and
+            // firing here on each search/fetch activity-row toggle blanked the list)
+            // and on !isUserScrolling (so a drag near the bottom right after a turn
+            // isn't tugged back down as late cells change the content height).
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { old, new in
-                if scrollPinned && !isStreaming && new != old { scrollToBottom(proxy: proxy) }
+                if scrollPinned && !isStreaming && !isUserScrolling && new != old {
+                    scrollToBottom(proxy: proxy)
+                }
             }
             .onScrollPhaseChange { _, phase in
                 isUserScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
