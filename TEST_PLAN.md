@@ -20,22 +20,24 @@ Contrast was measured 2026-07-26 (mira-core `notes/mira-palette-contrast.py`),
 so the numeric part is done and the link colour is fixed. What is left needs
 eyes.
 
-- [ ] **Mac / iPhone / iPad**: set the system to Light → chat, sidebar and input
+- [x] **Mac / iPhone / iPad**: set the system to Light → chat, sidebar and input
       bar are legible
-- [ ] **Markdown links in Light** are readable. They were 3.25:1 and are now
+- [x] **Markdown links in Light** are readable. They were 3.25:1 and are now
       `#9F6542` at 4.52. The only measured failure in the palette
-- [ ] **iPhone**: reconnect banner and the floating nav circles use
+- [x] **iPhone**: reconnect banner and the floating nav circles use
       `.ultraThinMaterial`, designed against dark. Confirm they still read
-- [ ] **Mac**: splash screen in Light → the amber radial wash is visible but not muddy
-- [ ] **Mac**: System Settings → Appearance → set a **non-default accent colour**
+- [x] **Mac**: splash screen in Light → the amber radial wash is visible but not muddy
+- [x] **Mac**: System Settings → Appearance → set a **non-default accent colour**
       (blue, pink) → the app stays amber everywhere. 35 places use
       `Color.accent` rather than `Color.appAccent`; both resolve to the same
       amber from the asset catalog, but that is asserted, not observed
-- [ ] **Switch appearance with the app already running** → the window background
+- [x] **Switch appearance with the app already running** → the window background
       follows, no relaunch. The palette itself was verified to resolve
       dynamically, so this is about AppKit state held elsewhere
-- [ ] Inline code chips are still visible in Light. Measured at 1.57:1, which is
+- [x] Inline code chips are still visible in Light. Measured at 1.57:1, which is
       *higher* than GitHub's 1.13, so this is a look check and not a defect hunt
+
+_A closed 2026-08-13: light mode legible on Mac; user-turn bubble lightened `0xD0C8BE` → `0xE0D8CE`._
 
 ### B. macOS window chrome — Mac only
 
@@ -90,17 +92,20 @@ what these two are for.
 Specs 1 and 2, shipped 2026-07-26 (`003463c`, `0fa90bc`, server `76b660f`).
 Build-verified, plus a decode check against live server bytes. **Never run.**
 
-- [ ] Open the model card → the running model is **first and checkmarked**.
+- [x] Open the model card → the running model is **first and checkmarked**.
       Before this, nothing was ever checkmarked
-- [ ] Every selectable row shows engine, context window and size on disk, and
+- [x] Every selectable row shows engine, context window and size on disk, and
       no title truncates mid-word
-- [ ] **Stop Ollama**, reopen the card → its preset appears under "Not
+- [~] **Stop Ollama**, reopen the card → its preset appears under "Not
       available" with a reason, greyed, and does nothing when tapped
-- [ ] Switch to another model, then switch back → the row you came from is
+      _(N/A — Ollama is no longer a configured backend)_
+- [x] Switch to another model, then switch back → the row you came from is
       still there. Before this there was no way back
-- [ ] **Mac**: Mira → About Mira → "Backend" reads `mira-mlx`, not "Ollama"
-- [ ] After a switch, the info line in the transcript names the right engine
-- [ ] "Download a model" → does **not** offer Gemma 4 26B, which is installed
+- [x] **Mac**: Mira → About Mira → "Backend" reads `mira-mlx`, not "Ollama"
+- [x] After a switch, the info line in the transcript names the right engine
+- [x] "Download a model" → does **not** offer Gemma 4 26B, which is installed
+
+_E closed 2026-08-13: About → Backend reads `mira-mlx`; Ollama-stop check N/A (Ollama no longer a backend)._
 
 ### F. Nothing moved — all three
 
