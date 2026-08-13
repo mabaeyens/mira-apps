@@ -133,6 +133,10 @@ extension APIError {
 }
 
 /// mira-core's error envelope: `{"detail": "..."}`.
-struct APIErrorResponse: Decodable {
+///
+/// `nonisolated` so its `Decodable` conformance can be used from the nonisolated
+/// `APIError.from(status:body:)` — under the project's main-actor-by-default
+/// isolation a bare type would be `@MainActor` and its conformance unusable there.
+nonisolated struct APIErrorResponse: Decodable {
     let detail: String
 }

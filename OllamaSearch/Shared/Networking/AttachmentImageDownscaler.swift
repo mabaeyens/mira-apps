@@ -16,7 +16,12 @@ import UniformTypeIdentifiers
 ///
 /// Nothing here is required for correctness — the server handles any size. This
 /// is bandwidth, not behaviour.
-enum AttachmentImageDownscaler {
+///
+/// `nonisolated` because it is pure CoreGraphics/ImageIO with no main-actor state
+/// and is deliberately run in a detached task (see `ChatViewModel.send`) so the
+/// resize does not block the UI. Under main-actor-by-default it would otherwise be
+/// `@MainActor` and could not be called from that detached context.
+nonisolated enum AttachmentImageDownscaler {
 
     /// Longest edge in pixels. 1600 gives ~1.9 MP on a 4:3 frame, comfortably
     /// above the server's 1 MP ceiling so the app is never the binding
