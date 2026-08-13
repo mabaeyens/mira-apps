@@ -99,7 +99,7 @@ struct MessageBubble: View {
     @ViewBuilder
     private func thumbnailImage(_ data: Data) -> some View {
         #if os(iOS)
-        if let img = UIImage(data: data) {
+        if let img = ThumbnailCache.shared.image(for: data) {
             Image(uiImage: img)
                 .resizable()
                 .scaledToFill()
@@ -107,7 +107,7 @@ struct MessageBubble: View {
                 .clipShape(RoundedRectangle(cornerRadius: Radius.card))
         }
         #elseif os(macOS)
-        if let img = NSImage(data: data) {
+        if let img = ThumbnailCache.shared.image(for: data) {
             Image(nsImage: img)
                 .resizable()
                 .scaledToFill()
@@ -198,7 +198,7 @@ struct MessageBubble: View {
 struct MessageContentView: View {
     let content: String
 
-    private var segments: [MessageSegment] { parseMessageSegments(content) }
+    private var segments: [MessageSegment] { SegmentCache.shared.segments(for: content) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
