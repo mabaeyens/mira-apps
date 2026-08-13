@@ -22,6 +22,10 @@ struct MessageListView: View {
 
     @State private var scrollPinned = true
     @State private var thinkingExpanded = true
+    // True only while the user is physically dragging the list. Used to keep
+    // content growing under us (lazy cells rendering on open, streaming tokens)
+    // from being mistaken for the user scrolling up and unpinning the view.
+    @State private var isUserScrolling = false
     private let bottomAnchor = "bottom"
 
     var body: some View {
@@ -253,11 +257,27 @@ struct MessageListView: View {
                     scrollToBottom(proxy: proxy)
                 }
             }
-            // Sole source of truth for pin/unpin — no DragGesture needed.
-            // Hysteresis: pin at ≤80 pt from bottom, unpin at >120 pt.
-            // This prevents the button from flickering at the threshold and,
-            // crucially, stops the button from reappearing after it's tapped
-            // (the button tap itself no longer sets scrollPinned = false).
+            // Opening a conversation recreates this ScrollView. defaultScrollAnchor
+            // lands on ESTIMATED cell heights; as the lazy markdown/code cells
+            // render their real (taller) heights the true bottom moves down and
+            // the view is left stranded mid-content. Snap to the true bottom on
+            // appear and again on every content-height change while pinned — the
+            // same re-pin streaming already relies on, which the initial load lacked.
+            .onAppear {
+                scrollPinned = true
+                scrollToBottom(proxy: proxy)
+            }
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { old, new in
+                if scrollPinned && new != old { scrollToBottom(proxy: proxy) }
+            }
+            .onScrollPhaseChange { _, phase in
+                isUserScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
+            }
+            // Hysteresis: pin at ≤80 pt from bottom, unpin at >120 pt — and only
+            // when the user is actually dragging (isUserScrolling), so the lazy
+            // settle on open and streaming growth can't unpin. This prevents the
+            // button from flickering at the threshold and stops it reappearing
+            // after it's tapped (the tap itself never sets scrollPinned = false).
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentSize.height
                     - geometry.contentOffset.y
@@ -272,7 +292,8 @@ struct MessageListView: View {
                     - geometry.containerSize.height
                     - geometry.contentInsets.bottom > 120
             } action: { _, isFarFromBottom in
-                if isFarFromBottom { scrollPinned = false }
+                // Only a real user drag unpins — never content growing under us.
+                if isFarFromBottom && isUserScrolling { scrollPinned = false }
             }
             .overlay(alignment: .bottom) {
                 if !scrollPinned && !messages.isEmpty {
