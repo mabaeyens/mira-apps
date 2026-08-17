@@ -60,3 +60,6 @@ CLAUDE.md
 # Python bytecode from scripts/checks/ (regenerated on every run)
 __pycache__/
 *.pyc
+
+# Obsidian vault config (local notes tooling, not part of the app)
+.obsidian/
