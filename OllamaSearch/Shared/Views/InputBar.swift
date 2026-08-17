@@ -26,6 +26,25 @@ struct InputBar: View {
     @State private var showProjectPicker = false
     #endif
 
+    // Icon-glyph sizes that map onto no stock text style, scaled so the glyphs
+    // grow with Dynamic Type. Base values equal the former literals, so nothing
+    // changes at the default size; their (still-fixed) frames are a later pass.
+    // On macOS these resolve to the base value, so the surface stays fixed there.
+    @ScaledMetric(relativeTo: .caption)  private var brainGlyphAdaptive: CGFloat = 14
+    @ScaledMetric(relativeTo: .caption2) private var brainGlyphCompact: CGFloat = 10
+    @ScaledMetric(relativeTo: .caption2) private var projectPillGlyph: CGFloat = 9
+    @ScaledMetric(relativeTo: .title)    private var attachTileGlyph: CGFloat = 26
+
+    /// 12pt medium pill label. Scales on iOS (.caption is 12); macOS keeps a
+    /// fixed 12 (its .caption is 10, too small for these controls).
+    private var pillCaption: Font {
+        #if os(iOS)
+        .caption.weight(.medium)
+        #else
+        .system(size: 12, weight: .medium)
+        #endif
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             attachmentChipsRow()
@@ -186,17 +205,17 @@ struct InputBar: View {
             Button { vm.thinkingMode.cycle() } label: {
                 HStack(spacing: 3) {
                     Image(systemName: "brain.fill")
-                        .font(.system(size: vm.thinkingMode == .adaptive ? 14 : 10, weight: .medium))
+                        .font(.system(size: vm.thinkingMode == .adaptive ? brainGlyphAdaptive : brainGlyphCompact, weight: .medium))
                     switch vm.thinkingMode {
                     case .on:
                         Text("Thinking")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(pillCaption)
                     case .off:
                         Text("Off")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(pillCaption)
                     case .adaptive:
                         Text("Auto")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(pillCaption)
                     }
                 }
                 .foregroundStyle(vm.thinkingMode == .on ? Color.appAccent : Color.textSecondary.opacity(0.6))
@@ -216,9 +235,9 @@ struct InputBar: View {
             if let project = vm.activeProject {
                 HStack(spacing: 3) {
                     Image(systemName: project.localPath != nil ? "folder" : "network")
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.system(size: projectPillGlyph, weight: .medium))
                     Text(project.name)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(pillCaption)
                         .lineLimit(1)
                 }
                 .foregroundStyle(Color.appAccent)
@@ -366,7 +385,7 @@ struct InputBar: View {
             Color.clear.frame(height: 8)
 
             Text("Add to Chat")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.headline)
                 .foregroundStyle(Color.textPrimary)
                 .padding(.vertical, 14)
 
@@ -425,7 +444,7 @@ struct InputBar: View {
                         .foregroundStyle(Color.textSecondary)
                 }
                 Text("Speech language")
-                    .font(.system(size: 16))
+                    .font(.callout)
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Picker("", selection: Bindable(prefs).speechLanguage) {
@@ -451,7 +470,7 @@ struct InputBar: View {
                     RoundedRectangle(cornerRadius: Radius.compose)
                         .fill(color.opacity(0.14))
                     Image(systemName: icon)
-                        .font(.system(size: 26, weight: .medium))
+                        .font(.system(size: attachTileGlyph, weight: .medium))
                         .foregroundStyle(color)
                 }
                 .frame(height: 72)
@@ -517,12 +536,20 @@ struct InputBar: View {
                     .foregroundStyle(iconColor)
             }
             Text(label)
-                .font(.system(size: 16))
+                #if os(iOS)
+                .font(.callout)          // 16pt, scales
+                #else
+                .font(.system(size: 16)) // macOS .callout is 12; keep fixed
+                #endif
                 .foregroundStyle(Color.textPrimary)
             Spacer()
             if let t = trailing {
                 Text(t)
-                    .font(.system(size: 15))
+                    #if os(iOS)
+                    .font(.subheadline)      // 15pt, scales
+                    #else
+                    .font(.system(size: 15)) // macOS .subheadline is 11; keep fixed
+                    #endif
                     .foregroundStyle(Color.textSecondary)
             }
         }

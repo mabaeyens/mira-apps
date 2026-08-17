@@ -15,6 +15,12 @@ struct ModelPickerView: View {
     @State private var pendingPreset: BackendPreset? = nil
     @State private var showAddModel = false
 
+    // The Cancel button's 14pt matches no stock text style, so it scales via
+    // @ScaledMetric relative to .subheadline (its sibling Switch button uses the
+    // .rowTitleDense() modifier for the same 14pt). Base equals the former
+    // literal; macOS resolves to the base and stays fixed.
+    @ScaledMetric(relativeTo: .subheadline) private var cancelButtonSize: CGFloat = 14
+
     /// Selectable entries first, then the ones that cannot be switched to.
     /// The server already puts the running model at the top of `available`.
     private var selectable: [BackendPreset] { backendPresets.filter(\.available) }
@@ -99,7 +105,7 @@ struct ModelPickerView: View {
         VStack(spacing: 16) {
             VStack(spacing: 6) {
                 Text("Switch to \(preset.label)?")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.rowTitle) // 15 medium; scales on iOS, fixed on macOS
                     .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.center)
                 Text("The current model will stop and \(preset.label) will load. Chat is paused for 30–60 seconds.")
@@ -110,7 +116,7 @@ struct ModelPickerView: View {
             HStack(spacing: 10) {
                 Button("Cancel") { pendingPreset = nil }
                     .buttonStyle(.plain)
-                    .font(.system(size: 14))
+                    .font(.system(size: cancelButtonSize))
                     .foregroundStyle(Color.textSecondary)
                     .padding(.horizontal, 16).padding(.vertical, 8)
                     .background(
@@ -125,7 +131,7 @@ struct ModelPickerView: View {
                     Task { await onSwitch(p.backend, p.model) }
                 }
                 .buttonStyle(.plain)
-                .font(.rowTitleDense)
+                .rowTitleDense()
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16).padding(.vertical, 8)
                 .background(RoundedRectangle(cornerRadius: Radius.control).fill(Color.appAccent))
@@ -170,7 +176,11 @@ struct ModelPickerView: View {
                     showAddModel = true
                 } label: {
                     Label("Download a model", systemImage: "arrow.down.circle")
-                        .font(.system(size: 13))
+                        #if os(iOS)
+                        .font(.footnote) // 13pt, scales
+                        #else
+                        .font(.system(size: 13)) // macOS .footnote is 10; keep fixed
+                        #endif
                         .foregroundStyle(Color.appAccent)
                 }
                 .buttonStyle(.plain)
@@ -230,7 +240,7 @@ struct ModelPickerView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(modelName(preset))
-                        .font(.rowTitleDense)
+                        .rowTitleDense()
                         .foregroundStyle(preset.available ? Color.textPrimary : Color.textSecondary)
                         .lineLimit(1)
                     Text(subtitle(preset))
@@ -390,7 +400,7 @@ private struct AddModelView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(preset.label)
-                                .font(.rowTitleDense)
+                                .rowTitleDense()
                                 .foregroundStyle(Color.textPrimary)
                             Text(preset.size)
                                 .font(.caption)
@@ -421,7 +431,11 @@ private struct AddModelView: View {
             HStack(spacing: 8) {
                 TextField("mlx-community/model-name", text: $customId)
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
+                    #if os(iOS)
+                    .font(.footnote) // 13pt, scales
+                    #else
+                    .font(.system(size: 13)) // macOS .footnote is 10; keep fixed
+                    #endif
                     .autocorrectionDisabled()
                     #if os(iOS)
                     .textInputAutocapitalization(.never)
@@ -431,7 +445,11 @@ private struct AddModelView: View {
                     startPull(modelId: customId.trimmingCharacters(in: .whitespaces))
                 }
                 .buttonStyle(.plain)
-                .font(.system(size: 13, weight: .medium))
+                #if os(iOS)
+                .font(.footnote.weight(.medium)) // 13pt, scales
+                #else
+                .font(.system(size: 13, weight: .medium)) // macOS keeps fixed
+                #endif
                 .foregroundStyle(customId.isEmpty ? Color.textSecondary : Color.appAccent)
                 .disabled(customId.trimmingCharacters(in: .whitespaces).isEmpty)
             }

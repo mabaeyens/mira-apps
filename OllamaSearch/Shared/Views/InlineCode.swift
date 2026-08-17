@@ -268,7 +268,11 @@ struct HighlightedCodeView: View {
                         .textSelection(.enabled)
                 } else {
                     Text(code)
-                        .font(.system(size: 16, design: .monospaced))
+                        #if os(iOS)
+                        .font(.callout.monospaced()) // 16pt mono, scales
+                        #else
+                        .font(.system(size: 16, design: .monospaced)) // macOS .callout is 12; keep fixed
+                        #endif
                         .foregroundStyle(Color.textPrimary)
                         .textSelection(.enabled)
                 }
@@ -311,7 +315,11 @@ struct CopyableCodeBlock: View {
                 Button(action: doCopy) {
                     HStack(spacing: 4) {
                         Image(systemName: copied ? "checkmark" : "square.on.square")
-                            .font(.system(size: 11))
+                            #if os(iOS)
+                            .font(.caption2) // 11pt, scales with the adjacent label
+                            #else
+                            .font(.system(size: 11)) // macOS .caption2 is 10; keep fixed
+                            #endif
                         Text(copied ? "Copied" : "Copy")
                             .font(.caption2)
                     }

@@ -25,6 +25,13 @@ struct ConversationListView: View {
     @State private var deletingConv: Conversation? = nil
     @Environment(CloudPreferences.self) private var prefs
 
+    #if os(iOS)
+    // 14pt search-row icons have no stock text style; scale them relative to
+    // the field's .subheadline so the row grows as one. Base equals the former
+    // literal, so nothing changes at the default text size.
+    @ScaledMetric(relativeTo: .subheadline) private var searchIconGlyph: CGFloat = 14
+    #endif
+
     private var filteredConversations: [Conversation] {
         guard !debouncedSearch.isEmpty else { return vm.conversations }
         return vm.conversations.filter {
@@ -327,7 +334,7 @@ struct ConversationListView: View {
         VStack(spacing: 8) {
             HStack {
                 Text("Mira")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.title3.weight(.bold)) // 20pt, scales
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Button(action: { showMemories = true }) {
@@ -379,15 +386,15 @@ struct ConversationListView: View {
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14))
+                    .font(.system(size: searchIconGlyph))
                     .foregroundStyle(Color.textSecondary)
                 TextField("Search", text: $searchText)
-                    .font(.system(size: 15))
+                    .font(.subheadline) // 15pt, scales
                     .foregroundStyle(Color.textPrimary)
                 if !searchText.isEmpty {
                     Button { searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: searchIconGlyph))
                             .foregroundStyle(Color.textSecondary)
                     }
                     .buttonStyle(.plain)
@@ -411,9 +418,9 @@ struct ConversationListView: View {
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.footnote.weight(.bold)) // 13pt, scales
                     Text("New Chat")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.subheadline.weight(.semibold)) // 15pt, scales
                 }
                 .foregroundStyle(Color.black)
                 .padding(.horizontal, 24)

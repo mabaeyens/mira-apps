@@ -249,10 +249,10 @@ struct ConnectionView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 Image(systemName: "network")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold)) // 13pt, scales
                     .foregroundStyle(Color.accent)
                 Text("Connect to your Mac")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold)) // 13pt, scales
                     .foregroundStyle(Color.textPrimary)
             }
             .padding(.bottom, 10)
@@ -260,16 +260,16 @@ struct ConnectionView: View {
             ForEach(Array(setupSteps.enumerated()), id: \.offset) { i, step in
                 HStack(alignment: .top, spacing: 10) {
                     Text("\(i + 1)")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: 11, weight: .bold, design: .rounded)) // fixed: digit in an 18×18 badge; scaling clips the circle
                         .foregroundStyle(Color.accent)
                         .frame(width: 18, height: 18)
                         .background(Color.accent.opacity(0.15), in: Circle())
                     VStack(alignment: .leading, spacing: 2) {
                         Text(step.title)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.footnote.weight(.medium)) // 13pt, scales
                             .foregroundStyle(Color.textPrimary)
                         Text(step.detail)
-                            .font(.system(size: 12))
+                            .font(.caption) // 12pt, scales
                             .foregroundStyle(Color.textSecondary)
                     }
                     Spacer()

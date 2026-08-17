@@ -16,7 +16,7 @@ struct iOSAttachButton: View {
             isPresented = true
         } label: {
             Image(systemName: "paperclip")
-                .font(.system(size: 16))
+                .font(.callout) // 16pt, scales
                 .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)

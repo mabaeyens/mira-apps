@@ -382,7 +382,7 @@ private struct ConversationOptionsSheet: View {
 
             // Non-tappable title header
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.subheadline.weight(.semibold)) // 15pt, scales
                 .foregroundStyle(Color.textPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -440,11 +440,11 @@ private struct ConversationOptionsSheet: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .font(.title3) // 20pt, scales
                     .foregroundStyle(destructive ? .red : Color.textPrimary)
                     .frame(width: 28)
                 Text(label)
-                    .font(.system(size: 17))
+                    .font(.body) // 17pt, scales
                     .foregroundStyle(destructive ? .red : Color.textPrimary)
                 Spacer()
             }

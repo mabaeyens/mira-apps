@@ -131,7 +131,7 @@ struct MemoriesView: View {
         VStack(spacing: 12) {
             if let err = vm.errorMessage {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 40))
+                    .font(.system(size: 40)) // fixed: decorative empty-state glyph, not text; scaling balloons it at AX sizes
                     .foregroundStyle(Color.textSecondary.opacity(0.5))
                 Text("Could not load memories")
                     .font(.headline)
@@ -143,7 +143,7 @@ struct MemoriesView: View {
                     .frame(maxWidth: 280)
             } else {
                 Image(systemName: "person.text.rectangle")
-                    .font(.system(size: 40))
+                    .font(.system(size: 40)) // fixed: decorative empty-state glyph, not text; scaling balloons it at AX sizes
                     .foregroundStyle(Color.textSecondary.opacity(0.5))
                 Text("No memories yet")
                     .font(.headline)

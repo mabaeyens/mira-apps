@@ -147,7 +147,7 @@ verified is the UI reaching it.
 ### I. Memory advisory — iPhone against the Mac, plus the Mac itself
 
 - [x] **iPhone and Mac**: the `evicted` banner renders from a real advisory
-      during a real conversation. Confirmed by Miguel 2026-08-08 on both, which
+      during a real conversation. Confirmed 2026-08-08 on both, which
       also settles the live path — the 30s poll does flip the state, and the copy
       reads correctly on a phone that has plenty of memory itself
 
@@ -211,5 +211,5 @@ code changes. Per-release detail is in git history and `CHANGELOG.md`.
 - **v0.1.34** — in-app model browser, iCloud sync, long-term memory, voice input
 - **v0.1.32, 2026-05-24** — iPad layout, agent step indicator, project count
   badge after delete, end-to-end agentic loop, edit and resend
-- **2026-07-26** — macOS auth token flow, confirmed by Miguel in the running app
+- **2026-07-26** — macOS auth token flow, confirmed in the running app
   (`aec50d1`, `5a6a56f`)

@@ -22,6 +22,10 @@ struct MessageListView: View {
 
     @State private var scrollPinned = true
     @State private var thinkingExpanded = true
+    // 10pt disclosure chevron has no stock text style; scale it so it grows
+    // with the adjacent caption. Base value equals the former literal, so the
+    // default size is unchanged; on macOS it resolves to the base and stays fixed.
+    @ScaledMetric(relativeTo: .caption) private var chevronGlyph: CGFloat = 10
     // True only while the user is physically dragging the list. Used to keep
     // content growing under us (lazy cells rendering on open, streaming tokens)
     // from being mistaken for the user scrolling up and unpinning the view.
@@ -149,7 +153,7 @@ struct MessageListView: View {
                                 Image(systemName: "pencil")
                             }
                         }
-                        .font(.system(size: 15))
+                        .font(.subheadline) // 15pt, scales (iOS-only branch)
                         .foregroundStyle(Color.textSecondary)
                         .padding(.horizontal, 20)
                         .padding(.top, 6)
@@ -166,7 +170,7 @@ struct MessageListView: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: thinkingExpanded ? "chevron.down" : "chevron.right")
-                                        .font(.system(size: 10, weight: .semibold))
+                                        .font(.system(size: chevronGlyph, weight: .semibold))
                                         .frame(width: 12)
                                         .foregroundStyle(Color.textSecondary.opacity(0.7))
                                     if isThinkingActive {
@@ -178,7 +182,11 @@ struct MessageListView: View {
                                         #endif
                                     } else {
                                         Image(systemName: "brain")
-                                            .font(.system(size: 11))
+                                            #if os(iOS)
+                                            .font(.caption2) // 11pt, scales
+                                            #else
+                                            .font(.system(size: 11)) // macOS .caption2 is 10; keep fixed
+                                            #endif
                                             .opacity(0.6)
                                             .foregroundStyle(Color.textSecondary)
                                     }
@@ -198,7 +206,11 @@ struct MessageListView: View {
                             if thinkingExpanded {
                                 ScrollView {
                                     Text(content)
-                                        .font(.system(size: 13, design: .monospaced))
+                                        #if os(iOS)
+                                        .font(.footnote.monospaced()) // 13pt mono, scales
+                                        #else
+                                        .font(.system(size: 13, design: .monospaced)) // macOS keeps fixed
+                                        #endif
                                         .foregroundStyle(Color.textSecondary)
                                         .textSelection(.enabled)
                                         .frame(maxWidth: .infinity, alignment: .leading)

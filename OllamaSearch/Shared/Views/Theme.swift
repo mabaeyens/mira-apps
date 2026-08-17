@@ -111,6 +111,19 @@ extension Font {
     static let brandTitle: Font = .brand(size: 36, weight: .semibold)
 
     /// Icon sizing — apply via .font() on Image(systemName:) to decouple icons from surrounding text.
+    /// iOS uses semantic sizes so glyphs scale with Dynamic Type (footnote 13,
+    /// callout 16, body 17, title2 22, title 28 at the default text size — the
+    /// same points the fixed values used). macOS stays fixed: it has no iOS-style
+    /// Dynamic Type and its semantic sizes are far smaller.
+    #if os(iOS)
+    static let iconSmall:   Font = .footnote
+    /// Between small and medium: the compose bar's own controls, which sit in a
+    /// 28pt tap target and would crowd it at 17.
+    static let iconCompact: Font = .callout
+    static let iconMedium:  Font = .body
+    static let iconLarge:   Font = .title2
+    static let iconXL:      Font = .title
+    #else
     static let iconSmall:   Font = .system(size: 13, weight: .regular)
     /// Between small and medium: the compose bar's own controls, which sit in a
     /// 28pt tap target and would crowd it at 17.
@@ -118,6 +131,7 @@ extension Font {
     static let iconMedium:  Font = .system(size: 17, weight: .regular)
     static let iconLarge:   Font = .system(size: 22, weight: .regular)
     static let iconXL:      Font = .system(size: 28, weight: .regular)
+    #endif
 
     /// Body size used in chat bubbles, streaming text, and the input field.
     /// iOS uses .body (Dynamic Type, 17pt at default) so SwiftUI–UIKit font
@@ -150,35 +164,70 @@ extension Font {
     // `pillLabel` are both 13; keeping them separate is the whole point, since
     // moving one later should not drag the other with it.
     //
-    // KNOWN ISSUE, deliberately not changed here. On iOS these fixed sizes are
-    // exactly the Dynamic Type defaults (11 = caption2, 12 = caption,
-    // 13 = footnote, 15 = subheadline, 17 = body), so they render identically
-    // at the default text size and then refuse to grow, while the neighbouring
-    // `.caption` and `.subheadline` uses do grow. A Larger Text user sees a
-    // layout come apart. Switching these to semantic fonts on iOS is a one-line
-    // change per role now that the roles exist, but it changes behaviour and is
-    // Miguel's call, so it is written up rather than done.
-
+    // On iOS every role below maps onto the stock text style whose default size
+    // equals the fixed value it replaced (11 = caption2, 12 = caption,
+    // 13 = footnote, 15 = subheadline), so nothing changes at the default text
+    // size and everything now grows with Larger Text alongside the neighbouring
+    // semantic fonts. macOS keeps fixed points: it has no iOS-style Dynamic Type
+    // and its semantic sizes are far smaller (caption is 10pt). `rowTitleDense`
+    // is 14, which no stock style matches, so it is a ViewModifier further down
+    // (`.rowTitleDense()`) rather than a static Font — a Font cannot carry
+    // @ScaledMetric.
+    #if os(iOS)
+    /// Primary text of a list or sheet row: sidebar entries, option rows.
+    static let rowTitle: Font = .subheadline.weight(.medium)
+    /// Uppercase section label above a group of rows ("MODELS", "NOT AVAILABLE").
+    static let sectionHeader: Font = .caption2.weight(.medium)
+    /// Text inside an inline banner across the top of the chat.
+    static let bannerLabel: Font = .footnote
+    /// Text inside a capsule control, currently the model pill.
+    static let pillLabel: Font = .footnote
+    /// Token counters and other figures that must not reflow as digits change.
+    static let monoStatus: Font = .footnote.weight(.medium).monospaced()
+    static let monoStatusSmall: Font = .caption2.weight(.medium).monospaced()
+    /// Monospaced detail inside a row, e.g. a search snippet.
+    static let monoDetail: Font = .caption.monospaced()
+    #else
     /// Primary text of a list or sheet row: sidebar entries, option rows.
     static let rowTitle: Font = .system(size: 15, weight: .medium)
-
-    /// Row title on denser surfaces, currently the model picker's 340pt sheet.
-    static let rowTitleDense: Font = .system(size: 14, weight: .medium)
-
     /// Uppercase section label above a group of rows ("MODELS", "NOT AVAILABLE").
     static let sectionHeader: Font = .system(size: 11, weight: .medium)
-
     /// Text inside an inline banner across the top of the chat.
     static let bannerLabel: Font = .system(size: 13)
-
     /// Text inside a capsule control, currently the model pill.
     static let pillLabel: Font = .system(size: 13)
-
     /// Token counters and other figures that must not reflow as digits change.
     static let monoStatus: Font = .system(size: 13, weight: .medium, design: .monospaced)
     static let monoStatusSmall: Font = .system(size: 11, weight: .medium, design: .monospaced)
     /// Monospaced detail inside a row, e.g. a search snippet.
     static let monoDetail: Font = .system(size: 12, design: .monospaced)
+    #endif
+}
+
+// ── rowTitleDense (14pt, no stock text style) ───────────────────────────────────
+//
+// The model picker's dense row title is 14pt, which sits between .footnote (13)
+// and .subheadline (15). Moving it to either would change the picker at the
+// default size, which `specs/dynamic-type.md` forbids, so on iOS it scales via
+// @ScaledMetric relative to .subheadline while keeping 14 at the default. macOS
+// stays fixed at 14 — no iOS-style Dynamic Type there.
+private struct RowTitleDense: ViewModifier {
+    #if os(iOS)
+    @ScaledMetric(relativeTo: .subheadline) private var size: CGFloat = 14
+    func body(content: Content) -> some View {
+        content.font(.system(size: size, weight: .medium))
+    }
+    #else
+    func body(content: Content) -> some View {
+        content.font(.system(size: 14, weight: .medium))
+    }
+    #endif
+}
+
+extension View {
+    /// Row title on denser surfaces, currently the model picker's 340pt sheet.
+    /// Replaces the former `Font.rowTitleDense`; scales on iOS, fixed on macOS.
+    func rowTitleDense() -> some View { modifier(RowTitleDense()) }
 }
 
 // ── Corner radii ──────────────────────────────────────────────────────────────
@@ -204,7 +253,7 @@ enum Radius {
     static let field: CGFloat = 10
 
     /// A row on a dense surface — currently the model picker's 340pt sheet,
-    /// the same surface `Font.rowTitleDense` exists for.
+    /// the same surface the `.rowTitleDense()` modifier exists for.
     ///
     /// NOTE: this is a row, and `card` (12) is also a row. They do the same
     /// job at different radii, which is drift, not intent. Merging them would
