@@ -22,6 +22,14 @@ echo "==> Applying locale: English UI, Spain region"
 xcrun simctl spawn "$UDID" defaults write .GlobalPreferences AppleLocale -string "en_US@rg=eszzzz"
 xcrun simctl spawn "$UDID" defaults write .GlobalPreferences AppleLanguages -array "en-US" "es-ES"
 
+echo "==> Setting Spanish (Spain) as the active on-screen keyboard"
+# AppleLanguages alone does NOT switch the keyboard — AppleKeyboards must be set
+# explicitly, first entry = active. Without this the on-screen keyboard stays English.
+xcrun simctl spawn "$UDID" defaults write .GlobalPreferences AppleKeyboards -array \
+  "es_ES@sw=QWERTY-Spanish;hw=Automatic" \
+  "en_US@sw=QWERTY;hw=Automatic" \
+  "emoji@sw=Emoji"
+
 echo "==> Disabling hardware-keyboard passthrough (shows on-screen keyboard)"
 defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
 
