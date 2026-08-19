@@ -67,7 +67,7 @@ struct MemoriesView: View {
                             Text(item.text)
                                 .font(.subheadline)
                                 .foregroundStyle(Color.textPrimary)
-                                .padding(.vertical, 2)
+                                .padding(.vertical, Spacing.xxs)
                         }
                         .onDelete { offsets in
                             Task { await vm.delete(at: offsets) }
@@ -128,7 +128,7 @@ struct MemoriesView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.ml) {
             if let err = vm.errorMessage {
                 Image(systemName: "exclamationmark.triangle")
                     .font(.system(size: 40)) // fixed: decorative empty-state glyph, not text; scaling balloons it at AX sizes
@@ -160,7 +160,7 @@ struct MemoriesView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(Color.appAccent)
                 .disabled(vm.memories.count >= 30)
-                .padding(.top, 4)
+                .padding(.top, Spacing.xs)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -184,12 +184,12 @@ struct AddMemorySheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Spacing.ml) {
                 Text("Add a fact Mira should always remember — your name, role, preferences, or any context that applies to all conversations.")
                     .font(.subheadline)
                     .foregroundStyle(Color.textSecondary)
                     .padding(.horizontal)
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
 
                 TextEditor(text: $text)
                     .font(.body)
@@ -240,12 +240,12 @@ struct RememberThisSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Spacing.ml) {
                 Text("Edit the text below down to the key fact you want Mira to remember.")
                     .font(.subheadline)
                     .foregroundStyle(Color.textSecondary)
                     .padding(.horizontal)
-                    .padding(.top, 8)
+                    .padding(.top, Spacing.sm)
 
                 TextEditor(text: $text)
                     .font(.body)

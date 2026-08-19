@@ -14,8 +14,8 @@ struct WelcomeView: View {
                 circleButton(icon: "line.3.horizontal", action: onMenu)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.top, Spacing.sm)
 
             // ── Centered logo + prompt ─────────────────────────────────────
             Spacer()

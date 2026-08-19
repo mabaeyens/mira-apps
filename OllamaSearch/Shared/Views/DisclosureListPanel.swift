@@ -15,7 +15,7 @@ struct DisclosureListPanel<Item: Identifiable, RowContent: View>: View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: vStackSpacing) {
                 ForEach(items) { item in
-                    HStack(alignment: .top, spacing: 6) {
+                    HStack(alignment: .top, spacing: Spacing.s) {
                         Image(systemName: itemIcon)
                             .foregroundStyle(Color.appAccent)
                             .font(.caption)
@@ -26,13 +26,13 @@ struct DisclosureListPanel<Item: Identifiable, RowContent: View>: View {
                     }
                 }
             }
-            .padding(.top, 4)
+            .padding(.top, Spacing.xs)
         } label: {
             Label(header, systemImage: headerIcon)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color.appAccent)
         }
-        .padding(8)
+        .padding(Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: Radius.control)
                 .fill(Color.appAccent.opacity(0.07))

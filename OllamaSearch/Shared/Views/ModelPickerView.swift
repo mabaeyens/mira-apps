@@ -50,8 +50,8 @@ struct ModelPickerView: View {
                 .buttonStyle(.plain)
                 .disabled(isSwitching)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.horizontal, Spacing.xxl)
+            .padding(.vertical, Spacing.xl)
 
             Divider().background(Color.borderSubtle)
 
@@ -84,7 +84,7 @@ struct ModelPickerView: View {
     // ── Switching progress ────────────────────────────────────────────────────
 
     private var switchingView: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Spacing.l) {
             ProgressView().tint(.yellow)
             Text(switchStatusMessage.isEmpty ? "Switching model…" : switchStatusMessage)
                 .font(.subheadline)
@@ -102,8 +102,8 @@ struct ModelPickerView: View {
     // ── Confirmation ──────────────────────────────────────────────────────────
 
     private func confirmationView(for preset: BackendPreset) -> some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 6) {
+        VStack(spacing: Spacing.xl) {
+            VStack(spacing: Spacing.s) {
                 Text("Switch to \(preset.label)?")
                     .font(.rowTitle) // 15 medium; scales on iOS, fixed on macOS
                     .foregroundStyle(Color.textPrimary)
@@ -113,12 +113,12 @@ struct ModelPickerView: View {
                     .foregroundStyle(Color.textSecondary)
                     .multilineTextAlignment(.center)
             }
-            HStack(spacing: 10) {
+            HStack(spacing: Spacing.m) {
                 Button("Cancel") { pendingPreset = nil }
                     .buttonStyle(.plain)
                     .font(.system(size: cancelButtonSize))
                     .foregroundStyle(Color.textSecondary)
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .padding(.horizontal, Spacing.xl).padding(.vertical, Spacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: Radius.control)
                             .fill(Color.surfaceBg)
@@ -133,11 +133,11 @@ struct ModelPickerView: View {
                 .buttonStyle(.plain)
                 .rowTitleDense()
                 .foregroundStyle(.white)
-                .padding(.horizontal, 16).padding(.vertical, 8)
+                .padding(.horizontal, Spacing.xl).padding(.vertical, Spacing.sm)
                 .background(RoundedRectangle(cornerRadius: Radius.control).fill(Color.appAccent))
             }
         }
-        .padding(20)
+        .padding(Spacing.xxl)
     }
 
     // ── Model list ────────────────────────────────────────────────────────────
@@ -150,25 +150,25 @@ struct ModelPickerView: View {
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
                         .multilineTextAlignment(.center)
-                        .padding(20)
+                        .padding(Spacing.xxl)
                 } else {
                     if !selectable.isEmpty {
                         sectionHeader("Models")
-                        VStack(spacing: 8) {
+                        VStack(spacing: Spacing.sm) {
                             ForEach(selectable) { preset in presetRow(preset) }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, 10)
+                        .padding(.horizontal, Spacing.l)
+                        .padding(.bottom, Spacing.m)
                     }
                     // Shown rather than hidden: a user who put an entry in
                     // mira.yaml deliberately would otherwise think it was lost.
                     if !unselectable.isEmpty {
                         sectionHeader("Not available")
-                        VStack(spacing: 8) {
+                        VStack(spacing: Spacing.sm) {
                             ForEach(unselectable) { preset in presetRow(preset) }
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, 10)
+                        .padding(.horizontal, Spacing.l)
+                        .padding(.bottom, Spacing.m)
                     }
                 }
 
@@ -184,8 +184,8 @@ struct ModelPickerView: View {
                         .foregroundStyle(Color.appAccent)
                 }
                 .buttonStyle(.plain)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.vertical, Spacing.m)
             }
         }
         .frame(maxHeight: 440)
@@ -197,9 +197,9 @@ struct ModelPickerView: View {
             .font(.sectionHeader)
             .foregroundStyle(Color.textSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 4)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.top, Spacing.ml)
+            .padding(.bottom, Spacing.xs)
     }
 
     /// The model's name, without the parenthetical that mira.yaml labels carry.
@@ -237,7 +237,7 @@ struct ModelPickerView: View {
             guard !preset.active, preset.available else { return }
             pendingPreset = preset
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.ml) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(modelName(preset))
                         .rowTitleDense()
@@ -267,8 +267,8 @@ struct ModelPickerView: View {
                         .foregroundStyle(.orange)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, Spacing.l)
+            .padding(.vertical, Spacing.m)
             .background(
                 RoundedRectangle(cornerRadius: Radius.cardDense)
                     .fill(preset.active ? Color.appAccent.opacity(0.08) : Color.surfaceBg)
@@ -330,8 +330,8 @@ private struct AddModelView: View {
                 .buttonStyle(.plain)
                 .disabled(isPulling)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.horizontal, Spacing.xxl)
+            .padding(.vertical, Spacing.xl)
 
             Divider().background(Color.borderSubtle)
 
@@ -351,10 +351,10 @@ private struct AddModelView: View {
     }
 
     private var pullingView: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Spacing.l) {
             ProgressView(value: Double(pullPercent), total: 100)
                 .tint(Color.appAccent)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Spacing.xxl)
             Text("\(pullPercent)% downloaded")
                 .font(.subheadline)
                 .foregroundStyle(Color.textSecondary)
@@ -378,19 +378,19 @@ private struct AddModelView: View {
 
     @ViewBuilder
     private var presetSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.s) {
             Text("POPULAR MODELS")
                 .font(.sectionHeader)
                 .foregroundStyle(Color.textSecondary)
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.top, Spacing.l)
 
             if presets.isEmpty {
                 Text("Every suggested model is already installed. Use a repo id below to download something else.")
                     .font(.caption)
                     .foregroundStyle(Color.textSecondary)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 4)
+                    .padding(.horizontal, Spacing.xl)
+                    .padding(.bottom, Spacing.xs)
             }
 
             ForEach(presets, id: \.id) { preset in
@@ -398,7 +398,7 @@ private struct AddModelView: View {
                     startPull(modelId: preset.id)
                 } label: {
                     HStack {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Spacing.xxs) {
                             Text(preset.label)
                                 .rowTitleDense()
                                 .foregroundStyle(Color.textPrimary)
@@ -410,25 +410,25 @@ private struct AddModelView: View {
                         Image(systemName: "arrow.down.circle")
                             .foregroundStyle(Color.appAccent)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, Spacing.xl)
+                    .padding(.vertical, Spacing.m)
                 }
                 .buttonStyle(.plain)
 
-                Divider().padding(.horizontal, 16)
+                Divider().padding(.horizontal, Spacing.xl)
             }
         }
     }
 
     private var customSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("CUSTOM REPO ID")
                 .font(.sectionHeader)
                 .foregroundStyle(Color.textSecondary)
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.top, Spacing.l)
 
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 TextField("mlx-community/model-name", text: $customId)
                     .textFieldStyle(.roundedBorder)
                     #if os(iOS)
@@ -453,8 +453,8 @@ private struct AddModelView: View {
                 .foregroundStyle(customId.isEmpty ? Color.textSecondary : Color.appAccent)
                 .disabled(customId.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 20)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.bottom, Spacing.xxl)
         }
     }
 

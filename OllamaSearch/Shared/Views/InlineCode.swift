@@ -180,8 +180,8 @@ struct InlineCodeChip: View {
                     .font(.caption2)
                     .opacity(0.7)
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, Spacing.s)
+            .padding(.vertical, Spacing.xxs)
             .background(
                 RoundedRectangle(cornerRadius: Radius.badge)
                     .fill(copied ? Color.accent.opacity(0.12) : Color.userBubbleBg)
@@ -313,7 +313,7 @@ struct CopyableCodeBlock: View {
                 }
                 Spacer(minLength: 8)
                 Button(action: doCopy) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Spacing.xs) {
                         Image(systemName: copied ? "checkmark" : "square.on.square")
                             #if os(iOS)
                             .font(.caption2) // 11pt, scales with the adjacent label
@@ -323,8 +323,8 @@ struct CopyableCodeBlock: View {
                         Text(copied ? "Copied" : "Copy")
                             .font(.caption2)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
                     .background(
                         Capsule()
                             .fill(copied ? Color.accent.opacity(0.15) : Color.borderSubtle.opacity(0.5))
@@ -334,8 +334,8 @@ struct CopyableCodeBlock: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Spacing.ml)
+            .padding(.vertical, Spacing.s)
 
             Rectangle()
                 .fill(Color.borderSubtle)
@@ -343,7 +343,7 @@ struct CopyableCodeBlock: View {
                 .opacity(0.5)
 
             HighlightedCodeView(code: content, language: language)
-                .padding(12)
+                .padding(Spacing.ml)
         }
         .background(
             RoundedRectangle(cornerRadius: Radius.control)
@@ -353,7 +353,7 @@ struct CopyableCodeBlock: View {
                         .strokeBorder(Color.borderSubtle, lineWidth: 1)
                 )
         )
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 
     private func doCopy() {
@@ -392,7 +392,7 @@ struct MarkdownTableBlock: View {
                 .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 6))
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
     }
 
     @ViewBuilder
@@ -404,8 +404,8 @@ struct MarkdownTableBlock: View {
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(nil)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, Spacing.l)
+                    .padding(.vertical, Spacing.sm)
                 if i < cells.count - 1 {
                     Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 1)
                 }

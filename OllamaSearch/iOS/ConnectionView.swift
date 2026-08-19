@@ -68,7 +68,7 @@ struct ConnectionView: View {
                         .foregroundStyle(Color.accent)
                 }
                 .buttonStyle(.plain)
-                .padding(.vertical, 10)
+                .padding(.vertical, Spacing.m)
 
                 if let err = rowError {
                     Text(err)
@@ -76,12 +76,12 @@ struct ConnectionView: View {
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
-                        .padding(.top, 4)
+                        .padding(.top, Spacing.xs)
                 }
 
                 Spacer().frame(height: 32)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Spacing.xl)
         }
         .overlay(alignment: .topTrailing) {
             Button { showAbout = true } label: {
@@ -89,8 +89,8 @@ struct ConnectionView: View {
                     .font(.title3)
                     .foregroundStyle(Color.textSecondary)
             }
-            .padding(.top, 20)
-            .padding(.trailing, 24)
+            .padding(.top, Spacing.xxl)
+            .padding(.trailing, Spacing.xxxl)
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
@@ -125,7 +125,7 @@ struct ConnectionView: View {
         let isLoading = connectingURL == conn.urlString
         let reached   = reachability[conn.urlString]
 
-        return HStack(spacing: 12) {
+        return HStack(spacing: Spacing.ml) {
             // Reachability dot: green=up, red=down, gray=unknown
             Circle()
                 .fill(reached == true ? Color.green : reached == false ? Color.red : Color.secondary.opacity(0.4))
@@ -148,7 +148,7 @@ struct ConnectionView: View {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.accent)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, Spacing.xxs)
         .contentShape(Rectangle())
         .onTapGesture { connectRow(urlString: conn.urlString) }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
@@ -247,7 +247,7 @@ struct ConnectionView: View {
 
     private var tailscaleGuide: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.s) {
                 Image(systemName: "network")
                     .font(.footnote.weight(.semibold)) // 13pt, scales
                     .foregroundStyle(Color.accent)
@@ -255,16 +255,16 @@ struct ConnectionView: View {
                     .font(.footnote.weight(.semibold)) // 13pt, scales
                     .foregroundStyle(Color.textPrimary)
             }
-            .padding(.bottom, 10)
+            .padding(.bottom, Spacing.m)
 
             ForEach(Array(setupSteps.enumerated()), id: \.offset) { i, step in
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .top, spacing: Spacing.m) {
                     Text("\(i + 1)")
                         .font(.system(size: 11, weight: .bold, design: .rounded)) // fixed: digit in an 18×18 badge; scaling clips the circle
                         .foregroundStyle(Color.accent)
                         .frame(width: 18, height: 18)
                         .background(Color.accent.opacity(0.15), in: Circle())
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
                         Text(step.title)
                             .font(.footnote.weight(.medium)) // 13pt, scales
                             .foregroundStyle(Color.textPrimary)
@@ -277,14 +277,14 @@ struct ConnectionView: View {
                 .padding(.bottom, i < setupSteps.count - 1 ? 10 : 0)
             }
         }
-        .padding(16)
+        .padding(Spacing.xl)
         .background(
             RoundedRectangle(cornerRadius: Radius.card)
                 .fill(Color.surfaceBg)
                 .overlay(RoundedRectangle(cornerRadius: Radius.card).strokeBorder(Color.borderSubtle, lineWidth: 1))
         )
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
+        .padding(.horizontal, Spacing.xxl)
+        .padding(.top, Spacing.sm)
     }
 
     private struct SetupStep { let title: String; let detail: String }

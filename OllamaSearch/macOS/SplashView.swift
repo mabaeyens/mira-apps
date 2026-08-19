@@ -130,7 +130,7 @@ struct SplashView: View {
             EmptyView()
 
         case .needsToken:
-            VStack(spacing: 12) {
+            VStack(spacing: Spacing.ml) {
                 Label("Access token needed", systemImage: "key")
                     .font(.subheadline.weight(.medium))
                 Text("The server is running but rejected this app. Paste the token from ~/.local/share/mira/token — it is stored in your keychain, so this is asked once.")
@@ -149,7 +149,7 @@ struct SplashView: View {
             }
 
         case .failed(let msg):
-            VStack(spacing: 14) {
+            VStack(spacing: Spacing.l) {
                 Label("Server not available", systemImage: "exclamationmark.triangle")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.red)
@@ -166,7 +166,7 @@ struct SplashView: View {
     }
 
     private func statusRow(_ label: String) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.sm) {
             ProgressView()
                 .tint(Color.accent)
                 .scaleEffect(0.8)

@@ -45,7 +45,7 @@ struct MessageListView: View {
     // ── Loading state ─────────────────────────────────────────────────────────
 
     private var loadingView: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: Spacing.l) {
             ProgressView()
                 .tint(Color.accent)
             Text("Loading conversation…")
@@ -72,7 +72,7 @@ struct MessageListView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Color.textSecondary)
             Spacer().frame(height: 36)
-            HStack(spacing: 10) {
+            HStack(spacing: Spacing.m) {
                 ForEach(["What time is it?", "What's the weather in Madrid?", "Tell me a joke", "What's in the news today?"], id: \.self) { prompt in
                     Button(prompt) { onSendSuggestion?(prompt) }
                         .buttonStyle(SuggestionChipStyle())
@@ -135,12 +135,12 @@ struct MessageListView: View {
                         .foregroundStyle(Color.textSecondary)
                         .background(Color.surfaceBg, in: RoundedRectangle(cornerRadius: Radius.control))
                         .overlay(RoundedRectangle(cornerRadius: Radius.control).strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))
-                        .padding(.horizontal, 20)
-                        .padding(.top, 6)
-                        .padding(.bottom, 4)
+                        .padding(.horizontal, Spacing.xxl)
+                        .padding(.top, Spacing.s)
+                        .padding(.bottom, Spacing.xs)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         #else
-                        HStack(spacing: 24) {
+                        HStack(spacing: Spacing.xxxl) {
                             Button(action: {
                                 UIPasteboard.general.string = lastMsg.content
                             }) {
@@ -155,9 +155,9 @@ struct MessageListView: View {
                         }
                         .font(.subheadline) // 15pt, scales (iOS-only branch)
                         .foregroundStyle(Color.textSecondary)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 6)
-                        .padding(.bottom, 4)
+                        .padding(.horizontal, Spacing.xxl)
+                        .padding(.top, Spacing.s)
+                        .padding(.bottom, Spacing.xs)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         #endif
                     }
@@ -168,7 +168,7 @@ struct MessageListView: View {
                             Button {
                                 withAnimation(.easeInOut(duration: 0.2)) { thinkingExpanded.toggle() }
                             } label: {
-                                HStack(spacing: 6) {
+                                HStack(spacing: Spacing.s) {
                                     Image(systemName: thinkingExpanded ? "chevron.down" : "chevron.right")
                                         .font(.system(size: chevronGlyph, weight: .semibold))
                                         .frame(width: 12)
@@ -214,13 +214,13 @@ struct MessageListView: View {
                                         .foregroundStyle(Color.textSecondary)
                                         .textSelection(.enabled)
                                         .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(12)
+                                        .padding(Spacing.ml)
                                 }
                                 .frame(maxHeight: 220)
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, Spacing.xxl)
+                        .padding(.vertical, Spacing.xs)
                         .onChange(of: isThinkingActive) { _, active in
                             if !active { thinkingExpanded = false }
                         }
@@ -324,7 +324,7 @@ struct MessageListView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(Color.accent)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, Spacing.sm)
                 }
             }
         }
@@ -348,7 +348,7 @@ struct MessageListView: View {
     }
 
     private func activityRow(icon: String, text: String) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Spacing.s) {
             Image(systemName: icon)
             Text(text)
             Spacer()
@@ -361,8 +361,8 @@ struct MessageListView: View {
         }
         .font(.caption)
         .foregroundStyle(Color.textSecondary)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 4)
+        .padding(.horizontal, Spacing.xxl)
+        .padding(.vertical, Spacing.xs)
     }
 }
 
@@ -372,8 +372,8 @@ struct SuggestionChipStyle: ButtonStyle {
         configuration.label
             .font(.system(size: 12))
             .foregroundStyle(Color.textSecondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.l)
+            .padding(.vertical, Spacing.sm)
             .background(
                 Capsule()
                     .strokeBorder(Color.borderSubtle.opacity(configuration.isPressed ? 1.0 : 0.55), lineWidth: 1)

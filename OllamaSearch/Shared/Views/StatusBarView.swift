@@ -8,7 +8,7 @@ struct StatusBarView: View {
     let contextPct: Double
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Spacing.s) {
             badge("↑\(formatted(inputTokens)) ↓\(formatted(outputTokens))", color: .secondary)
             badge("ctx:\(Int(contextPct))%", color: ctxColor)
         }
@@ -28,8 +28,8 @@ struct StatusBarView: View {
     private func badge(_ text: String, color: Color) -> some View {
         Text(text)
             .foregroundStyle(contextPct > 70 ? .white : color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, Spacing.s)
+            .padding(.vertical, Spacing.xxs)
             .background(
                 RoundedRectangle(cornerRadius: Radius.badge)
                     .fill(contextPct > 70 ? Color.red.opacity(0.8) :

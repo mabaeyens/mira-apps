@@ -27,7 +27,7 @@ struct MessageBubble: View {
         Text(message.content)
             .font(.caption)
             .foregroundStyle(Color.textSecondary)
-            .padding(.vertical, 6)
+            .padding(.vertical, Spacing.s)
             .frame(maxWidth: .infinity)
     }
 
@@ -36,18 +36,18 @@ struct MessageBubble: View {
     private var userBubble: some View {
         HStack {
             Spacer(minLength: 72)
-            VStack(alignment: .trailing, spacing: 6) {
+            VStack(alignment: .trailing, spacing: Spacing.s) {
                 if !message.imageAttachments.isEmpty {
                     thumbnailRow
                 }
                 if !message.attachedFileNames.isEmpty {
-                    VStack(alignment: .trailing, spacing: 4) {
+                    VStack(alignment: .trailing, spacing: Spacing.xs) {
                         ForEach(message.attachedFileNames, id: \.self) { name in
                             Label(name, systemImage: "doc.fill")
                                 .font(.caption2)
                                 .foregroundStyle(Color.textSecondary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, Spacing.sm)
+                                .padding(.vertical, Spacing.xs)
                                 .background(Color.surfaceBg, in: Capsule())
                         }
                     }
@@ -57,8 +57,8 @@ struct MessageBubble: View {
                         .font(.chatBody)
                         .textSelection(.enabled)
                         .foregroundStyle(Color.textPrimary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, Spacing.xl)
+                        .padding(.vertical, Spacing.ml)
                         .background(
                             RoundedRectangle(cornerRadius: 18)
                                 .fill(Color.userBubbleBg)
@@ -69,12 +69,12 @@ struct MessageBubble: View {
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Spacing.xxl)
+        .padding(.vertical, Spacing.sm)
     }
 
     private var resendActions: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.m) {
             Button(action: { onEdit?() }) {
                 Label("Edit", systemImage: "pencil")
                     .font(.caption)
@@ -89,7 +89,7 @@ struct MessageBubble: View {
     }
 
     private var thumbnailRow: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Spacing.s) {
             ForEach(message.imageAttachments.indices, id: \.self) { i in
                 thumbnailImage(message.imageAttachments[i])
             }
@@ -156,7 +156,7 @@ struct MessageBubble: View {
     }
 
     private var assistantContent: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Spacing.m) {
             if message.isStreaming {
                 TimelineView(.periodic(from: .now, by: 0.53)) { tl in
                     let showCursor = Int(tl.date.timeIntervalSinceReferenceDate / 0.53) % 2 == 0
@@ -179,8 +179,8 @@ struct MessageBubble: View {
             }
 
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Spacing.xxl)
+        .padding(.vertical, Spacing.sm)
     }
 
     @ViewBuilder
@@ -201,7 +201,7 @@ struct MessageContentView: View {
     private var segments: [MessageSegment] { SegmentCache.shared.segments(for: content) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
             ForEach(Array(segments.enumerated()), id: \.offset) { _, seg in
                 switch seg {
                 case .text(let prose):

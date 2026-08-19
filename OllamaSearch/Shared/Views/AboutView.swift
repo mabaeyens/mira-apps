@@ -25,7 +25,7 @@ struct AboutView: View {
                 Text("Version \(version)")
                     .font(.subheadline)
                     .foregroundStyle(Color.textSecondary)
-                    .padding(.top, 4)
+                    .padding(.top, Spacing.xs)
 
                 Spacer().frame(height: 28)
 
@@ -67,8 +67,8 @@ struct AboutView: View {
                     }
                 }
                 .frame(maxWidth: 360)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.vertical, Spacing.ml)
                 .background(
                     RoundedRectangle(cornerRadius: Radius.card)
                         .fill(Color.surfaceBg)
@@ -93,7 +93,7 @@ struct AboutView: View {
                     .foregroundStyle(Color.textSecondary)
             }
             .buttonStyle(.plain)
-            .padding(16)
+            .padding(Spacing.xl)
         }
         .background(Color.appBg)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -109,7 +109,7 @@ struct AboutView: View {
 
     @ViewBuilder
     private func systemInfoGrid(rows: [(String, String)]) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             ForEach(rows, id: \.0) { label, value in
                 HStack(alignment: .top) {
                     Text(label)

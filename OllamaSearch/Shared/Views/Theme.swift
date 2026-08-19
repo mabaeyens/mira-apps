@@ -283,6 +283,33 @@ enum Radius {
     static let compose: CGFloat = 14
 }
 
+// ── Spacing scale ───────────────────────────────────────────────────────────────
+//
+// The padding and stack-gap values used more than twice across the app, named so
+// they move together and a global adjustment is one edit. Sibling of `Radius`, and
+// the remaining half of `specs/type-scale.md` Done criterion 4.
+//
+// Honest caveat: this is a *captured* scale, not a designed one. The app grew a
+// 2/4/6/8/10/12/14/16/20/24 set — irregular, with 8/10/12/14 all in use — so the
+// steps are what the code already does, not a clean 4pt grid. Renaming a token is a
+// find/replace on one name here; the *values* are fixed by "nothing may look
+// different" (the same rule that governs the type and radius passes). One-off gaps
+// (40pt empty-state spacers, a few single-context values) stay literals, per the
+// same edge case (e) that left Radius's 3/6/18 alone — a single-use size may not
+// deserve a name.
+enum Spacing {
+    static let xxs:  CGFloat = 2
+    static let xs:   CGFloat = 4
+    static let s:    CGFloat = 6
+    static let sm:   CGFloat = 8
+    static let m:    CGFloat = 10
+    static let ml:   CGFloat = 12
+    static let l:    CGFloat = 14
+    static let xl:   CGFloat = 16
+    static let xxl:  CGFloat = 20
+    static let xxxl: CGFloat = 24
+}
+
 // ── Markdown theme ────────────────────────────────────────────────────────────
 
 extension MarkdownUI.Theme {

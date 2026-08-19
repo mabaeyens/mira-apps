@@ -47,8 +47,8 @@ struct ChatView: View {
                         outputTokens: vm.outputTokens,
                         contextPct: vm.contextPct
                     )
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, Spacing.ml)
+                    .padding(.vertical, Spacing.xs)
                 }
                 .background(Color.appBg)
             }
@@ -178,7 +178,7 @@ struct ChatView: View {
     }
 
     private var backendLoadingBanner: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.m) {
             ProgressView()
                 .tint(Color.accent)
             #if os(macOS)
@@ -191,7 +191,7 @@ struct ChatView: View {
                 .foregroundStyle(Color.textSecondary)
             Spacer()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, Spacing.l)
         .padding(.vertical, 9)
         .background(Color.accent.opacity(0.06))
         .overlay(alignment: .bottom) {
@@ -200,7 +200,7 @@ struct ChatView: View {
     }
 
     private var backendOfflineBanner: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.m) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
                 .font(.bannerLabel)
@@ -215,7 +215,7 @@ struct ChatView: View {
             .tint(Color.appAccent)
             .controlSize(.small)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, Spacing.l)
         .padding(.vertical, 9)
         .background(Color.orange.opacity(0.10))
         .overlay(alignment: .bottom) {
@@ -224,7 +224,7 @@ struct ChatView: View {
     }
 
     private var backendStartingBanner: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.m) {
             ProgressView()
                 .tint(.yellow)
             #if os(macOS)
@@ -238,7 +238,7 @@ struct ChatView: View {
                 .animation(.default, value: vm.switchStatusMessage)
             Spacer()
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, Spacing.l)
         .padding(.vertical, 9)
         .background(Color.yellow.opacity(0.08))
         .overlay(alignment: .bottom) {
@@ -256,8 +256,8 @@ struct ChatView: View {
             Spacer()
             navCircleButton(icon: "ellipsis") { showOptions = true }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.horizontal, Spacing.xl)
+        .padding(.top, Spacing.sm)
     }
 
     private func navCircleButton(icon: String, action: @escaping () -> Void) -> some View {
@@ -295,7 +295,7 @@ struct MemoryAdvisoryBanner: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.m) {
             Image(systemName: "memorychip")
                 .foregroundStyle(Color.textSecondary)
                 .font(.bannerLabel)
@@ -305,7 +305,7 @@ struct MemoryAdvisoryBanner: View {
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, Spacing.l)
         .padding(.vertical, 9)
         .background(Color.secondary.opacity(0.08))
         .overlay(alignment: .bottom) {
@@ -328,10 +328,10 @@ struct MemoryAdvisoryBanner: View {
 /// is what the device pass in TEST_PLAN.md is for.
 private struct AdvisoryPreview: View {
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Spacing.xxl) {
             ForEach(MemoryAdvisory.allCases, id: \.rawValue) { advisory in
                 if let text = advisory.advisoryText {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(".\(advisory.rawValue)")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
@@ -341,7 +341,7 @@ private struct AdvisoryPreview: View {
             }
         }
         .frame(width: 320)
-        .padding(.vertical, 24)
+        .padding(.vertical, Spacing.xxxl)
     }
 }
 
@@ -386,8 +386,8 @@ private struct ConversationOptionsSheet: View {
                 .foregroundStyle(Color.textPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
+                .padding(.horizontal, Spacing.xxxl)
+                .padding(.vertical, Spacing.xl)
 
             Divider()
 
@@ -405,8 +405,8 @@ private struct ConversationOptionsSheet: View {
                     showDeleteConfirm = true
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.sm)
 
             Spacer()
         }
@@ -438,7 +438,7 @@ private struct ConversationOptionsSheet: View {
 
     private func optionRow(icon: String, label: String, destructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 14) {
+            HStack(spacing: Spacing.l) {
                 Image(systemName: icon)
                     .font(.title3) // 20pt, scales
                     .foregroundStyle(destructive ? .red : Color.textPrimary)
@@ -448,7 +448,7 @@ private struct ConversationOptionsSheet: View {
                     .foregroundStyle(destructive ? .red : Color.textPrimary)
                 Spacer()
             }
-            .padding(.vertical, 16)
+            .padding(.vertical, Spacing.xl)
         }
         .buttonStyle(.plain)
     }
@@ -468,7 +468,7 @@ private struct ConversationOptionsSheet: View {
                                 showProjectPicker = false
                                 dismiss()
                             }) {
-                                HStack(spacing: 12) {
+                                HStack(spacing: Spacing.ml) {
                                     Image(systemName: project.icon)
                                         .foregroundStyle(Color.appAccent)
                                         .frame(width: 20)
@@ -491,7 +491,7 @@ private struct ConversationOptionsSheet: View {
                                 showProjectPicker = false
                                 dismiss()
                             }) {
-                                HStack(spacing: 12) {
+                                HStack(spacing: Spacing.ml) {
                                     Image(systemName: "folder.badge.minus")
                                         .frame(width: 20)
                                     Text("Remove from project")

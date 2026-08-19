@@ -46,7 +46,7 @@ struct InputBar: View {
     }
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Spacing.s) {
             attachmentChipsRow()
 
             // ── Two-row card ──────────────────────────────────────────────────
@@ -63,9 +63,9 @@ struct InputBar: View {
                             .strokeBorder(Color.borderSubtle.opacity(0.6), lineWidth: 1)
                     )
             )
-            .padding(.horizontal, 16)
-            .padding(.top, 10)
-            .padding(.bottom, 12)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.top, Spacing.m)
+            .padding(.bottom, Spacing.ml)
         }
         .background(Color.appBg)
         .animation(.spring(duration: 0.2), value: vm.thinkingMode)
@@ -153,12 +153,12 @@ struct InputBar: View {
     private func attachmentChipsRow() -> some View {
         if !vm.stagedAttachmentNames.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                HStack(spacing: Spacing.s) {
                     ForEach(Array(vm.stagedAttachmentNames.enumerated()), id: \.offset) { idx, name in
                         attachmentChip(name: name, index: idx)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Spacing.xl)
             }
         }
     }
@@ -171,7 +171,7 @@ struct InputBar: View {
             .textFieldStyle(.plain)
             .font(.chatBody)
             .foregroundStyle(Color.textPrimary)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, Spacing.l)
             .padding(.top, 13)
             .padding(.bottom, 11)
             .focused($isFocused)
@@ -186,7 +186,7 @@ struct InputBar: View {
     // ── Toolbar row ───────────────────────────────────────────────────────────────
 
     private func toolbarRow() -> some View {
-        HStack(alignment: .center, spacing: 8) {
+        HStack(alignment: .center, spacing: Spacing.sm) {
             Button { showAddToChat.wrappedValue = true } label: {
                 Image(systemName: "plus")
                     .font(.iconCompact.weight(.medium))
@@ -252,15 +252,15 @@ struct InputBar: View {
             micButton
             actionButton
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Spacing.ml)
+        .padding(.vertical, Spacing.sm)
     }
 
     // ── Model pill ────────────────────────────────────────────────────────────────
 
     private func modelPill() -> some View {
         Button { vm.showModelPicker = true } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: Spacing.xs) {
                 Circle()
                     .fill(modelStatusColor)
                     .frame(width: 6, height: 6)
@@ -269,8 +269,8 @@ struct InputBar: View {
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
             .background(
                 Capsule()
                     .fill(Color.surfaceBg)
@@ -297,9 +297,9 @@ struct InputBar: View {
             .buttonStyle(.plain)
 
             Divider()
-                .padding(.horizontal, 12)
+                .padding(.horizontal, Spacing.ml)
 
-            HStack(spacing: 14) {
+            HStack(spacing: Spacing.l) {
                 ZStack {
                     RoundedRectangle(cornerRadius: Radius.control)
                         .fill(Color.surfaceBg)
@@ -319,11 +319,11 @@ struct InputBar: View {
                 }
                 .pickerStyle(.menu)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Spacing.xxl)
+            .padding(.vertical, Spacing.ml)
 
             Divider()
-                .padding(.horizontal, 12)
+                .padding(.horizontal, Spacing.ml)
 
             Button { vm.thinkingMode.cycle() } label: {
                 addToChatRow(
@@ -336,7 +336,7 @@ struct InputBar: View {
             .foregroundStyle(vm.thinkingMode == .on ? Color.appAccent : Color.textPrimary)
         }
         .frame(width: 320)
-        .padding(.vertical, 4)
+        .padding(.vertical, Spacing.xs)
         .background(Color.appBg)
     }
     #endif
@@ -348,12 +348,12 @@ struct InputBar: View {
             RoundedRectangle(cornerRadius: 3)
                 .fill(Color.borderSubtle)
                 .frame(width: 36, height: 4)
-                .padding(.top, 10)
+                .padding(.top, Spacing.m)
 
             Text("Add to Chat")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
-                .padding(.vertical, 14)
+                .padding(.vertical, Spacing.l)
 
             Divider().background(Color.borderSubtle)
 
@@ -387,10 +387,10 @@ struct InputBar: View {
             Text("Add to Chat")
                 .font(.headline)
                 .foregroundStyle(Color.textPrimary)
-                .padding(.vertical, 14)
+                .padding(.vertical, Spacing.l)
 
             // ── 3-tile grid ───────────────────────────────────────────────────
-            HStack(spacing: 12) {
+            HStack(spacing: Spacing.ml) {
                 attachmentTile(icon: "camera.fill", label: "Camera",
                                color: Color(uiColor: .systemBlue)) {
                     showAddToChat.wrappedValue = false
@@ -416,10 +416,10 @@ struct InputBar: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 16)
+            .padding(.horizontal, Spacing.xxl)
+            .padding(.bottom, Spacing.xl)
 
-            Divider().padding(.horizontal, 16)
+            Divider().padding(.horizontal, Spacing.xl)
 
             // ── Add to project row ────────────────────────────────────────────
             Button(action: { showProjectPicker = true }) {
@@ -431,10 +431,10 @@ struct InputBar: View {
             }
             .buttonStyle(.plain)
 
-            Divider().padding(.horizontal, 16)
+            Divider().padding(.horizontal, Spacing.xl)
 
             // ── Speech language row ───────────────────────────────────────────
-            HStack(spacing: 14) {
+            HStack(spacing: Spacing.l) {
                 ZStack {
                     RoundedRectangle(cornerRadius: Radius.control)
                         .fill(Color.surfaceBg)
@@ -454,8 +454,8 @@ struct InputBar: View {
                 }
                 .pickerStyle(.menu)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Spacing.xxl)
+            .padding(.vertical, Spacing.ml)
         }
         .frame(maxWidth: .infinity)
         .background(Color.appBg)
@@ -465,7 +465,7 @@ struct InputBar: View {
 
     private func attachmentTile(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: Spacing.sm) {
                 ZStack {
                     RoundedRectangle(cornerRadius: Radius.compose)
                         .fill(color.opacity(0.14))
@@ -496,7 +496,7 @@ struct InputBar: View {
                             vm.setProject(project.id, for: vm.currentConvId)
                             showProjectPicker = false
                         }) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: Spacing.ml) {
                                 Image(systemName: project.icon)
                                     .foregroundStyle(Color.appAccent)
                                     .frame(width: 20)
@@ -526,7 +526,7 @@ struct InputBar: View {
         trailing: String?,
         iconColor: Color = Color.textSecondary
     ) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: Spacing.l) {
             ZStack {
                 RoundedRectangle(cornerRadius: Radius.control)
                     .fill(Color.surfaceBg)
@@ -557,8 +557,8 @@ struct InputBar: View {
                     .foregroundStyle(Color.textSecondary)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.horizontal, Spacing.xxl)
+        .padding(.vertical, Spacing.ml)
     }
 
     // ── macOS file picker ─────────────────────────────────────────────────────────
@@ -656,7 +656,7 @@ struct InputBar: View {
     // ── Attachment chip ───────────────────────────────────────────────────────────
 
     private func attachmentChip(name: String, index: Int) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.xs) {
             Image(systemName: "doc.fill")
                 .font(.caption2)
                 .foregroundStyle(Color.accent)
@@ -673,8 +673,8 @@ struct InputBar: View {
                     .foregroundStyle(Color.textSecondary)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.xs)
         .background(
             Capsule().fill(Color.surfaceBg)
                 .overlay(Capsule().strokeBorder(Color.borderSubtle.opacity(0.5), lineWidth: 1))

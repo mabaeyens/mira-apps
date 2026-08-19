@@ -420,7 +420,7 @@ struct MacRootView: View {
                             .frame(minWidth: 200, idealWidth: 260, maxWidth: 320)
                             .clipShape(RoundedRectangle(cornerRadius: Radius.sidebarClip, style: .continuous))
                             .shadow(color: .black.opacity(0.06), radius: 5, x: 0, y: 1)
-                            .padding(10)
+                            .padding(Spacing.m)
                             .transition(.move(edge: .leading))
                     }
                     NavigationStack {
@@ -700,7 +700,7 @@ struct iOSConnectedView: View {
     @ViewBuilder
     private var reconnectBanner: some View {
         if let msg = reconnectMessage {
-            HStack(spacing: 10) {
+            HStack(spacing: Spacing.m) {
                 if reconnectStalled {
                     Image(systemName: "exclamationmark.triangle")
                         .font(.caption)
@@ -723,8 +723,8 @@ struct iOSConnectedView: View {
                     .lineLimit(2)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.sm)
             .background(.ultraThinMaterial)
             .overlay(alignment: .bottom) {
                 Color.borderSubtle.frame(height: 0.5)

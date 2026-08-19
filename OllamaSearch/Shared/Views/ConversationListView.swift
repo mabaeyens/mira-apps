@@ -78,7 +78,7 @@ struct ConversationListView: View {
 
     private func offlineCacheBanner(_ date: Date) -> some View {
         let formatted = RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
-        return HStack(spacing: 6) {
+        return HStack(spacing: Spacing.s) {
             Image(systemName: "icloud.slash")
                 .font(Font.sidebarMeta)
             Text("Offline · cached \(formatted)")
@@ -86,7 +86,7 @@ struct ConversationListView: View {
         }
         .foregroundStyle(Color.textSecondary)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
+        .padding(.vertical, Spacing.s)
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) { Color.borderSubtle.frame(height: 0.5) }
     }
@@ -94,7 +94,7 @@ struct ConversationListView: View {
     // ── Loading / empty states ────────────────────────────────────────────────
 
     private var loadingView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.ml) {
             ProgressView()
             Text("Connecting…")
                 .font(.caption)
@@ -104,7 +104,7 @@ struct ConversationListView: View {
     }
 
     private var emptyView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.ml) {
             Text("No conversations")
                 .font(.subheadline)
                 .foregroundStyle(Color.textSecondary)
@@ -125,7 +125,7 @@ struct ConversationListView: View {
             if onChats != nil {
                 Section {
                     Button(action: { onChats?() }) {
-                        HStack(spacing: 12) {
+                        HStack(spacing: Spacing.ml) {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .foregroundStyle(Color.textPrimary)
                                 .frame(width: 20)
@@ -137,8 +137,8 @@ struct ConversationListView: View {
                                 .font(.iconSmall)
                                 .foregroundStyle(Color.textSecondary)
                         }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 4)
+                        .padding(.vertical, Spacing.m)
+                        .padding(.horizontal, Spacing.xs)
                     }
                     .buttonStyle(.plain)
                     .listRowBackground(Color.clear)
@@ -165,7 +165,7 @@ struct ConversationListView: View {
                             prefs.projectsExpanded.toggle()
                         }
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Spacing.xs) {
                             sectionHeader("Projects")
                             Image(systemName: prefs.projectsExpanded ? "chevron.down" : "chevron.right")
                                 .font(.iconSmall)
@@ -274,11 +274,11 @@ struct ConversationListView: View {
             onNewChat?()
             #endif
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: Spacing.m) {
                 Image(systemName: project.icon)
                     .foregroundStyle(Color.appAccent)
                     .frame(width: 18)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
                     Text(project.name)
                         .font(Font.sidebarTitle.weight(.medium))
                         .foregroundStyle(Color.textPrimary)
@@ -293,14 +293,14 @@ struct ConversationListView: View {
                     Text("\(project.conversationCount)")
                         .font(Font.sidebarMeta)
                         .foregroundStyle(Color.textSecondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, Spacing.s)
+                        .padding(.vertical, Spacing.xxs)
                         .background(Color.borderSubtle.opacity(0.6))
                         .clipShape(Capsule())
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 4)
+            .padding(.vertical, Spacing.s)
+            .padding(.horizontal, Spacing.xs)
         }
         .buttonStyle(.plain)
         .contextMenu {
@@ -319,8 +319,8 @@ struct ConversationListView: View {
             Label("Add project", systemImage: "plus.circle")
                 .font(Font.sidebarTitle)
                 .foregroundStyle(Color.appAccent)
-                .padding(.vertical, 4)
-                .padding(.horizontal, 4)
+                .padding(.vertical, Spacing.xs)
+                .padding(.horizontal, Spacing.xs)
         }
         .buttonStyle(.plain)
         .listRowBackground(Color.clear)
@@ -331,7 +331,7 @@ struct ConversationListView: View {
 
     #if os(iOS)
     private var iosHeader: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Spacing.sm) {
             HStack {
                 Text("Mira")
                     .font(.title3.weight(.bold)) // 20pt, scales
@@ -381,10 +381,10 @@ struct ConversationListView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.top, Spacing.xl)
 
-            HStack(spacing: 8) {
+            HStack(spacing: Spacing.sm) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: searchIconGlyph))
                     .foregroundStyle(Color.textSecondary)
@@ -400,12 +400,12 @@ struct ConversationListView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, Spacing.ml)
             .padding(.vertical, 9)
             .background(Color(uiColor: .secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: Radius.field))
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.bottom, Spacing.sm)
         }
         .background(Color.appBg)
     }
@@ -416,15 +416,15 @@ struct ConversationListView: View {
             Button(action: {
                 if let onNewChat { onNewChat() } else { vm.newConversation() }
             }) {
-                HStack(spacing: 6) {
+                HStack(spacing: Spacing.s) {
                     Image(systemName: "plus")
                         .font(.footnote.weight(.bold)) // 13pt, scales
                     Text("New Chat")
                         .font(.subheadline.weight(.semibold)) // 15pt, scales
                 }
                 .foregroundStyle(Color.black)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 12)
+                .padding(.horizontal, Spacing.xxxl)
+                .padding(.vertical, Spacing.ml)
                 .background(Color.white)
                 .clipShape(Capsule())
                 .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 2)
@@ -432,7 +432,7 @@ struct ConversationListView: View {
             .buttonStyle(.plain)
             Spacer()
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, Spacing.xl)
         .background(Color.appBg)
     }
     #endif
@@ -450,14 +450,14 @@ struct ConversationListView: View {
         let rowFill: Color = isSelected ? Color.appAccent.opacity(0.14) : .clear
         #endif
         return HStack {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(conv.title)
                     .font(Font.sidebarTitle)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if !titleOnly {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Spacing.s) {
                         if isLoading {
                             Text("Opening…")
                                 .font(Font.sidebarSubtitle)
@@ -490,8 +490,8 @@ struct ConversationListView: View {
                 #endif
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 20)
+        .padding(.vertical, Spacing.m)
+        .padding(.horizontal, Spacing.xxl)
         .background(
             RoundedRectangle(cornerRadius: Radius.card)
                 .fill(rowFill)
@@ -575,7 +575,7 @@ struct AddProjectSheet: View {
                 }
                 Section {
                     #if os(macOS)
-                    HStack(spacing: 8) {
+                    HStack(spacing: Spacing.sm) {
                         Text(localPath.isEmpty ? "No folder selected" : localPath)
                             .font(.monoDetail)
                             .foregroundStyle(localPath.isEmpty ? Color.textSecondary : Color.textPrimary)
