@@ -382,7 +382,7 @@ private struct ConversationOptionsSheet: View {
 
             // Non-tappable title header
             Text(title)
-                .font(.subheadline.weight(.semibold)) // 15pt, scales
+                .font(.headline) // 17pt semibold, scales — canonical sheet title (matches InputBar "Add to Chat")
                 .foregroundStyle(Color.textPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)

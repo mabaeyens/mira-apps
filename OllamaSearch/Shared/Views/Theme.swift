@@ -176,6 +176,11 @@ extension Font {
     #if os(iOS)
     /// Primary text of a list or sheet row: sidebar entries, option rows.
     static let rowTitle: Font = .subheadline.weight(.medium)
+    /// Secondary line under a `rowTitle` (model description, row subtitle). Same as
+    /// `.caption` on iOS, so unchanged here; exists so the macOS branch can be 12
+    /// instead of `.caption`'s 10 — otherwise a 12pt subtitle would sit under an
+    /// 11pt `sectionHeader` and invert the hierarchy. True captions stay `.caption`.
+    static let rowSubtitle: Font = .caption
     /// Uppercase section label above a group of rows ("MODELS", "NOT AVAILABLE").
     static let sectionHeader: Font = .caption2.weight(.medium)
     /// Text inside an inline banner across the top of the chat.
@@ -190,6 +195,10 @@ extension Font {
     #else
     /// Primary text of a list or sheet row: sidebar entries, option rows.
     static let rowTitle: Font = .system(size: 15, weight: .medium)
+    /// Secondary line under a `rowTitle`. 12, not `.caption`'s 10, so row content
+    /// reads at least as large as its 11pt `sectionHeader` (fixes the model-picker
+    /// inversion where the group label was bigger than the rows it labelled).
+    static let rowSubtitle: Font = .system(size: 12)
     /// Uppercase section label above a group of rows ("MODELS", "NOT AVAILABLE").
     static let sectionHeader: Font = .system(size: 11, weight: .medium)
     /// Text inside an inline banner across the top of the chat.

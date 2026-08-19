@@ -244,7 +244,7 @@ struct ModelPickerView: View {
                         .foregroundStyle(preset.available ? Color.textPrimary : Color.textSecondary)
                         .lineLimit(1)
                     Text(subtitle(preset))
-                        .font(.caption)
+                        .font(.rowSubtitle)
                         .foregroundStyle(Color.textSecondary)
                     // Why it cannot be selected, in the user's terms: "Ollama is
                     // installed but not responding" rather than a row that
@@ -403,7 +403,7 @@ private struct AddModelView: View {
                                 .rowTitleDense()
                                 .foregroundStyle(Color.textPrimary)
                             Text(preset.size)
-                                .font(.caption)
+                                .font(.rowSubtitle)
                                 .foregroundStyle(Color.textSecondary)
                         }
                         Spacer()

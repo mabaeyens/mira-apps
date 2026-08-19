@@ -440,11 +440,11 @@ struct InputBar: View {
                         .fill(Color.surfaceBg)
                         .frame(width: 40, height: 40)
                     Image(systemName: "mic.fill")
-                        .font(.iconMedium.weight(.medium))
+                        .font(.title3.weight(.medium)) // 20pt, scales — canonical sheet row icon
                         .foregroundStyle(Color.textSecondary)
                 }
                 Text("Speech language")
-                    .font(.callout)
+                    .font(.body) // 17pt, scales — canonical sheet row label
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Picker("", selection: Bindable(prefs).speechLanguage) {
@@ -532,14 +532,18 @@ struct InputBar: View {
                     .fill(Color.surfaceBg)
                     .frame(width: 40, height: 40)
                 Image(systemName: icon)
-                    .font(.iconMedium.weight(.medium))
+                    #if os(iOS)
+                    .font(.title3.weight(.medium)) // 20pt, scales — canonical sheet row icon
+                    #else
+                    .font(.iconMedium.weight(.medium)) // macOS: keep 17 (.title3 is only 15pt here)
+                    #endif
                     .foregroundStyle(iconColor)
             }
             Text(label)
                 #if os(iOS)
-                .font(.callout)          // 16pt, scales
+                .font(.body)             // 17pt, scales — canonical sheet row label
                 #else
-                .font(.system(size: 16)) // macOS .callout is 12; keep fixed
+                .font(.system(size: 16)) // macOS .body is 13; keep fixed
                 #endif
                 .foregroundStyle(Color.textPrimary)
             Spacer()

@@ -10,35 +10,6 @@ Three targets, not two: **iPhone, iPad and Mac**. Every item below says which.
 
 ## Open before the next ship
 
-### A. Light mode — all three (never tested)
-
-Light mode shipped 2026-05-17 and has no check here, because `backlog.md`
-claimed the app forced dark. It does not. This is the largest untested surface
-in the app.
-
-Contrast was measured 2026-07-26 (mira-core `notes/mira-palette-contrast.py`),
-so the numeric part is done and the link colour is fixed. What is left needs
-eyes.
-
-- [x] **Mac / iPhone / iPad**: set the system to Light → chat, sidebar and input
-      bar are legible
-- [x] **Markdown links in Light** are readable. They were 3.25:1 and are now
-      `#9F6542` at 4.52. The only measured failure in the palette
-- [x] **iPhone**: reconnect banner and the floating nav circles use
-      `.ultraThinMaterial`, designed against dark. Confirm they still read
-- [x] **Mac**: splash screen in Light → the amber radial wash is visible but not muddy
-- [x] **Mac**: System Settings → Appearance → set a **non-default accent colour**
-      (blue, pink) → the app stays amber everywhere. 35 places use
-      `Color.accent` rather than `Color.appAccent`; both resolve to the same
-      amber from the asset catalog, but that is asserted, not observed
-- [x] **Switch appearance with the app already running** → the window background
-      follows, no relaunch. The palette itself was verified to resolve
-      dynamically, so this is about AppKit state held elsewhere
-- [x] Inline code chips are still visible in Light. Measured at 1.57:1, which is
-      *higher* than GitHub's 1.13, so this is a look check and not a defect hunt
-
-_A closed 2026-08-13: light mode legible on Mac; user-turn bubble lightened `0xD0C8BE` → `0xE0D8CE`._
-
 ### B. macOS window chrome — Mac only
 
 From `0208d8b`, which was reasoned from code structure and **never reproduced**.
@@ -87,37 +58,27 @@ what these two are for.
 
 ---
 
-### E. Model card and backend names — all three
+### F. Type scale and Dynamic Type — all three
 
-Specs 1 and 2, shipped 2026-07-26 (`003463c`, `0fa90bc`, server `76b660f`).
-Build-verified, plus a decode check against live server bytes. **Never run.**
+Spec 4 named the font roles; the Dynamic Type fonts pass (`1ea5898`, verified
+2026-08-19) then mapped every iOS role onto a stock text style, so iOS text and
+icons now scale with Larger Text. The type-scale findings (2026-08-19) added two
+**deliberate** size changes on top — so, unlike the earlier "nothing moved" pass,
+some things here are meant to look different.
 
-- [x] Open the model card → the running model is **first and checkmarked**.
-      Before this, nothing was ever checkmarked
-- [x] Every selectable row shows engine, context window and size on disk, and
-      no title truncates mid-word
-- [~] **Stop Ollama**, reopen the card → its preset appears under "Not
-      available" with a reason, greyed, and does nothing when tapped
-      _(N/A — Ollama is no longer a configured backend)_
-- [x] Switch to another model, then switch back → the row you came from is
-      still there. Before this there was no way back
-- [x] **Mac**: Mira → About Mira → "Backend" reads `mira-mlx`, not "Ollama"
-- [x] After a switch, the info line in the transcript names the right engine
-- [x] "Download a model" → does **not** offer Gemma 4 26B, which is installed
-
-_E closed 2026-08-13: About → Backend reads `mira-mlx`; Ollama-stop check N/A (Ollama no longer a backend)._
-
-### F. Nothing moved — all three
-
-Spec 4 renamed 27 font literals to named roles. Every substitution was checked
-mechanically to resolve to the same size, weight and design, so this is a
-glance, not a hunt.
-
-- [ ] Sidebar rows, chat banners, the model pill, the model card and the token
-      counter all look exactly as they did. Any size change here is a bug
-- [ ] **iPhone**: Settings → Accessibility → Larger Text → text grows. Half the
-      labels will not, which is a **known** issue written up in
-      `specs/type-scale.md`, not a regression from this change
+- [ ] **iPhone**: Settings → Accessibility → Larger Text → chat, sidebar, compose
+      bar, model picker and connection-sheet text all grow now (they did not
+      before the fonts pass). Container frames are still fixed, so at the largest
+      sizes some glyphs may clip their boxes — **known**, deferred to the frame
+      pass in `specs/dynamic-type.md`, not a regression
+- [ ] **All three**: at the default text size, everything *except* the two changes
+      below looks exactly as before. Any other size shift is a bug
+- [ ] **Mac**: model picker → the "MODELS" / "NOT AVAILABLE" group header is no
+      longer larger than the row subtitle under it (subtitle went 10→12pt via the
+      new `rowSubtitle` role). This was the visible inversion the change fixes
+- [ ] **iPhone**: the "Add to Chat" (+) sheet and the conversation options (⋯)
+      sheet now match — title 17 semibold, row label 17, row icon 20. Put them
+      side by side; they used to disagree on all three
 
 ---
 
@@ -146,10 +107,8 @@ verified is the UI reaching it.
 
 ### I. Memory advisory — iPhone against the Mac, plus the Mac itself
 
-- [x] **iPhone and Mac**: the `evicted` banner renders from a real advisory
-      during a real conversation. Confirmed 2026-08-08 on both, which
-      also settles the live path — the 30s poll does flip the state, and the copy
-      reads correctly on a phone that has plenty of memory itself
+The `evicted` banner and its live 30s-poll path are device-verified (2026-08-08,
+in the validated log). What is left is the tail below.
 
 Verified underneath it: decoding against the live payload and eight degraded
 shapes, all five advisories mapping to known cases, polling starting at all four
@@ -204,6 +163,14 @@ What is left is the tail, not the feature:
 Kept as a record so these are not re-run blindly. Re-test a line only when its
 code changes. Per-release detail is in git history and `CHANGELOG.md`.
 
+- **2026-08-13** — Light mode on all three (legibility, Markdown links, accent
+  independence, live appearance switch, inline-code chips; user bubble lightened
+  `0xD0C8BE` → `0xE0D8CE`); model card and backend names (running model first and
+  checkmarked, row-back after a switch, About → Backend reads `mira-mlx`, Gemma 4
+  not offered). Ollama "Not available" check retired — Ollama is no longer a backend
+- **2026-08-08** — Memory `evicted` advisory banner from a real advisory, iPhone
+  and Mac (live 30s-poll path). Section I tail (self-clear, menu-bar row,
+  `critical`) still open
 - **v0.2.0 / build 37, 2026-06-21** — iPad sidebar persistence, think-mode turn
   control, project deletion guard
 - **v0.1.38, 2026-06-06** — macOS seamless sidebar and toggle, New Chat at the
