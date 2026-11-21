@@ -207,19 +207,22 @@ swiftc -O -o "$D/connectioncheck" \
 
 # `send` inspects the status before anything is decoded. A call site that goes
 # straight to the session bypasses it and brings the original bug back one
-# endpoint at a time. Five are expected and deliberate:
+# endpoint at a time. Eight are expected and deliberate:
 #   send()              — the one that maps status to APIError
 #   health()            — wants the raw 200/503 rather than an error
 #   isHealthy(at:)      — same, for an arbitrary URL
 #   probeDetailed()     — reports the status as ProbeResult
 #   probeToken()        — same, against a guarded route
-# A sixth is not automatically wrong, but it needs a reason. Update the count
+#   the stream call     — session.bytes for /chat, which has to read the stream
+#   wakeEngine()        — best-effort POST /engine/wake; the response is ignored
+#   unloadEngine()      — reads the status itself: 200 done, 409 busy or disabled
+# A further one is not automatically wrong, but it needs a reason. Update the count
 # here when you add one, and say why in the commit.
 DIRECT=$(grep -c "session\.data(for:\|URLSession\.shared\.data(for:\|session\.bytes(for:" \
   "$APP/Shared/Networking/APIClient.swift")
 echo
-echo "direct session calls in APIClient.swift: $DIRECT (expected 6)"
-if [ "$DIRECT" -ne 6 ]; then
+echo "direct session calls in APIClient.swift: $DIRECT (expected 8)"
+if [ "$DIRECT" -ne 8 ]; then
   echo "FAIL: a request may now bypass send(), which is what let a 401 decode as data loss"
   exit 1
 fi
