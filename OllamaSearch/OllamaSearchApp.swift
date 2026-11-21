@@ -765,7 +765,7 @@ struct iOSConnectedView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: 0) {
-                if let onExitDemo { DemoBanner(onExit: onExitDemo) }
+                if let onExitDemo, !hidesDemoBannerForScreenshots { DemoBanner(onExit: onExitDemo) }
                 reconnectBanner
             }
         }
@@ -807,6 +807,16 @@ struct iOSConnectedView: View {
             .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
+}
+
+/// `-MiraHideDemoBanner 1` on the launch line (Debug builds only) leaves the
+/// banner out, for the store screenshots. Release builds always show it.
+private var hidesDemoBannerForScreenshots: Bool {
+    #if DEBUG
+    UserDefaults.standard.bool(forKey: "MiraHideDemoBanner")
+    #else
+    false
+    #endif
 }
 
 /// Across the top of everything while the demo is on: the chat, the welcome

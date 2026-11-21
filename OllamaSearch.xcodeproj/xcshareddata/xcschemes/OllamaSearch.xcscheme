@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "497B07F62F82C7D90018933E"
-               BuildableName = "Mira.app"
+               BuildableName = "Mira Desktop.app"
                BlueprintName = "OllamaSearch"
                ReferencedContainer = "container:OllamaSearch.xcodeproj">
             </BuildableReference>
@@ -30,8 +30,7 @@
       shouldAutocreateTestPlan = "YES">
       <Testables>
          <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
+            skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4A10A0032FA00001001897E6"
@@ -57,7 +56,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "497B07F62F82C7D90018933E"
-            BuildableName = "Mira.app"
+            BuildableName = "Mira Desktop.app"
             BlueprintName = "OllamaSearch"
             ReferencedContainer = "container:OllamaSearch.xcodeproj">
          </BuildableReference>
@@ -74,7 +73,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "497B07F62F82C7D90018933E"
-            BuildableName = "Mira.app"
+            BuildableName = "Mira Desktop.app"
             BlueprintName = "OllamaSearch"
             ReferencedContainer = "container:OllamaSearch.xcodeproj">
          </BuildableReference>

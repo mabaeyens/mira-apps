@@ -26,7 +26,7 @@ final class StoreScreenshotsUITests: XCTestCase {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         if UIDevice.current.userInterfaceIdiom == .pad { XCUIDevice.shared.orientation = .landscapeLeft }
         app = XCUIApplication()
-        app.launchArguments += ["-MiraNoAutoWake", "1"]
+        app.launchArguments += ["-MiraNoAutoWake", "1", "-MiraHideDemoBanner", "1"]
         app.launch()
     }
 
