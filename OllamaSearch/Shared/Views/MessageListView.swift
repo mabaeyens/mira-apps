@@ -242,10 +242,13 @@ struct MessageListView: View {
                     if let label = agentStepLabel {
                         activityRow(icon: "arrow.triangle.2.circlepath", text: label)
                     }
-                    Color.clear.frame(height: 1).id(bottomAnchor)
                     }
                     .frame(maxWidth: 780)
                     .frame(maxWidth: .infinity)
+                    // Outside the LazyVStack on purpose: an id inside it may not be
+                    // realised when we scrollTo it, which left the list blank after
+                    // a send until something forced a re-layout (e.g. the sidebar).
+                    Color.clear.frame(height: 1).id(bottomAnchor)
                 }
             }
             .defaultScrollAnchor(.bottom)
@@ -331,7 +334,14 @@ struct MessageListView: View {
         .background(Color.appBg)
     }
 
+    /// Scrolls after the current layout pass. Sending a message changes the
+    /// message count and `isStreaming` in one update; scrolling inside that same
+    /// pass targeted rows that did not exist yet and blanked the list.
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = false) {
+        DispatchQueue.main.async { scrollNow(proxy: proxy, animated: animated) }
+    }
+
+    private func scrollNow(proxy: ScrollViewProxy, animated: Bool) {
         if animated {
             withAnimation(.easeOut(duration: 0.15)) {
                 proxy.scrollTo(bottomAnchor, anchor: .bottom)
