@@ -11,7 +11,18 @@
 		49D199CB2F82CAEB001897E6 /* Highlightr in Frameworks */ = {isa = PBXBuildFile; productRef = 49D199CA2F82CAEB001897E6 /* Highlightr */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		4A10A0072FA00001001897E6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 497B07EF2F82C7D90018933E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 497B07F62F82C7D90018933E;
+			remoteInfo = OllamaSearch;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		4A10A0012FA00001001897E6 /* MiraUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MiraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		497B07F72F82C7D90018933E /* Mira.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mira.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		49A5E78D2F9CDB2500395E72 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = OllamaSearch/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -35,6 +46,11 @@
 			path = OllamaSearch;
 			sourceTree = "<group>";
 		};
+		4A10A0022FA00001001897E6 /* MiraUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MiraUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +63,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4A10A0052FA00001001897E6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -54,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				497B07F92F82C7D90018933E /* OllamaSearch */,
+				4A10A0022FA00001001897E6 /* MiraUITests */,
 				497B07F82F82C7D90018933E /* Products */,
 				49A5E78D2F9CDB2500395E72 /* PrivacyInfo.xcprivacy */,
 			);
@@ -63,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				497B07F72F82C7D90018933E /* Mira.app */,
+				4A10A0012FA00001001897E6 /* MiraUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -94,6 +119,29 @@
 			productReference = 497B07F72F82C7D90018933E /* Mira.app */;
 			productType = "com.apple.product-type.application";
 		};
+		4A10A0032FA00001001897E6 /* MiraUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4A10A0092FA00001001897E6 /* Build configuration list for PBXNativeTarget "MiraUITests" */;
+			buildPhases = (
+				4A10A0042FA00001001897E6 /* Sources */,
+				4A10A0052FA00001001897E6 /* Frameworks */,
+				4A10A0062FA00001001897E6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4A10A0082FA00001001897E6 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4A10A0022FA00001001897E6 /* MiraUITests */,
+			);
+			name = MiraUITests;
+			packageProductDependencies = (
+			);
+			productName = MiraUITests;
+			productReference = 4A10A0012FA00001001897E6 /* MiraUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -106,6 +154,10 @@
 				TargetAttributes = {
 					497B07F62F82C7D90018933E = {
 						CreatedOnToolsVersion = 26.4;
+					};
+					4A10A0032FA00001001897E6 = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = 497B07F62F82C7D90018933E;
 					};
 				};
 			};
@@ -128,12 +180,20 @@
 			projectRoot = "";
 			targets = (
 				497B07F62F82C7D90018933E /* OllamaSearch */,
+				4A10A0032FA00001001897E6 /* MiraUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		497B07F52F82C7D90018933E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A10A0062FA00001001897E6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -150,7 +210,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4A10A0042FA00001001897E6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4A10A0082FA00001001897E6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 497B07F62F82C7D90018933E /* OllamaSearch */;
+			targetProxy = 4A10A0072FA00001001897E6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		497B08002F82C7DA0018933E /* Debug */ = {
@@ -371,6 +446,44 @@
 			};
 			name = Release;
 		};
+		4A10A00A2FA00001001897E6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = HTVGRBVW58;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mab.OllamaSearch.UITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = OllamaSearch;
+			};
+			name = Debug;
+		};
+		4A10A00B2FA00001001897E6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = HTVGRBVW58;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mab.OllamaSearch.UITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = OllamaSearch;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -388,6 +501,15 @@
 			buildConfigurations = (
 				497B08032F82C7DA0018933E /* Debug */,
 				497B08042F82C7DA0018933E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4A10A0092FA00001001897E6 /* Build configuration list for PBXNativeTarget "MiraUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A10A00A2FA00001001897E6 /* Debug */,
+				4A10A00B2FA00001001897E6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
