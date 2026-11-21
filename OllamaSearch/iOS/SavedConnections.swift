@@ -177,7 +177,24 @@ final class SavedConnectionsStore {
             return c
         }
         if needsScrub { persist() }
+        #if DEBUG
+        auditKeyValueStore()
+        #endif
     }
+
+    #if DEBUG
+    /// `-MiraKVAudit 1` on the launch line: prints, with no values, how many saved
+    /// entries still carry a `token` key in the key-value JSON and how many have a
+    /// Keychain item. For checking the migration on a device.
+    private func auditKeyValueStore() {
+        guard UserDefaults.standard.bool(forKey: "MiraKVAudit") else { return }
+        let raw = kv.data(forKey: Self.connectionsKey)
+        let entries = (raw.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [[String: Any]]) ?? []
+        let withToken = entries.filter { ($0["token"] as? String).map { !$0.isEmpty } ?? ($0["token"] != nil) }.count
+        let inKeychain = connections.filter { ConnectionTokenKeychain.read($0.urlString) != nil }.count
+        print("MIRA_KV_AUDIT entries=\(entries.count) kvEntriesWithTokenKey=\(withToken) keychainItems=\(inKeychain)")
+    }
+    #endif
 
     // One-time migration from UserDefaults to NSUbiquitousKeyValueStore.
     private func migrateToKVStoreIfNeeded() {

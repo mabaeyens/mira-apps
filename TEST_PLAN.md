@@ -183,7 +183,7 @@ code changes. Per-release detail is in git history and `CHANGELOG.md`.
 
 ## Connection tokens in the Keychain (iOS)
 
-- [ ] Upgrade from a build that stored the token in iCloud key-value storage: launch once, the connection still connects (token came from the Keychain), and the key-value JSON no longer has a `token` field.
+- [x] Upgrade from a build that stored the token in iCloud key-value storage: launch once, the connection still connects (token came from the Keychain), and the key-value JSON no longer has a `token` field. Checked on the iPhone 2026-11-22 with `-MiraKVAudit 1` (Debug build): 1 entry, 0 with a token key, 1 Keychain item.
 - [ ] Pair by QR, force close, relaunch: still connected, no 401.
 - [ ] Edit a connection and clear its token: the app reports a missing token and the Keychain item is gone. Delete a connection: its Keychain item is gone.
 - [ ] A second device with iCloud Keychain on shows the connection and connects without re-pairing. With iCloud Keychain off it shows the connection with no token and asks for it.
