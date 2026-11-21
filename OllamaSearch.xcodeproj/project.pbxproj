@@ -381,7 +381,10 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mab.OllamaSearch;
+				APP_DISPLAY_NAME = Mira;
+				"APP_DISPLAY_NAME[sdk=macosx*]" = "Mira Desktop";
 				PRODUCT_NAME = Mira;
+				"PRODUCT_NAME[sdk=macosx*]" = "Mira Desktop";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -430,7 +433,10 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mab.OllamaSearch;
+				APP_DISPLAY_NAME = Mira;
+				"APP_DISPLAY_NAME[sdk=macosx*]" = "Mira Desktop";
 				PRODUCT_NAME = Mira;
+				"PRODUCT_NAME[sdk=macosx*]" = "Mira Desktop";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

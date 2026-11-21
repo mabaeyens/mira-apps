@@ -42,7 +42,7 @@ This is a **single multiplatform target** (not separate macOS/iOS targets).
 | `NSLocalNetworkUsageDescription` | `Mira uses the local network to find your Mac server.` |
 | `NSBonjourServices` | Array → Item 0: `_ollamasearch._tcp` |
 | `NSAppTransportSecurity` → `NSAllowsLocalNetworking` | `YES` |
-| `CFBundleDisplayName` | `Mira` |
+| `CFBundleDisplayName` | `$(APP_DISPLAY_NAME)` (`Mira` on iOS, `Mira Desktop` on macOS) |
 
 ## 4. Add SPM dependencies
 

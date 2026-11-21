@@ -28,7 +28,7 @@ struct OllamaSearchApp: App {
             }
         }
 
-        Window("About Mira", id: "about") {
+        Window("About Mira Desktop", id: "about") {
             AboutView()
                 .frame(width: 480, height: 560)
         }
@@ -386,7 +386,7 @@ struct OllamaSearchApp: App {
 private struct AboutCommand: View {
     @Environment(\.openWindow) private var openWindow
     var body: some View {
-        Button("About Mira") { openWindow(id: "about") }
+        Button("About Mira Desktop") { openWindow(id: "about") }
     }
 }
 #endif

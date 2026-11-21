@@ -4,6 +4,7 @@
 
 **New**
 
+- **The macOS app is now Mira Desktop.** It installs as `Mira Desktop.app`, so it no longer collides with the notarized menu-bar `Mira.app`. The bundle id is unchanged, so your data, token and TestFlight updates carry over. iOS stays Mira. The notarized DMG is now `mira-desktop-<version>.dmg`.
 - **Mira can sleep, and the app says so.** With `engine_idle_unload_minutes` set on the server, the engine unloads after that many idle minutes and wakes on the next request. The app reads `engine_state` from `/health`: a sleeping engine shows a quiet "Asleep. Wakes when you send a message." banner (never the offline banner or the Start button), and a waking one shows "Waking up…". Both appear on the empty-chat screen too, not only inside a conversation.
 - **The wake starts while you type.** Focusing the composer or opening a conversation calls `POST /engine/wake`, so the 9 to 30 second load overlaps with writing the message.
 - **Unload now** in the model sheet and the macOS menu bar frees the engine's memory on demand. A refusal (another client has a request in flight, or idle unload is off) says so instead of closing the sheet.
