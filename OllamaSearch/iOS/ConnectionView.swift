@@ -13,6 +13,7 @@ struct ConnectionView: View {
     @State private var addError: String? = nil
     @State private var isAddConnecting   = false
     @State private var showInsecureAlert = false
+    @State private var showScanner       = false
 
     @State private var connectingURL: String? = nil
     @State private var rowError: String? = nil
@@ -174,12 +175,30 @@ struct ConnectionView: View {
     private var addConnectionSheet: some View {
         NavigationStack {
             Form {
+                if QRScannerSheet.cameraAvailable {
+                    Section {
+                        Button {
+                            showScanner = true
+                        } label: {
+                            Label("Scan QR from your Mac", systemImage: "qrcode.viewfinder")
+                        }
+                    } footer: {
+                        Text("Open Pair iPhone… in the Mira menu-bar app, or paste its link into the URL field.")
+                    }
+                }
+
                 Section {
                     TextField("http://192.168.0.x:8000", text: $addURL)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .onChange(of: addURL) {
+                            if PairingPayload.looksLikePairingLink(addURL) {
+                                let link = addURL
+                                addURL = ""
+                                applyPairing(link, fromPasteboard: true)
+                                return
+                            }
                             if addLabel.isEmpty {
                                 addLabel = SavedConnection.autoLabel(for: addURL)
                             }
@@ -235,6 +254,9 @@ struct ConnectionView: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .sheet(isPresented: $showScanner) {
+            QRScannerSheet { code in applyPairing(code, fromPasteboard: false) }
+        }
         .alert("Unencrypted Connection", isPresented: $showInsecureAlert) {
             Button("Connect Anyway", role: .destructive) { performAdd() }
             Button("Cancel", role: .cancel) { }
@@ -338,6 +360,24 @@ struct ConnectionView: View {
             }
             for await (urlString, ok) in group {
                 reachability[urlString] = ok
+            }
+        }
+    }
+
+    /// Fills the add sheet from a pairing link. Never connects or saves: the user
+    /// reviews the fields and taps Connect. Errors are fixed strings, never the link.
+    private func applyPairing(_ link: String, fromPasteboard: Bool) {
+        switch PairingPayload.parse(link) {
+        case .failure(let err):
+            addError = err.message
+        case .success(let p):
+            if addLabel.isEmpty, let name = p.label { addLabel = name }
+            addURL = p.url
+            addToken = p.token
+            addError = nil
+            if fromPasteboard, UIPasteboard.general.string?
+                .trimmingCharacters(in: .whitespacesAndNewlines) == link.trimmingCharacters(in: .whitespacesAndNewlines) {
+                UIPasteboard.general.string = ""
             }
         }
     }

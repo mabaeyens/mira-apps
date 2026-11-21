@@ -4,6 +4,7 @@
 
 **New**
 
+- **Pair from the Mac with a QR code.** The iPhone's Add Connection sheet has a Scan QR button, and a pasted `mira://pair` link in the URL field works too. Either fills the URL, label and token for you to review; nothing connects until you tap Connect. Pairing is https only (Tailscale): a link that isn't https or has no token is rejected with a plain message, and the token never appears in an alert or a log. A pasted link is cleared from the clipboard after use.
 - **The macOS app is now Mira Desktop.** It installs as `Mira Desktop.app`, so it no longer collides with the notarized menu-bar `Mira.app`. The bundle id is unchanged, so your data, token and TestFlight updates carry over. iOS stays Mira. The notarized DMG is now `mira-desktop-<version>.dmg`.
 - **Mira can sleep, and the app says so.** With `engine_idle_unload_minutes` set on the server, the engine unloads after that many idle minutes and wakes on the next request. The app reads `engine_state` from `/health`: a sleeping engine shows a quiet "Asleep. Wakes when you send a message." banner (never the offline banner or the Start button), and a waking one shows "Waking up…". Both appear on the empty-chat screen too, not only inside a conversation.
 - **The wake starts while you type.** Focusing the composer or opening a conversation calls `POST /engine/wake`, so the 9 to 30 second load overlaps with writing the message.

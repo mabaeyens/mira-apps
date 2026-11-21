@@ -28,7 +28,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Mira uses the camera to capture and attach images to your messages. Photos are sent only to your local Mira server and are not shared externally.</string>
+	<string>Mira uses the camera to attach images to your messages and to scan the pairing QR code from your Mac. Photos are sent only to your own Mira server and are not shared externally.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Mira uses the local network to discover and connect to the server running on your Mac.</string>
 	<key>NSMicrophoneUsageDescription</key>
