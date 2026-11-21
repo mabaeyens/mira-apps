@@ -17,6 +17,10 @@ struct WelcomeView: View {
             .padding(.horizontal, Spacing.xl)
             .padding(.top, Spacing.sm)
 
+            // ── Engine lifecycle (asleep / waking) ─────────────────────────
+            EngineStateBanner()
+                .padding(.top, Spacing.m)
+
             // ── Centered logo + prompt ─────────────────────────────────────
             Spacer()
             VStack(spacing: 18) {

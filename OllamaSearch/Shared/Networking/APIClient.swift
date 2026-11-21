@@ -50,6 +50,36 @@ final class APIClient {
         /// True when Mira is up AND its configured inference backend, whichever
         /// one `mira.yaml` names, is reachable with its model loaded.
         let backendReady: Bool
+        /// `running`, `unloading`, `sleeping` or `waking` when the server's engine
+        /// lifecycle is on; nil when it is off (the key is absent from `/health`).
+        var engineState: String? = nil
+    }
+
+    enum EngineError: Error { case busyOrDisabled, failed }
+
+    /// POST /engine/wake — returns once the engine is up. Best-effort: a failure
+    /// is harmless because the next chat request wakes the engine itself.
+    func wakeEngine() async {
+        var req = URLRequest(url: baseURL.appendingPathComponent("engine/wake"))
+        req.httpMethod = "POST"
+        req.timeoutInterval = 300
+        authed(&req)
+        _ = try? await session.data(for: req)
+    }
+
+    /// POST /engine/unload — 409 means a request is in flight or the lifecycle is off.
+    func unloadEngine() async throws {
+        var req = URLRequest(url: baseURL.appendingPathComponent("engine/unload"))
+        req.httpMethod = "POST"
+        req.timeoutInterval = 30
+        authed(&req)
+        let (_, response) = try await session.data(for: req)
+        let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+        switch code {
+        case 200...299: return
+        case 409: throw EngineError.busyOrDisabled
+        default: throw EngineError.failed
+        }
     }
 
     /// Returns full health info — startup state + whether the inference backend is ready.
@@ -66,7 +96,8 @@ final class APIClient {
             case 200:
                 let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
                 let backendReady = json?["backend_ready"] as? Bool ?? true
-                return HealthResponse(startupStatus: .ready, backendReady: backendReady)
+                return HealthResponse(startupStatus: .ready, backendReady: backendReady,
+                                      engineState: json?["engine_state"] as? String)
             case 503:
                 return HealthResponse(startupStatus: .starting, backendReady: false)
             default:
@@ -338,6 +369,10 @@ final class APIClient {
     ) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chat"))
         request.httpMethod = "POST"
+        // The server holds the request while a sleeping engine wakes (typically
+        // 15-25 s, up to ~260 s). Explicit, because the 60 s URLRequest default
+        // would cut a wake short.
+        request.timeoutInterval = 300
         // 64-hex-char boundary makes accidental collision with file content statistically impossible.
         let boundary = UUID().uuidString.replacingOccurrences(of: "-", with: "") + UUID().uuidString.replacingOccurrences(of: "-", with: "")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")

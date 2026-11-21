@@ -11,8 +11,12 @@ struct ModelPickerView: View {
     /// download sheet would otherwise offer to fetch again.
     var library: ModelsResponse? = nil
     let onSwitch: (String, String) async -> Void  // (backend, modelId)
+    /// "Unload now" (mira-core engine lifecycle). nil hides the row; returns a
+    /// short message when the server refuses (409 busy, or lifecycle off).
+    var onUnload: (() async -> String?)? = nil
 
     @State private var pendingPreset: BackendPreset? = nil
+    @State private var unloadMessage: String? = nil
     @State private var showAddModel = false
 
     // The Cancel button's 14pt matches no stock text style, so it scales via
@@ -61,6 +65,26 @@ struct ModelPickerView: View {
                 confirmationView(for: pending)
             } else {
                 modelListView
+                if let onUnload {
+                    Divider().background(Color.borderSubtle)
+                    HStack {
+                        Button("Unload now") {
+                            Task {
+                                unloadMessage = await onUnload()
+                                if unloadMessage == nil { dismiss() }
+                            }
+                        }
+                        .font(.caption)
+                        if let unloadMessage {
+                            Text(unloadMessage)
+                                .font(.caption)
+                                .foregroundStyle(Color.textSecondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, Spacing.xxl)
+                    .padding(.vertical, Spacing.l)
+                }
             }
         }
         #if os(macOS)

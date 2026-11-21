@@ -16,7 +16,9 @@ struct ChatView: View {
     var body: some View {
         VStack(spacing: 0) {
             // ── Backend offline banner ────────────────────────────────────
-            if !vm.backendReady && !vm.isSwitchingBackend && !vm.isStartingBackend {
+            if vm.engineBanner != nil {
+                EngineStateBanner()
+            } else if !vm.backendReady && !vm.isSwitchingBackend && !vm.isStartingBackend {
                 // Within first 120 s of detecting backend_ready: false, show a gentle
                 // spinner banner (model is loading). After that, show the manual-start banner.
                 if let since = vm.backendLoadingSince,
@@ -116,7 +118,8 @@ struct ChatView: View {
                 liveModelName: vm.modelName,
                 liveContextWindow: vm.contextWindow,
                 library: vm.modelLibrary,
-                onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) }
+                onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) },
+                onUnload: vm.engineState == "running" ? { await vm.unloadEngine() } : nil
             )
         }
         #endif
@@ -515,3 +518,42 @@ private struct ConversationOptionsSheet: View {
     }
 }
 #endif
+
+/// Quiet engine-lifecycle state (idle unload): asleep, waking or unloading.
+/// Shared by `ChatView` and the iPhone `WelcomeView`, which is what an empty
+/// conversation shows and has no `ChatView` banners of its own.
+struct EngineStateBanner: View {
+    @Environment(ChatViewModel.self) private var vm
+
+    var body: some View {
+        if let banner = vm.engineBanner {
+            HStack(spacing: Spacing.m) {
+                if banner.spinner {
+                    ProgressView()
+                        .tint(Color.accent)
+                    #if os(macOS)
+                        .controlSize(.small)
+                    #else
+                        .scaleEffect(0.75)
+                    #endif
+                } else {
+                    Image(systemName: "moon.zzz")
+                        .font(.bannerLabel)
+                        .foregroundStyle(Color.textSecondary)
+                }
+                Text(banner.text)
+                    .font(.bannerLabel)
+                    .foregroundStyle(Color.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, Spacing.l)
+            .padding(.vertical, 9)
+            .background(Color.accent.opacity(0.06))
+            .overlay(alignment: .bottom) {
+                Color.accent.opacity(0.2).frame(height: 1)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("engine-banner")
+        }
+    }
+}

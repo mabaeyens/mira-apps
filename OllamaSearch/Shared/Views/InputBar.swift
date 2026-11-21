@@ -175,6 +175,10 @@ struct InputBar: View {
             .padding(.top, 13)
             .padding(.bottom, 11)
             .focused($isFocused)
+            .accessibilityIdentifier("composer")
+            .onChange(of: isFocused) { _, focused in
+                if focused { vm.wakeEngineIfNeeded() }
+            }
             .onSubmit {
                 guard !vm.isStreaming else { return }
                 isFocused = false
@@ -606,7 +610,8 @@ struct InputBar: View {
 
     private var modelStatusColor: Color {
         if vm.errorMessage != nil { return .red }
-        if vm.isSwitchingBackend || vm.isStartingBackend { return .yellow }
+        if vm.isSwitchingBackend || vm.isStartingBackend || vm.isEngineWaking { return .yellow }
+        if vm.isEngineAsleep { return Color(white: 0.45) }
         if vm.backendReady { return .green }
         return Color(white: 0.45)
     }
@@ -637,6 +642,7 @@ struct InputBar: View {
                     .background(Circle().fill(Color.red.opacity(0.85)))
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("stop-button")
         } else {
             let canSend = !vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             Button {
@@ -650,6 +656,7 @@ struct InputBar: View {
             }
             .buttonStyle(.plain)
             .disabled(!canSend)
+            .accessibilityIdentifier("send-button")
         }
     }
 

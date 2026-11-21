@@ -79,6 +79,20 @@ final class ChatViewModel {
     var showModelPicker: Bool = false
     var switchStatusMessage: String = ""
     var backendReady: Bool = true      // optimistic; polling corrects it
+    /// Engine lifecycle state from `/health`; nil when the server's lifecycle is off.
+    var engineState: String? = nil
+    private var isWakingEngine = false
+    var isEngineAsleep: Bool { engineState == "sleeping" }
+    var isEngineWaking: Bool { engineState == "waking" }
+    /// What the engine-lifecycle banner should say, or nil when there is nothing to show.
+    var engineBanner: (text: String, spinner: Bool)? {
+        switch engineState {
+        case "waking":    return ("Waking up…", true)
+        case "unloading": return ("Unloading…", true)
+        case "sleeping":  return ("Asleep. Wakes when you send a message.", false)
+        default:          return nil
+        }
+    }
     var backendLoadingSince: Date? = nil  // set when backend_ready is first false after connect
     var isStartingBackend: Bool = false
     /// The server's advisory about its own machine's memory, from `GET /hardware`.
@@ -250,7 +264,7 @@ final class ChatViewModel {
         streamEndedWithError = false
         retryInFlight = retry
 
-        streamingWaitMessage = "Sending…"
+        streamingWaitMessage = (isEngineAsleep || isEngineWaking) ? "Waking up Mira…" : "Sending…"
 
         // Reset heartbeat clock then start watchdog: if no event arrives for >15 s
         // (including heartbeats, which come every 5 s), treat as dropped connection.
@@ -489,6 +503,7 @@ final class ChatViewModel {
         let h = await APIClient.shared.health()
         switch h.startupStatus {
         case .ready:
+            engineState = h.engineState
             if h.backendReady {
                 backendLoadingSince = nil
             } else if backendLoadingSince == nil {
@@ -497,6 +512,34 @@ final class ChatViewModel {
             backendReady = h.backendReady
         case .starting, .unavailable:
             backendReady = false
+        }
+    }
+
+    // ── Engine lifecycle (mira-core idle unload) ──────────────────────────────
+
+    /// Wake the engine so the load overlaps with typing. Only fires when the
+    /// server reports `sleeping`; a no-op when the lifecycle is off (nil state).
+    func wakeEngineIfNeeded() {
+        guard engineState == "sleeping", !isWakingEngine else { return }
+        isWakingEngine = true
+        engineState = "waking"
+        Task {
+            await APIClient.shared.wakeEngine()
+            isWakingEngine = false
+            await refreshBackendHealth()
+        }
+    }
+
+    /// Unload the engine now to free RAM. Returns a short message on failure.
+    func unloadEngine() async -> String? {
+        do {
+            try await APIClient.shared.unloadEngine()
+            await refreshBackendHealth()
+            return nil
+        } catch APIClient.EngineError.busyOrDisabled {
+            return "Busy, or idle unload is off"
+        } catch {
+            return "Could not unload"
         }
     }
 
@@ -674,6 +717,7 @@ final class ChatViewModel {
             ? currentConvId : nil
         conversationHadSuccessfulSend = false
         loadingConvId = id
+        wakeEngineIfNeeded()
         Task {
             if let sid = staleId {
                 try? await api.deleteConversation(id: sid)

@@ -37,6 +37,8 @@ struct OllamaSearchApp: App {
         MenuBarExtra {
             MenuBarContent(
                 memoryAdvisory: chatVM.memoryAdvisory,
+                engineState: chatVM.engineState,
+                onUnload: { _ = await chatVM.unloadEngine() },
                 onNewConversation: { chatVM.newConversation() }
             )
         } label: {
@@ -491,6 +493,9 @@ struct MenuBarContent: View {
     /// The server's memory advisory. This is a property of the server's health,
     /// which is what this menu already reports — not a property of a conversation.
     var memoryAdvisory: MemoryAdvisory = .unknown
+    /// Engine lifecycle state; nil when the server's idle unload is off.
+    var engineState: String? = nil
+    var onUnload: () async -> Void = {}
     let onNewConversation: () -> Void
     private let connection = MacConnectionManager.shared
 
@@ -502,6 +507,11 @@ struct MenuBarContent: View {
         if let advisory = memoryAdvisory.advisoryText {
             Label(advisory, systemImage: "memorychip")
                 .foregroundStyle(.secondary)
+        }
+        if engineState == "sleeping" {
+            Label("Asleep", systemImage: "moon.zzz").foregroundStyle(.secondary)
+        } else if engineState == "running" {
+            Button("Unload Model Now") { Task { await onUnload() } }
         }
         Divider()
         Button("New Chat") { onNewConversation() }
@@ -616,7 +626,8 @@ struct iOSConnectedView: View {
             liveModelName: chatVM.modelName,
             liveContextWindow: chatVM.contextWindow,
             library: chatVM.modelLibrary,
-            onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) }
+            onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) },
+            onUnload: chatVM.engineState == "running" ? { await chatVM.unloadEngine() } : nil
         )
         #if os(iOS)
         .presentationBackground(Color.appBg)
