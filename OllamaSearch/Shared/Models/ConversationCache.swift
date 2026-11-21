@@ -4,7 +4,7 @@ import Foundation
 // Documents) so the list is readable when the backend is unreachable.
 actor ConversationCache {
     static let shared = ConversationCache()
-    private let containerID = "iCloud.com.mab.OllamaSearch"
+    private let containerID = "iCloud.com.mab.mira"
     private var resolvedURL: URL?
 
     private func cacheURL() -> URL {
