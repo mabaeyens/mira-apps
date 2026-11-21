@@ -291,6 +291,16 @@ struct MessageListView: View {
                     scrollToBottom(proxy: proxy)
                 }
             }
+            // A banner appearing or going away above the list (offline, waking,
+            // memory) changes the container height under a LazyVStack whose cells
+            // were laid out for the old height, and the list came back blank until
+            // something forced a re-layout. Re-pin to the true bottom on any change,
+            // after the layout pass. Not while the user is dragging.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height } action: { old, new in
+                if new != old && scrollPinned && !isUserScrolling {
+                    scrollToBottom(proxy: proxy)
+                }
+            }
             .onScrollPhaseChange { _, phase in
                 isUserScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
             }

@@ -9,6 +9,13 @@ struct ChatView: View {
     @State private var showOptions = false
     #endif
 
+    /// Rebuilds the message list when a banner above it appears or goes away, so
+    /// the lazy ScrollView cannot be left scrolled past its content (blank list).
+    @State private var bannerEpoch = 0
+    private var bannerKey: String {
+        "\(vm.engineBanner != nil)\(vm.backendReady)\(vm.isStartingBackend)\(vm.isSwitchingBackend)\(vm.memoryAdvisory.advisoryText != nil)"
+    }
+
     private var currentTitle: String {
         vm.conversations.first(where: { $0.id == vm.currentConvId })?.title ?? ""
     }
@@ -83,6 +90,8 @@ struct ChatView: View {
                         vm.inputText = text
                     }
                 )
+                .id("\(vm.listEpoch)-\(bannerEpoch)")
+                .onChange(of: bannerKey) { _, _ in bannerEpoch += 1 }
                 #if os(iOS)
                 if onBack != nil { floatingPillNav }
                 LinearGradient(

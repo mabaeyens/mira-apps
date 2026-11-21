@@ -168,6 +168,13 @@ final class ChatViewModel {
     }()
     private static let wakeGraceLimit: TimeInterval = 300
     private var streamEndedWithError = false
+    private var reconcileTask: Task<Void, Never>?
+    /// Bumped whenever `messages` is replaced wholesale from the server. ChatView
+    /// uses it as the identity of the message list, which rebuilds the ScrollView:
+    /// a lazy list whose content was swapped under it, or whose container resized
+    /// when a banner came and went, was left scrolled past its content and drew
+    /// nothing until the view was recreated (sidebar and back).
+    var listEpoch = 0
     // True once this conversation has at least one successfully saved exchange.
     // Used to decide whether to delete (never sent) or rename (failed send) on error.
     private var conversationHadSuccessfulSend = false
@@ -277,6 +284,7 @@ final class ChatViewModel {
         agentStepLabel = nil
         thinkingContent = nil
         isThinkingActive = false
+        reconcileTask?.cancel()
         streamEndedWithError = false
         retryInFlight = retry
 
@@ -300,9 +308,18 @@ final class ChatViewModel {
                 if let state = self.engineState, state != "running" { self.wakeGrace = true }
                 let limit = self.wakeGrace ? Self.wakeGraceLimit : Self.staleLimit
                 if Date().timeIntervalSince(self.lastEventDate) > limit {
-                    self.streamEndedWithError = true
+                    // stopStreaming() skips finishStreaming(), so the reconcile that
+                    // finishStreaming() starts after a failed stream never runs on
+                    // this path — the one a silent drop (Wi-Fi off) actually takes.
+                    // Start it here: the server keeps generating and saves the reply.
+                    let droppedConvId = self.currentConvId
                     self.errorMessage = "Connection lost — the server may be sleeping. Tap Resend when it's back."
                     self.stopStreaming()
+                    if !droppedConvId.isEmpty {
+                        Task { @MainActor [weak self] in
+                            await self?.reconcileAfterDrop(droppedConvId)
+                        }
+                    }
                     break
                 }
             }
@@ -1053,10 +1070,11 @@ final class ChatViewModel {
                 let time = formatter.string(from: Date())
                 renameConversation(currentConvId, title: "Pending – Retry \(time)")
             }
+            let droppedConvId = currentConvId
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.errorMessage = nil
-                await self.reloadHistoryFromServer()
+                await self.reconcileAfterDrop(droppedConvId)
             }
         } else {
             conversationHadSuccessfulSend = true
@@ -1086,6 +1104,33 @@ final class ChatViewModel {
     /// stores neither. That is already true of every conversation reopened from
     /// the sidebar (`selectConversation`), so it is the app's existing behaviour
     /// rather than something the retry path introduces.
+    /// After a dropped stream the server does not stop: it finishes the reply and
+    /// saves it. Reloading once, straight away, finds a phone that is still
+    /// offline and a server that is still generating, so the screen was left with
+    /// the cut-off text for good. Poll instead, every 3 s for up to two minutes,
+    /// until the server's last message is the finished assistant reply, then
+    /// replace what is on screen with it. Gives up quietly (the cut-off text and
+    /// the usual Resend path remain) if the server never saves one.
+    private func reconcileAfterDrop(_ convId: String) async {
+        reconcileTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            for _ in 0..<40 {
+                guard let self, !Task.isCancelled,
+                      self.currentConvId == convId, !self.isStreaming else { return }
+                if let history = try? await self.api.getMessages(conversationId: convId),
+                   history.last?.role == "assistant" {
+                    guard !Task.isCancelled, self.currentConvId == convId, !self.isStreaming else { return }
+                    await self.reloadHistoryFromServer()
+                    self.errorMessage = nil
+                    return
+                }
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
+        reconcileTask = task
+        await task.value
+    }
+
     private func reloadHistoryFromServer() async {
         guard !currentConvId.isEmpty else { return }
         guard let history = try? await api.getMessages(conversationId: currentConvId),
@@ -1096,6 +1141,7 @@ final class ChatViewModel {
                            thinkingContent: m.thinkingContent)
         }
         thinkingContent = messages.last(where: { $0.role == .assistant })?.thinkingContent
+        listEpoch += 1
     }
 
     private static func isNetworkError(_ error: Error) -> Bool {
