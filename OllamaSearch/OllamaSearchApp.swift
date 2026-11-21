@@ -626,6 +626,7 @@ struct iOSConnectedView: View {
             liveModelName: chatVM.modelName,
             liveContextWindow: chatVM.contextWindow,
             library: chatVM.modelLibrary,
+            loadError: chatVM.backendPresetsError,
             onSwitch: { backend, modelId in await chatVM.switchModel(backend: backend, modelId: modelId) },
             onUnload: chatVM.engineState == "running" ? { await chatVM.unloadEngine() } : nil
         )
@@ -685,7 +686,7 @@ struct iOSConnectedView: View {
         } message: {
             Text(chatVM.errorMessage ?? "")
         }
-        .task {
+        .task(id: serverURL) {
             APIClient.shared.baseURL = serverURL
             await chatVM.loadBackend()
             await chatVM.refreshBackendHealth()

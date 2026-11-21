@@ -12,6 +12,8 @@
 
 **Fixed**
 
+- **Pairing again to a saved URL keeps the new token.** Adding a connection whose URL was already saved silently kept the old entry, so after a relaunch the app reconnected with a stale token and every request returned 401. The saved entry is now updated. The connected screen also reloads models and conversations when the server URL changes.
+- **The model picker says why it is empty.** A failed model list (a 401, say) no longer reads "No backends configured. Add entries to mira.yaml"; it shows the actual error.
 - **A message sent to a sleeping engine is no longer cancelled mid-wake.** The 15 second stream-silence watchdog read the wake as a dropped connection, showed "Connection lost" and posted `/cancel` whenever a wake took longer than 15 seconds. The limit is now 300 seconds while the engine is not running, and chat requests allow 300 seconds instead of 60.
 
 - **Resend replaces the failed answer instead of asking the question twice.** Tapping Resend trimmed the broken exchange from the screen but never told the server, so the question stayed in the conversation's history twice with the failed reply between them — and every later turn was built on both copies. The conversation is reloaded from the server afterwards, so what is on screen is what is actually stored. Needs mira-core v1.3.0 or newer, which added the `retry` field on `/chat`. An older server ignores the field, which leaves the old behaviour rather than breaking anything

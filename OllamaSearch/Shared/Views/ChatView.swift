@@ -118,6 +118,7 @@ struct ChatView: View {
                 liveModelName: vm.modelName,
                 liveContextWindow: vm.contextWindow,
                 library: vm.modelLibrary,
+                loadError: vm.backendPresetsError,
                 onSwitch: { backend, modelId in await vm.switchModel(backend: backend, modelId: modelId) },
                 onUnload: vm.engineState == "running" ? { await vm.unloadEngine() } : nil
             )

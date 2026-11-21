@@ -52,6 +52,9 @@ final class ChatViewModel {
     var currentBackend: String = ""
     var modelName: String = ""
     var backendPresets: [BackendPreset] = []
+    /// Why the last `/backends` request failed, or nil. The picker shows this
+    /// instead of claiming mira.yaml has no entries.
+    var backendPresetsError: String? = nil
     /// The local model library from `GET /models`. Nil until it loads, or when
     /// the request failed; rows then render without a size rather than lying.
     var modelLibrary: ModelsResponse? = nil
@@ -503,8 +506,10 @@ final class ChatViewModel {
     func loadBackendPresets() async {
         do {
             backendPresets = try await APIClient.shared.fetchBackends()
+            backendPresetsError = nil
         } catch {
-            // Non-fatal — picker falls back to empty list
+            // Non-fatal, but say why: an empty list from a 401 is not an empty yaml.
+            backendPresetsError = error.localizedDescription
         }
         await loadModelLibrary()
     }

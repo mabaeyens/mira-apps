@@ -65,8 +65,15 @@ final class SavedConnectionsStore {
     }
 
     func add(_ connection: SavedConnection) {
-        guard !connections.contains(where: { $0.urlString == connection.urlString }) else { return }
-        connections.insert(connection, at: 0)
+        // Same URL again (re-pairing, a rotated token): update the saved entry.
+        // Keeping the old one dropped the new token, so the next launch
+        // reconnected with the stale one and every request came back 401.
+        if let i = connections.firstIndex(where: { $0.urlString == connection.urlString }) {
+            connections[i].token = connection.token
+            if !connection.label.isEmpty { connections[i].label = connection.label }
+        } else {
+            connections.insert(connection, at: 0)
+        }
         persist()
     }
 

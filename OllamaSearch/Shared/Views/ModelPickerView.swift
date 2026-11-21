@@ -10,6 +10,8 @@ struct ModelPickerView: View {
     /// Local library from `GET /models`, for sizes and for hiding models the
     /// download sheet would otherwise offer to fetch again.
     var library: ModelsResponse? = nil
+    /// Set when `GET /backends` failed, so the empty state names the real cause.
+    var loadError: String? = nil
     let onSwitch: (String, String) async -> Void  // (backend, modelId)
     /// "Unload now" (mira-core engine lifecycle). nil hides the row; returns a
     /// short message when the server refuses (409 busy, or lifecycle off).
@@ -172,7 +174,8 @@ struct ModelPickerView: View {
         ScrollView {
             VStack(spacing: 0) {
                 if backendPresets.isEmpty {
-                    Text("No backends configured.\nAdd entries to mira.yaml on the server.")
+                    Text(loadError.map { "Could not load models.\n\($0)" }
+                         ?? "No backends configured.\nAdd entries to mira.yaml on the server.")
                         .font(.caption)
                         .foregroundStyle(Color.textSecondary)
                         .multilineTextAlignment(.center)
