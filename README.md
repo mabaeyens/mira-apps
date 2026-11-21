@@ -20,7 +20,7 @@ The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyen
 - **Web search** — the model can search the web and fetch pages when it needs to; sources surface as clickable links
 - **RAG** — attach documents and let the model search them before answering
 - **Long-term memory** — save facts across conversations; model uses them automatically
-- **Voice input** — tap the mic to dictate; live transcription via Apple Speech (on-device, iOS only)
+- **Voice input** — tap the mic to dictate; live transcription via Apple Speech (on-device when your language supports it, otherwise Apple may process the audio; iOS only)
 - **Conversation history** — persistent, named conversations with a sidebar
 - **Markdown rendering** — code blocks, tables, and inline formatting via MarkdownUI
 - **Model picker** — reads the server's real library: which backends are installed, which models are on disk and how big they are. Adding a model in `mira.yaml` shows up without an app update, the running model is always listed and marked, and anything that cannot be selected says why

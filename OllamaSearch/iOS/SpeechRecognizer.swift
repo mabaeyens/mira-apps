@@ -58,6 +58,9 @@ final class SpeechRecognizer {
 
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         recognitionRequest?.shouldReportPartialResults = true
+        // On-device when this language supports it, so the audio stays on the
+        // phone. Otherwise iOS may send it to Apple for recognition.
+        recognitionRequest?.requiresOnDeviceRecognition = recognizer.supportsOnDeviceRecognition
 
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()

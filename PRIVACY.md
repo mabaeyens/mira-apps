@@ -59,6 +59,10 @@ The smaller stuff (sidebar state, cached memory entries, last-used settings) sit
 app's local settings. All of it stays on your device and syncs only through *your* iCloud,
 under your Apple ID.
 
+## Dictation
+
+When you dictate, the audio is turned into text by Apple's speech recognition. It runs on your device when your language supports that. If it does not, iOS may send the audio to Apple to be recognised, under Apple's own privacy terms. Mira never receives the audio, only the text you then choose to send.
+
 ## The only network activity
 
 Mira makes no network calls of its own except to the server you configure. No phone-home, no

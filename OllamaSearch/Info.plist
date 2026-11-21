@@ -34,7 +34,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Mira uses the microphone to transcribe your voice into text.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Mira uses speech recognition to convert your voice to text locally on this device.</string>
+	<string>Mira uses speech recognition to convert your voice to text. It runs on this device when your language supports that; otherwise Apple may process the audio.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Mira accesses your photo library so you can attach images to messages. Photos are sent only to your local Mira server and are not shared externally.</string>
 	<key>UIAppFonts</key>
