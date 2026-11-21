@@ -501,6 +501,9 @@ struct ConversationListView: View {
         #else
         .contentShape(Rectangle())
         #endif
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier("conversation-row")
         .simultaneousGesture(TapGesture().onEnded {
             vm.selectConversation(conv.id)
             onTap?(conv.id)

@@ -1,5 +1,83 @@
 import SwiftUI
 
+/// One line between the messages and the input bar saying what the chat is
+/// doing: receiving a reply, hearing nothing from the server, waiting for a
+/// reply after the connection dropped, reply restored, saved copy on screen.
+///
+/// The text comes from `ChatViewModel.statusLine(now:)`, asked again every
+/// second, so a count in it moves and a stalled connection shows up as one
+/// without any event having to arrive. Empty when there is nothing to report.
+struct TurnStatusBar: View {
+    @Environment(ChatViewModel.self) private var vm
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            if let line = vm.statusLine(now: context.date) {
+                HStack(spacing: Spacing.m) {
+                    if line.showsSpinner {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: icon(line.tone))
+                            .foregroundStyle(color(line.tone))
+                    }
+                    Text(line.text)
+                        .font(.caption)
+                        .foregroundStyle(line.tone == .progress ? Color.textSecondary : Color.textPrimary)
+                        .monospacedDigit()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("turn-status")
+                    if let action = line.action {
+                        Button(title(action)) { perform(action) }
+                            .font(.caption.weight(.semibold))
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .accessibilityIdentifier("turn-status-action")
+                    }
+                }
+                .padding(.horizontal, Spacing.ml)
+                .padding(.vertical, Spacing.s)
+                .frame(maxWidth: .infinity)
+                .background(color(line.tone).opacity(line.tone == .progress ? 0 : 0.12))
+            }
+        }
+    }
+
+    private func icon(_ tone: ChatStatusLine.Tone) -> String {
+        switch tone {
+        case .progress: return "arrow.triangle.2.circlepath"
+        case .warning:  return "wifi.exclamationmark"
+        case .success:  return "checkmark.circle.fill"
+        case .failure:  return "exclamationmark.triangle.fill"
+        }
+    }
+
+    private func color(_ tone: ChatStatusLine.Tone) -> Color {
+        switch tone {
+        case .progress: return Color.textSecondary
+        case .warning:  return .orange
+        case .success:  return .green
+        case .failure:  return .red
+        }
+    }
+
+    private func title(_ action: ChatStatusLine.Action) -> String {
+        switch action {
+        case .retryLoad:   return "Retry"
+        case .checkAgain:  return "Check again"
+        case .stopWaiting: return "Stop waiting"
+        }
+    }
+
+    private func perform(_ action: ChatStatusLine.Action) {
+        switch action {
+        case .retryLoad:   vm.retryLoad()
+        case .checkAgain:  vm.checkAgainForReply()
+        case .stopWaiting: vm.stopWaitingForReply()
+        }
+    }
+}
+
 /// Main chat content view — message list + input bar.
 struct ChatView: View {
     @Environment(ChatViewModel.self) private var vm
@@ -8,13 +86,6 @@ struct ChatView: View {
     @State private var showAttachSheet = false
     @State private var showOptions = false
     #endif
-
-    /// Rebuilds the message list when a banner above it appears or goes away, so
-    /// the lazy ScrollView cannot be left scrolled past its content (blank list).
-    @State private var bannerEpoch = 0
-    private var bannerKey: String {
-        "\(vm.engineBanner != nil)\(vm.backendReady)\(vm.isStartingBackend)\(vm.isSwitchingBackend)\(vm.memoryAdvisory.advisoryText != nil)"
-    }
 
     private var currentTitle: String {
         vm.conversations.first(where: { $0.id == vm.currentConvId })?.title ?? ""
@@ -70,7 +141,8 @@ struct ChatView: View {
                     isStreaming: vm.isStreaming,
                     currentSearchQuery: vm.currentSearchQuery,
                     isFetching: vm.isFetching,
-                    isLoadingMessages: vm.loadingConvId != nil,
+                    load: vm.transcriptLoad,
+                    onRetryLoad: { vm.retryLoad() },
                     failedUserMessageId: vm.lastFailedUserMessage?.id,
                     streamingWaitMessage: vm.streamingWaitMessage,
                     thinkingContent: vm.thinkingContent,
@@ -90,8 +162,10 @@ struct ChatView: View {
                         vm.inputText = text
                     }
                 )
-                .id("\(vm.listEpoch)-\(bannerEpoch)")
-                .onChange(of: bannerKey) { _, _ in bannerEpoch += 1 }
+                // One identity per transcript put on screen, and nothing else:
+                // scroll position and the message window start fresh with each
+                // conversation, and nothing rebuilds the list while one is open.
+                .id(vm.transcriptID)
                 #if os(iOS)
                 if onBack != nil { floatingPillNav }
                 LinearGradient(
@@ -104,6 +178,9 @@ struct ChatView: View {
                 .allowsHitTesting(false)
                 #endif
             }
+
+            // ── What is going on, re-read every second ────────────────────
+            TurnStatusBar()
 
             // ── Input bar ─────────────────────────────────────────────────
             #if os(iOS)
@@ -266,6 +343,7 @@ struct ChatView: View {
     private var floatingPillNav: some View {
         HStack {
             navCircleButton(icon: "chevron.left") { onBack?() }
+                .accessibilityIdentifier("sidebar-button")
             Spacer()
             navCircleButton(icon: "ellipsis") { showOptions = true }
         }

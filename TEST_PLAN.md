@@ -180,3 +180,11 @@ code changes. Per-release detail is in git history and `CHANGELOG.md`.
   badge after delete, end-to-end agentic loop, edit and resend
 - **2026-07-26** — macOS auth token flow, confirmed in the running app
   (`aec50d1`, `5a6a56f`)
+
+## Connection tokens in the Keychain (iOS)
+
+- [ ] Upgrade from a build that stored the token in iCloud key-value storage: launch once, the connection still connects (token came from the Keychain), and the key-value JSON no longer has a `token` field.
+- [ ] Pair by QR, force close, relaunch: still connected, no 401.
+- [ ] Edit a connection and clear its token: the app reports a missing token and the Keychain item is gone. Delete a connection: its Keychain item is gone.
+- [ ] A second device with iCloud Keychain on shows the connection and connects without re-pairing. With iCloud Keychain off it shows the connection with no token and asks for it.
+

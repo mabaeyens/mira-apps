@@ -12,6 +12,7 @@ struct WelcomeView: View {
             // ── Top buttons ────────────────────────────────────────────────
             HStack {
                 circleButton(icon: "line.3.horizontal", action: onMenu)
+                    .accessibilityIdentifier("sidebar-button")
                 Spacer()
             }
             .padding(.horizontal, Spacing.xl)

@@ -1,14 +1,19 @@
 import SwiftUI
 
 /// Scrollable list of chat bubbles with pin-to-bottom auto-scroll.
-/// Shows a welcome screen when the conversation is empty.
+///
+/// The area is never empty. With messages it shows them, also while a refresh
+/// is in flight; without, it shows a spinner with text while loading, an error
+/// with Retry when the load failed, and the welcome screen for a conversation
+/// that really is empty.
 struct MessageListView: View {
     let messages: [Message]
     var conversationId: String? = nil
     let isStreaming: Bool
     let currentSearchQuery: String?
     let isFetching: Bool
-    var isLoadingMessages: Bool = false
+    var load: TranscriptLoad = .idle
+    var onRetryLoad: (() -> Void)? = nil
     var failedUserMessageId: UUID? = nil
     var streamingWaitMessage: String? = nil
     var thinkingContent: String? = nil
@@ -32,28 +37,80 @@ struct MessageListView: View {
     @State private var isUserScrolling = false
     private let bottomAnchor = "bottom"
 
+    /// How many of the newest messages are laid out. The list is not lazy (see
+    /// `scrollingMessages`), so this bounds the cost of opening a long
+    /// conversation; "Show earlier messages" raises it a step at a time.
+    private static let windowStep = 20
+    @State private var windowSize = MessageListView.windowStep
+
+    private var shownMessages: ArraySlice<Message> { messages.suffix(windowSize) }
+    private var earlierCount: Int { max(0, messages.count - windowSize) }
+
     var body: some View {
-        if isLoadingMessages {
-            loadingView
-        } else if messages.isEmpty && !isStreaming {
-            welcomeView
-        } else {
+        if !messages.isEmpty || isStreaming {
             scrollingMessages
+        } else {
+            switch load {
+            case .loading(let since): loadingView(since: since)
+            case .failed(let reason): failedView(reason: reason)
+            default:                  welcomeView
+            }
         }
     }
 
     // ── Loading state ─────────────────────────────────────────────────────────
 
-    private var loadingView: some View {
+    /// Shown only when there is no saved copy to paint. Counts the seconds, so
+    /// a slow load is visibly still a load.
+    private func loadingView(since: Date) -> some View {
+        TimelineView(.periodic(from: since, by: 1)) { context in
+            let seconds = Int(context.date.timeIntervalSince(since))
+            VStack(spacing: Spacing.l) {
+                ProgressView()
+                    .tint(Color.accent)
+                Text(seconds < 2 ? "Loading conversation…" : "Loading conversation… \(seconds) s")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.textSecondary)
+                    .monospacedDigit()
+                if seconds >= 8 {
+                    Text("The server is slow to answer. It may be busy with another reply.")
+                        .font(.caption)
+                        .foregroundStyle(Color.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Spacing.xxxl)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(Color.appBg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("transcript-loading")
+    }
+
+    // ── Failed load ───────────────────────────────────────────────────────────
+
+    private func failedView(reason: String) -> some View {
         VStack(spacing: Spacing.l) {
-            ProgressView()
-                .tint(Color.accent)
-            Text("Loading conversation…")
-                .font(.subheadline)
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title2)
+                .foregroundStyle(.orange)
+            Text("Could not load this conversation")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.textPrimary)
+            Text(reason)
+                .font(.caption)
                 .foregroundStyle(Color.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Spacing.xxxl)
+            Button("Retry") { onRetryLoad?() }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.appAccent)
+                .accessibilityIdentifier("transcript-retry")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBg)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("transcript-error")
     }
 
     // ── Welcome empty state ───────────────────────────────────────────────────
@@ -83,17 +140,50 @@ struct MessageListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBg)
+        .accessibilityIdentifier("transcript-empty")
     }
 
     // ── Message list ──────────────────────────────────────────────────────────
 
+    /// A plain `VStack`, not a `LazyVStack`, on purpose.
+    ///
+    /// A lazy stack sizes itself from estimated row heights and builds only the
+    /// rows it believes are visible. This list starts at the bottom and is
+    /// scrolled there programmatically, over rows whose real heights (markdown,
+    /// code, tables) are far from any estimate, so the scroll could land where
+    /// the stack had built nothing: a blank list holding all its data, until
+    /// some unrelated layout pass woke it up. Four repairs aimed at that state
+    /// (anchor outside the stack, deferred scroll, re-pin on resize, rebuilding
+    /// the scroll view) each missed some path into it.
+    ///
+    /// Laying the rows out eagerly removes the state: content height is exact,
+    /// "bottom" is a real position, and every row in the window exists. The cost
+    /// is bounded by the window (`windowSize` newest messages).
     private var scrollingMessages: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: topContentInset)
-                    LazyVStack(spacing: 0) {
-                    ForEach(messages) { msg in
+                    VStack(spacing: 0) {
+                    if earlierCount > 0 {
+                        Button {
+                            // Keep the message being read where it is: the new
+                            // rows go in above it.
+                            let anchor = shownMessages.first?.id
+                            scrollPinned = false
+                            windowSize += Self.windowStep
+                            if let anchor {
+                                DispatchQueue.main.async { proxy.scrollTo(anchor, anchor: .top) }
+                            }
+                        } label: {
+                            Label("Show earlier messages (\(earlierCount))", systemImage: "arrow.up")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .padding(.vertical, Spacing.m)
+                        .accessibilityIdentifier("show-earlier")
+                    }
+                    ForEach(shownMessages) { msg in
                         let isLastStreamingEmpty = msg.id == messages.last?.id
                             && msg.isStreaming && msg.content.isEmpty
                         MessageBubble(
@@ -245,12 +335,10 @@ struct MessageListView: View {
                     }
                     .frame(maxWidth: 780)
                     .frame(maxWidth: .infinity)
-                    // Outside the LazyVStack on purpose: an id inside it may not be
-                    // realised when we scrollTo it, which left the list blank after
-                    // a send until something forced a re-layout (e.g. the sidebar).
                     Color.clear.frame(height: 1).id(bottomAnchor)
                 }
             }
+            .accessibilityIdentifier("message-list")
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
             .onChange(of: conversationId) {
@@ -272,30 +360,26 @@ struct MessageListView: View {
                     scrollToBottom(proxy: proxy)
                 }
             }
-            // Opening a conversation recreates this ScrollView. defaultScrollAnchor
-            // lands on ESTIMATED cell heights; as the lazy markdown/code cells
-            // render their real (taller) heights the true bottom moves down and
-            // the view is left stranded mid-content. Snap to the true bottom on
-            // appear and again as the lazy cells settle.
+            // Opening a conversation creates this ScrollView (ChatView gives it
+            // the transcript's identity). defaultScrollAnchor starts it at the
+            // bottom; this makes sure of it once the first layout is in.
             .onAppear {
                 scrollPinned = true
                 scrollToBottom(proxy: proxy)
             }
-            // Re-pin only for that opening settle. Gated on !isStreaming (a live
-            // turn's token/thinking onChanges below already keep us pinned, and
-            // firing here on each search/fetch activity-row toggle blanked the list)
-            // and on !isUserScrolling (so a drag near the bottom right after a turn
-            // isn't tugged back down as late cells change the content height).
+            // Content that changes height while pinned and not streaming (a
+            // refresh that adds messages, code highlighting finishing, the
+            // thinking block collapsing) must not leave the view short of the
+            // bottom. Not while streaming (the token/thinking onChanges above
+            // already keep it pinned) and not while the user is dragging.
             .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { old, new in
                 if scrollPinned && !isStreaming && !isUserScrolling && new != old {
                     scrollToBottom(proxy: proxy)
                 }
             }
-            // A banner appearing or going away above the list (offline, waking,
-            // memory) changes the container height under a LazyVStack whose cells
-            // were laid out for the old height, and the list came back blank until
-            // something forced a re-layout. Re-pin to the true bottom on any change,
-            // after the layout pass. Not while the user is dragging.
+            // A banner or the status line appearing or going away changes the
+            // container height. Stay at the bottom if that is where the view
+            // was. Not while the user is dragging.
             .onScrollGeometryChange(for: CGFloat.self) { $0.containerSize.height } action: { old, new in
                 if new != old && scrollPinned && !isUserScrolling {
                     scrollToBottom(proxy: proxy)

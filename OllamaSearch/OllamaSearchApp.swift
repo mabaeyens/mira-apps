@@ -239,6 +239,17 @@ struct OllamaSearchApp: App {
     private func autoConnect() async -> URL? {
         let isLoopback: (URL) -> Bool = { ["127.0.0.1", "::1"].contains($0.host ?? "") }
 
+        #if DEBUG
+        // UI tests in the simulator: `-MiraTestServer <url>` on the launch line
+        // connects straight to `scripts/mira-stub-server.py`, with no token and
+        // without reading or writing the saved connections. Debug builds only.
+        if let override = UserDefaults.standard.string(forKey: "MiraTestServer"),
+           let url = URL(string: override) {
+            splashStatus = "Connecting to the test server…"
+            return url
+        }
+        #endif
+
         // Try the last-used URL first
         if let active = connectionsStore.activeURLString,
            let url = URL(string: active), !isLoopback(url) {

@@ -42,10 +42,18 @@ Your conversations are cached locally as a file in the app's container. If iClou
 available, that file lives in the app's iCloud container and syncs across your devices under
 your own Apple ID, never to us.
 
-Saved server connections (the URLs you add, plus any access token you enter for them) are
-kept in iCloud's key-value store, so they too sync across your devices under your Apple ID,
-and nowhere else. On macOS, the local server's token is read from a file in your home
-directory.
+The text of your most recent conversations (the newest 80) is also kept as plain files in the
+app's local cache folder on that device, so a conversation opens at once while the server
+refreshes it. It is not in iCloud, is not backed up, and is removed when you delete the
+conversation.
+
+Saved server connections (the name and URL you add) are kept in iCloud's key-value store, so
+they sync across your devices under your Apple ID, and nowhere else. The access token for a
+connection is not stored there: it is kept in the Keychain. On iPhone and iPad that item is
+synchronizable, so it travels through iCloud Keychain, which is end-to-end encrypted, and the
+app never sends it anywhere except to the server it belongs to. If iCloud Keychain is off, the
+token stays on that device and another device needs the connection paired again. On macOS the
+local server's token is also kept in the Keychain, on that Mac only.
 
 The smaller stuff (sidebar state, cached memory entries, last-used settings) sits in the
 app's local settings. All of it stays on your device and syncs only through *your* iCloud,
