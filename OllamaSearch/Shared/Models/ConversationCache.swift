@@ -23,6 +23,10 @@ actor ConversationCache {
     }
 
     func save(_ conversations: [Conversation]) {
+        // Demo conversations are never written. The id check also catches a
+        // save that was scheduled in demo and runs after it ended.
+        guard !DemoMode.isActive,
+              !conversations.contains(where: { DemoMode.isDemoID($0.id) }) else { return }
         let file = CachedFile(
             savedAt: Date().timeIntervalSince1970,
             conversations: conversations.map { CachedConv($0) }
@@ -32,6 +36,8 @@ actor ConversationCache {
     }
 
     func load() -> (conversations: [Conversation], savedAt: Date)? {
+        // The real list must not appear in the demo.
+        guard !DemoMode.isActive else { return nil }
         guard let data = try? Data(contentsOf: cacheURL()),
               let file = try? JSONDecoder().decode(CachedFile.self, from: data) else { return nil }
         let convs = file.conversations.map(\.asConversation)

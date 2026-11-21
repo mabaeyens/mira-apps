@@ -2,6 +2,9 @@
 import SwiftUI
 
 struct ConnectionView: View {
+    /// Non-nil on the first-run screen only: offers the demo (see DemoMode).
+    /// Declared first so `onConnect` stays the trailing closure.
+    var onDemo: (() -> Void)? = nil
     let onConnect: (URL, String?) -> Void
 
     @Environment(SavedConnectionsStore.self) private var store
@@ -70,6 +73,20 @@ struct ConnectionView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.vertical, Spacing.m)
+
+                if let onDemo {
+                    Button(action: onDemo) {
+                        Text("Try the demo")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.textSecondary)
+                            .padding(.horizontal, Spacing.xl)
+                            .padding(.vertical, Spacing.s)
+                            .overlay(Capsule().strokeBorder(Color.borderSubtle, lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("try-demo-button")
+                    .accessibilityHint("Opens sample conversations. No Mac needed, nothing is sent or saved.")
+                }
 
                 if let err = rowError {
                     Text(err)

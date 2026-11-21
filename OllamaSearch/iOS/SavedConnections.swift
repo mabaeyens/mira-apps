@@ -90,6 +90,7 @@ final class SavedConnectionsStore {
     }
 
     func delete(at offsets: IndexSet) {
+        guard !DemoMode.isActive else { return }
         let removed = offsets.map { connections[$0].urlString }
         connections.remove(atOffsets: offsets)
         // The token goes with the connection, unless another entry still uses the URL.
@@ -104,6 +105,7 @@ final class SavedConnectionsStore {
     }
 
     func setActive(_ urlString: String) {
+        guard !DemoMode.isActive else { return }
         activeURLString = urlString
         kv.set(urlString, forKey: Self.activeKey)
         kv.synchronize()
@@ -128,6 +130,8 @@ final class SavedConnectionsStore {
     /// Tokens go to the Keychain; the key-value JSON carries none. If the Keychain
     /// refuses a token it stays in the JSON for now rather than being lost.
     private func persist() {
+        // Nothing is saved from the demo: no connection, no token, no key-value write.
+        guard !DemoMode.isActive else { return }
         var stored: [StoredConnection] = []
         for c in connections {
             var keep: String? = nil

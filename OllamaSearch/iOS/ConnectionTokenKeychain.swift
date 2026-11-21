@@ -47,6 +47,9 @@ enum ConnectionTokenKeychain {
     /// the caller can keep the token elsewhere instead of losing it.
     @discardableResult
     static func write(_ token: String, for urlString: String) -> Bool {
+        // The demo has no token and must leave the Keychain alone. Reported as
+        // refused, which callers already handle without losing anything.
+        guard !DemoMode.isActive else { return false }
         let value = Data(token.trimmingCharacters(in: .whitespacesAndNewlines).utf8)
         let updated = SecItemUpdate(query(urlString) as CFDictionary,
                                     [kSecValueData as String: value] as CFDictionary)
@@ -65,6 +68,7 @@ enum ConnectionTokenKeychain {
     }
 
     static func delete(_ urlString: String) {
+        guard !DemoMode.isActive else { return }
         let status = SecItemDelete(query(urlString) as CFDictionary)
         if status != errSecSuccess && status != errSecItemNotFound {
             logger.error("keychain delete failed: \(status)")

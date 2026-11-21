@@ -18,6 +18,10 @@ struct SSEClient {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 300
         config.timeoutIntervalForResource = 3600
+        // A session with its own configuration ignores URLProtocol.registerClass,
+        // so demo mode has to be listed here to answer /chat (and to keep this
+        // session off the network while demo is on).
+        config.protocolClasses = [DemoURLProtocol.self] + (config.protocolClasses ?? [])
         return URLSession(configuration: config, delegate: nil, delegateQueue: nil)
     }()
 

@@ -41,7 +41,7 @@ if [ -n "${RESULT:-}" ]; then rm -rf "$RESULT"; bundle=(-resultBundlePath "$RESU
 
 OUT="${LOG:-$(mktemp /tmp/claude_chatstates.XXXXXX)}"
 xcodebuild test -project OllamaSearch.xcodeproj -scheme OllamaSearch \
-  -destination "platform=iOS Simulator,id=$SIM" "${only[@]}" "${bundle[@]}" >"$OUT" 2>&1
+  -destination "platform=iOS Simulator,id=$SIM" "${only[@]}" ${bundle[@]+"${bundle[@]}"} >"$OUT" 2>&1
 rc=$?
 grep -E "PROBE|Test Case .*(passed|failed)|error:|XCTAssert|TEST (SUCCEEDED|FAILED)|BUILD FAILED" "$OUT" | cut -c1-600
 echo "xcodebuild exit=$rc"

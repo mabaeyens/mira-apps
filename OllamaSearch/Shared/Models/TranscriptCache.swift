@@ -43,6 +43,8 @@ actor TranscriptCache {
     }
 
     func save(_ entries: [Entry], for id: String) {
+        // Nothing from the demo reaches the disk (see DemoMode).
+        guard !DemoMode.isActive, !DemoMode.isDemoID(id) else { return }
         guard let url = fileURL(for: id), !entries.isEmpty,
               let data = try? JSONEncoder().encode(entries) else { return }
         try? data.write(to: url, options: .atomic)
@@ -50,12 +52,14 @@ actor TranscriptCache {
     }
 
     func load(_ id: String) -> [Entry]? {
+        guard !DemoMode.isActive else { return nil }
         guard let url = fileURL(for: id),
               let data = try? Data(contentsOf: url) else { return nil }
         return try? JSONDecoder().decode([Entry].self, from: data)
     }
 
     func remove(_ id: String) {
+        guard !DemoMode.isActive, !DemoMode.isDemoID(id) else { return }
         guard let url = fileURL(for: id) else { return }
         try? FileManager.default.removeItem(at: url)
     }

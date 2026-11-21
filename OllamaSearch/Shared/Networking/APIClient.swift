@@ -573,12 +573,14 @@ final class APIClient {
         do {
             let data = try await send(req)
             let items = try JSONDecoder().decode(MemoryList.self, from: data).memories
-            if let encoded = try? JSONEncoder().encode(items) {
+            // The demo's memories stay in memory, and the real cache stays out
+            // of the demo (same rule in addMemory and deleteMemory below).
+            if !DemoMode.isActive, let encoded = try? JSONEncoder().encode(items) {
                 UserDefaults.standard.set(encoded, forKey: "cachedMemories")
             }
             return items
         } catch {
-            if let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
+            if !DemoMode.isActive, let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
                let items = try? JSONDecoder().decode([MemoryItem].self, from: cached) {
                 return items
             }
@@ -597,6 +599,7 @@ final class APIClient {
         authed(&req)
         let data = try await send(req)
         let item = try JSONDecoder().decode(MemoryItem.self, from: data)
+        guard !DemoMode.isActive else { return item }
         var existing: [MemoryItem] = []
         if let data = UserDefaults.standard.data(forKey: "cachedMemories") {
             existing = (try? JSONDecoder().decode([MemoryItem].self, from: data)) ?? []
@@ -616,6 +619,7 @@ final class APIClient {
         req.httpMethod = "DELETE"
         authed(&req)
         _ = try await send(req)
+        guard !DemoMode.isActive else { return }
         if let cached = UserDefaults.standard.data(forKey: "cachedMemories"),
            var items = try? JSONDecoder().decode([MemoryItem].self, from: cached) {
             items.removeAll { $0.id == id }

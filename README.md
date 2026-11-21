@@ -74,7 +74,7 @@ iPhone (Mira iOS)
 
 The macOS app connects to the Python server ([mira-core](https://github.com/mabaeyens/mira-core)), which runs as a macOS LaunchAgent (`com.mab.mira`) installed separately from the app. Whichever backend `mira.yaml` names is started and managed by the server. The iOS app discovers the Mac over Bonjour (`_ollamasearch._tcp`) on the local network, or connects manually using a Tailscale hostname.
 
-**The app requires the Mac server to run.** There is no standalone offline mode — inference happens on the Mac. For access outside your home network, install [Tailscale](https://tailscale.com) on both devices and use the **Manual URL** option with your Tailscale hostname (the server listens on HTTPS port `8443` for remote access).
+**The app requires the Mac server to run.** There is no standalone offline mode — inference happens on the Mac. The one exception is the demo on iPhone and iPad (**Try the demo** on the first screen): sample conversations and a canned reply, with no server, no network and nothing saved, so the interface can be seen before a Mac is paired. For access outside your home network, install [Tailscale](https://tailscale.com) on both devices and use the **Manual URL** option with your Tailscale hostname (the server listens on HTTPS port `8443` for remote access).
 
 Once the server is reachable beyond loopback, it requires a shared token. Set `auth_token:` in the server's `mira.yaml` (or the `MIRA_TOKEN` env var); the apps send it as `Authorization: Bearer <token>` on every request automatically. See the [mira-core README](https://github.com/mabaeyens/mira-core#access-control) for details.
 

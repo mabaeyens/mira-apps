@@ -68,6 +68,10 @@ When you dictate, the audio is turned into text by Apple's speech recognition. I
 Mira makes no network calls of its own except to the server you configure. No phone-home, no
 telemetry, nothing reaching out in the background.
 
+## The demo
+
+On iPhone and iPad the first screen offers a demo for looking around without a Mac. It shows a few sample conversations that ship inside the app and answers anything you send with a fixed reply. In the demo the app makes no network request at all and stores nothing: no saved connection, no token, nothing in iCloud or the Keychain, no cached conversation. What you type there is gone when you leave the demo or quit the app.
+
 ## Children's privacy
 
 Mira collects no data from anyone, children included.

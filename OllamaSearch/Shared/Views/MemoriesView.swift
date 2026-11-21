@@ -10,7 +10,8 @@ final class MemoriesViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
 
     init() {
-        if let data = UserDefaults.standard.data(forKey: "cachedMemories"),
+        // Not in the demo: the cache holds memories from a real server.
+        if !DemoMode.isActive, let data = UserDefaults.standard.data(forKey: "cachedMemories"),
            let items = try? JSONDecoder().decode([MemoryItem].self, from: data) {
             memories = items
         }

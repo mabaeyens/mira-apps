@@ -875,6 +875,24 @@ final class ChatViewModel {
         }
     }
 
+    /// Stops everything this view model has running: the stream, the wait for a
+    /// reply, a transcript load and both polls. Sends nothing to the server.
+    /// Call before the view model is replaced (leaving the demo), so nothing of
+    /// it keeps polling a server that is no longer the one in use.
+    func shutDown() {
+        endStreamLocally()
+        awaitTask?.cancel()
+        awaitTask = nil
+        loadTask?.cancel()
+        loadTask = nil
+        healthPollTask?.cancel()
+        healthPollTask = nil
+        memoryPollTask?.cancel()
+        memoryPollTask = nil
+        pendingTurn = nil
+        turnPhase = .idle
+    }
+
     /// Tell the server to start its configured inference backend.
     func startBackend() async {
         guard !isStartingBackend, !isSwitchingBackend else { return }

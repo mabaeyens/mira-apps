@@ -9,12 +9,16 @@ final class CloudPreferences {
     @ObservationIgnored private var isLoading = false
 
     var projectsExpanded: Bool = true {
-        didSet { if !isLoading { kv.set(projectsExpanded, forKey: "cp_projectsExpanded") } }
+        didSet { if canWrite { kv.set(projectsExpanded, forKey: "cp_projectsExpanded") } }
     }
 
     var speechLanguage: String = "auto" {
-        didSet { if !isLoading { kv.set(speechLanguage, forKey: "cp_speechLanguage") } }
+        didSet { if canWrite { kv.set(speechLanguage, forKey: "cp_speechLanguage") } }
     }
+
+    /// Not while loading (that would write back what was just read), and not in
+    /// the demo, which writes nothing to iCloud.
+    private var canWrite: Bool { !isLoading && !DemoMode.isActive }
 
     init() {
         reload()

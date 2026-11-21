@@ -83,7 +83,14 @@ struct OllamaSearchApp: App {
     /// elsewhere. The banner keeps its text but drops the spinner: nothing is
     /// being retried any more, and a spinner that never resolves is a lie.
     @State private var reconnectStalled = false
+    /// The demo is on screen: `activeURL` is `DemoMode.baseURL` and every request
+    /// is answered from memory. Never persisted, so a relaunch starts without it.
+    @State private var demoActive = false
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        DemoMode.register()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -93,8 +100,11 @@ struct OllamaSearchApp: App {
                 } else if let url = activeURL {
                     iOSConnectedView(serverURL: url,
                                      isReachable: isReachable, reconnectMessage: reconnectMessage,
-                                     reconnectStalled: reconnectStalled) {
-                        showingConnectionSettings = true
+                                     reconnectStalled: reconnectStalled,
+                                     onExitDemo: demoActive ? { exitDemo() } : nil) {
+                        // The demo has no connection to manage: its connection
+                        // button leaves the demo instead.
+                        if demoActive { exitDemo() } else { showingConnectionSettings = true }
                     }
                     .sheet(isPresented: $showingConnectionSettings) {
                         ConnectionView { newURL, token in
@@ -110,7 +120,7 @@ struct OllamaSearchApp: App {
                         .environment(connectionsStore)
                     }
                 } else {
-                    ConnectionView { url, token in
+                    ConnectionView(onDemo: { enterDemo() }) { url, token in
                         APIClient.shared.authToken = token
                         APIClient.shared.baseURL = url
                         activeURL = url
@@ -132,12 +142,45 @@ struct OllamaSearchApp: App {
                 }
             }
             .onChange(of: scenePhase) { _, phase in
-                guard phase == .active, splashDone, activeURL != nil else { return }
+                // Not in the demo: there is nothing to reconnect to, and the
+                // saved connections must not be probed behind it.
+                guard phase == .active, splashDone, activeURL != nil, !demoActive else { return }
                 startReconnect()
             }
             .environment(chatVM)
             .environment(cloudPrefs)
         }
+    }
+
+    // ── Demo ──────────────────────────────────────────────────────────────────
+
+    /// "Try the demo" on the first-run screen. Points the client at the demo
+    /// host, which `DemoURLProtocol` answers from memory; nothing is saved, so
+    /// quitting here comes back to the first-run screen.
+    private func enterDemo() {
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        reconnectMessage = nil
+        reconnectStalled = false
+        isReachable = true
+        DemoMode.enter()
+        APIClient.shared.authToken = nil
+        APIClient.shared.baseURL = DemoMode.baseURL
+        demoActive = true
+        activeURL = DemoMode.baseURL
+    }
+
+    /// "Exit demo". Stops the view model, replaces it with a fresh one so no
+    /// sample conversation survives, and goes back to the first-run screen.
+    /// `baseURL` is left on the demo host until a real connection replaces it:
+    /// outside the demo that host only ever fails locally.
+    private func exitDemo() {
+        chatVM.shutDown()
+        chatVM = ChatViewModel()
+        DemoMode.exit()
+        APIClient.shared.authToken = nil
+        demoActive = false
+        activeURL = nil
     }
 
     /// Called when the app foregrounds. Polls the server for up to 90 s, cycling
@@ -603,6 +646,8 @@ struct iOSConnectedView: View {
     var reconnectMessage: String? = nil
     /// The banner is showing a reason rather than progress — no spinner.
     var reconnectStalled: Bool = false
+    /// Non-nil in the demo: shows the Demo banner, and is its Exit action.
+    var onExitDemo: (() -> Void)? = nil
     let onSettings: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -620,12 +665,16 @@ struct iOSConnectedView: View {
 
     /// "Tailscale" for 100.x addresses or *.ts.net hostnames, "Local" otherwise.
     private var connectionLabel: String {
+        if onExitDemo != nil { return "Exit demo" }
         guard let host = serverURL.host else { return "Server" }
         let isTailscale = host.hasPrefix("100.") || host.hasSuffix(".ts.net")
         return isTailscale ? "Tailscale" : "Local"
     }
     private var connectionIcon: String {
-        connectionLabel == "Tailscale" ? "network" : "wifi"
+        // In the demo the connection button leaves it, so it must not look
+        // like a live connection.
+        if onExitDemo != nil { return "rectangle.portrait.and.arrow.right" }
+        return connectionLabel == "Tailscale" ? "network" : "wifi"
     }
 
     @ViewBuilder
@@ -715,7 +764,10 @@ struct iOSConnectedView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            reconnectBanner
+            VStack(spacing: 0) {
+                if let onExitDemo { DemoBanner(onExit: onExitDemo) }
+                reconnectBanner
+            }
         }
         .animation(.easeInOut(duration: 0.3), value: reconnectMessage != nil)
     }
@@ -753,6 +805,42 @@ struct iOSConnectedView: View {
                 Color.borderSubtle.frame(height: 0.5)
             }
             .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+/// Across the top of everything while the demo is on: the chat, the welcome
+/// screen and the sidebar that slides over them, on iPhone and iPad alike. It
+/// is the one place that says this is a demo and the way out of it.
+struct DemoBanner: View {
+    let onExit: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.m) {
+            Text("Demo")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.accent)
+                .padding(.horizontal, Spacing.m)
+                .padding(.vertical, 3)
+                .background(Color.accent.opacity(0.15), in: Capsule())
+                .accessibilityIdentifier("demo-label")
+            Text("Sample conversations. Nothing is sent or saved.")
+                .font(.caption)
+                .foregroundStyle(Color.textSecondary)
+                .lineLimit(2)
+            Spacer(minLength: Spacing.s)
+            Button("Exit demo", action: onExit)
+                .font(.caption.weight(.semibold))
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .accessibilityIdentifier("exit-demo-button")
+                .accessibilityHint("Goes back to the connection screen, where you can connect your Mac.")
+        }
+        .padding(.horizontal, Spacing.xl)
+        .padding(.vertical, Spacing.sm)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            Color.borderSubtle.frame(height: 0.5)
         }
     }
 }
