@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+**New**
+
+- **Mira can sleep, and the app says so.** With `engine_idle_unload_minutes` set on the server, the engine unloads after that many idle minutes and wakes on the next request. The app reads `engine_state` from `/health`: a sleeping engine shows a quiet "Asleep. Wakes when you send a message." banner (never the offline banner or the Start button), and a waking one shows "Waking up…". Both appear on the empty-chat screen too, not only inside a conversation.
+- **The wake starts while you type.** Focusing the composer or opening a conversation calls `POST /engine/wake`, so the 9 to 30 second load overlaps with writing the message.
+- **Unload now** in the model sheet and the macOS menu bar frees the engine's memory on demand. A refusal (another client has a request in flight, or idle unload is off) says so instead of closing the sheet.
+
 **Fixed**
+
+- **A message sent to a sleeping engine is no longer cancelled mid-wake.** The 15 second stream-silence watchdog read the wake as a dropped connection, showed "Connection lost" and posted `/cancel` whenever a wake took longer than 15 seconds. The limit is now 300 seconds while the engine is not running, and chat requests allow 300 seconds instead of 60.
 
 - **Resend replaces the failed answer instead of asking the question twice.** Tapping Resend trimmed the broken exchange from the screen but never told the server, so the question stayed in the conversation's history twice with the failed reply between them — and every later turn was built on both copies. The conversation is reloaded from the server afterwards, so what is on screen is what is actually stored. Needs mira-core v1.3.0 or newer, which added the `retry` field on `/chat`. An older server ignores the field, which leaves the old behaviour rather than breaking anything
 - **A refused connection says so immediately.** A 403 from the host gate — the address is missing from `allowed_hosts` — was indistinguishable from a sleeping Mac, so the app spent 90 seconds retrying and then went orange with no explanation. The reason now appears on the first attempt and stays up. Retrying continues throughout, so fixing `mira.yaml` on the Mac is picked up without relaunching the app

@@ -22,6 +22,19 @@ final class EngineLifecycleUITests: XCTestCase {
         app.launch()
     }
 
+    /// No test may end with an alert on screen. The app reports every failure as
+    /// an "Error" alert, so naming the text here is what turns a flake into a
+    /// diagnosis instead of a bare "an alert appeared".
+    override func tearDownWithError() throws {
+        let alert = app.alerts.firstMatch
+        guard alert.exists else { return }
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.lifetime = .keepAlways
+        add(shot)
+        let texts = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " | ")
+        XCTFail("An alert was left on screen: title='\(alert.label)' texts=[\(texts)]")
+    }
+
     private var banner: XCUIElement { app.descendants(matching: .any)["engine-banner"].firstMatch }
     private var composer: XCUIElement { app.descendants(matching: .any)["composer"].firstMatch }
     private var sendButton: XCUIElement { app.buttons["send-button"] }
@@ -84,16 +97,44 @@ final class EngineLifecycleUITests: XCTestCase {
         XCTAssertTrue(stop.waitForExistence(timeout: 30), "Turn never started streaming")
         XCTAssertTrue(wait(300) { !stop.exists }, "Turn never finished (still streaming after 300 s)")
         XCTAssertFalse(app.buttons["Start"].exists, "Manual-start banner appeared during the wake")
-        let alert = app.alerts.firstMatch
-        if alert.exists {
-            let shot = XCTAttachment(screenshot: app.screenshot())
-            shot.lifetime = .keepAlways
-            add(shot)
-            let texts = alert.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " | ")
-            XCTFail("An alert appeared: title='\(alert.label)' texts=[\(texts)]")
-        }
         XCTAssertFalse(app.staticTexts["Request timed out. Check your connection and try again."].exists)
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Connection lost'")).firstMatch.exists,
                        "The stale-connection watchdog cancelled the turn during the wake")
+    }
+    // ── Unload now ────────────────────────────────────────────────────────────
+    // These two start with the engine RUNNING (the script wakes it first).
+
+    private var modelPill: XCUIElement { app.buttons["model-pill"] }
+    private var unloadButton: XCUIElement { app.buttons["unload-now-button"] }
+
+    /// Unload now frees the engine: the sheet closes and the app shows it asleep.
+    func testUnloadNowPutsEngineToSleep() throws {
+        XCTAssertTrue(composer.waitForExistence(timeout: 30))
+        XCTAssertFalse(bannerText().contains("Asleep"), "Precondition failed: engine already asleep")
+        XCTAssertTrue(modelPill.waitForExistence(timeout: 10))
+        modelPill.tap()
+        XCTAssertTrue(unloadButton.waitForExistence(timeout: 10),
+                      "No 'Unload now' in the model sheet: is engine_state running and the lifecycle on?")
+        unloadButton.tap()
+        XCTAssertTrue(wait(15) { !self.unloadButton.exists }, "Sheet did not close after a successful unload")
+        XCTAssertTrue(wait(25) { self.bannerText().contains("Asleep") },
+                      "Banner never showed Asleep after Unload now. Got '\(bannerText())'")
+    }
+
+    /// A 409 (another client has a request in flight) is reported, not hidden,
+    /// and the engine keeps running. The script holds a long chat open on the
+    /// server from a second client, since this app disables the model pill while
+    /// it is itself streaming.
+    func testUnloadNowWhileBusyShowsBusyMessage() throws {
+        XCTAssertTrue(composer.waitForExistence(timeout: 30))
+        XCTAssertTrue(modelPill.waitForExistence(timeout: 10))
+        modelPill.tap()
+        XCTAssertTrue(unloadButton.waitForExistence(timeout: 10))
+        unloadButton.tap()
+        let message = app.staticTexts["unload-message"]
+        XCTAssertTrue(message.waitForExistence(timeout: 15), "No message after a refused unload")
+        XCTAssertTrue(message.label.contains("Busy"), "Unexpected message: '\(message.label)'")
+        XCTAssertTrue(unloadButton.exists, "Sheet closed on a refused unload")
+        XCTAssertFalse(bannerText().contains("Asleep"), "Engine went to sleep despite the 409")
     }
 }

@@ -24,6 +24,7 @@ The apps are the SwiftUI front end for **[mira-core](https://github.com/mabaeyen
 - **Conversation history** — persistent, named conversations with a sidebar
 - **Markdown rendering** — code blocks, tables, and inline formatting via MarkdownUI
 - **Model picker** — reads the server's real library: which backends are installed, which models are on disk and how big they are. Adding a model in `mira.yaml` shows up without an app update, the running model is always listed and marked, and anything that cannot be selected says why
+- **Engine sleep and wake** — when the server unloads an idle engine to free RAM, the app shows it as asleep, starts the wake as soon as you focus the composer, and offers **Unload now** in the model sheet and the macOS menu bar. Needs `engine_idle_unload_minutes` in the server's `mira.yaml`; off by default
 - **iOS companion** — iPhone app connects to the Mac server over WiFi (Bonjour) or remotely (Tailscale over HTTPS), authenticating with a shared bearer token
 - **Splash screens** — animated Mira logo while the server and model load (macOS and iOS)
 - **About screen** — accessible from the macOS app menu and iOS info button
@@ -93,6 +94,17 @@ Quick start for an already-configured project:
 2. Open `OllamaSearch.xcodeproj` in Xcode
 3. Select the **macOS** destination → **⌘R**
 4. For iOS, connect your iPhone and select it as the destination → **⌘R**
+
+## Device tests
+
+`MiraUITests` holds UI tests that run on a wired iPhone, not the simulator, against a live server with `engine_idle_unload_minutes` set. `scripts/test-engine-lifecycle.sh` puts the engine in the right state before each test (asleep, running, or running and busy), runs it, and reports the server state afterwards. It runs from the terminal and does not take focus on the Mac, but the phone has to stay unlocked.
+
+```bash
+MIRA_URL=https://<host>:8443 MIRA_TOKEN=<token> scripts/test-engine-lifecycle.sh
+TESTS=testUnloadNowPutsEngineToSleep MIRA_URL=… MIRA_TOKEN=… scripts/test-engine-lifecycle.sh   # one test
+```
+
+The first run on a new machine needs the `MiraUITests` target signed once in Xcode.
 
 ## Name
 

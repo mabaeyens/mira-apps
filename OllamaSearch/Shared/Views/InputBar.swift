@@ -283,6 +283,7 @@ struct InputBar: View {
         }
         .buttonStyle(.plain)
         .disabled(vm.isSwitchingBackend || vm.isStreaming)
+        .accessibilityIdentifier("model-pill")
     }
 
     // ── "Add to Chat" popover — macOS ────────────────────────────────────────────

@@ -75,10 +75,12 @@ struct ModelPickerView: View {
                             }
                         }
                         .font(.caption)
+                        .accessibilityIdentifier("unload-now-button")
                         if let unloadMessage {
                             Text(unloadMessage)
                                 .font(.caption)
                                 .foregroundStyle(Color.textSecondary)
+                                .accessibilityIdentifier("unload-message")
                         }
                         Spacer()
                     }
