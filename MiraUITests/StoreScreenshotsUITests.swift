@@ -8,6 +8,9 @@ import XCTest
 ///     --batteryLevel 100 --cellularBars 4 --wifiBars 3
 ///   SHOTS_DIR=/tmp/claude_shots xcodebuild test ... -only-testing:MiraUITests/StoreScreenshotsUITests
 ///
+/// On an iPad the PNGs are written in the screen's native portrait orientation, so a
+/// landscape shot comes out turned 90 degrees: fix with `sips -r 270 file.png`.
+///
 /// The folder is `/tmp/mira-store-shots` unless `MIRA_SHOTS_DIR` is set in the
 /// test runner's environment (xcodebuild: `TEST_RUNNER_MIRA_SHOTS_DIR=...`).
 final class StoreScreenshotsUITests: XCTestCase {
@@ -21,6 +24,7 @@ final class StoreScreenshotsUITests: XCTestCase {
         let path = ProcessInfo.processInfo.environment["MIRA_SHOTS_DIR"] ?? "/tmp/mira-store-shots"
         dir = URL(fileURLWithPath: path)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        if UIDevice.current.userInterfaceIdiom == .pad { XCUIDevice.shared.orientation = .landscapeLeft }
         app = XCUIApplication()
         app.launchArguments += ["-MiraNoAutoWake", "1"]
         app.launch()
@@ -35,6 +39,13 @@ final class StoreScreenshotsUITests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", title)).firstMatch
     }
 
+    /// Opens the conversation list on the phone; on an iPad in landscape it is
+    /// already on screen.
+    private func openSidebar() {
+        let button = element("sidebar-button")
+        if button.exists && button.isHittable { button.tap() }
+    }
+
     private func shot(_ name: String) {
         Thread.sleep(forTimeInterval: 1.0)
         let png = XCUIScreen.main.screenshot().pngRepresentation
@@ -46,10 +57,10 @@ final class StoreScreenshotsUITests: XCTestCase {
         XCTAssertTrue(tryDemo.waitForExistence(timeout: 30))
         shot("01-first-run")
         tryDemo.tap()
-        XCTAssertTrue(element("sidebar-button").waitForExistence(timeout: 15))
+        XCTAssertTrue(element("sidebar-button").waitForExistence(timeout: 15) || row(titled: "A weekend in Lisbon").waitForExistence(timeout: 15))
         shot("02-demo-welcome")
 
-        element("sidebar-button").tap()
+        openSidebar()
         XCTAssertTrue(row(titled: "A weekend in Lisbon").waitForExistence(timeout: 15))
         shot("03-conversation-list")
 
@@ -62,19 +73,19 @@ final class StoreScreenshotsUITests: XCTestCase {
         }
         shot("04-thinking")
 
-        element("sidebar-button").tap()
+        openSidebar()
         XCTAssertTrue(row(titled: "A weekend in Lisbon").waitForExistence(timeout: 15))
         row(titled: "A weekend in Lisbon").tap()
         Thread.sleep(forTimeInterval: 1.0)
         shot("05-lisbon")
 
-        element("sidebar-button").tap()
+        openSidebar()
         XCTAssertTrue(row(titled: "Debounce a search field in SwiftUI").waitForExistence(timeout: 15))
         row(titled: "Debounce a search field in SwiftUI").tap()
         Thread.sleep(forTimeInterval: 1.0)
         shot("06-code")
 
-        element("sidebar-button").tap()
+        openSidebar()
         XCTAssertTrue(app.buttons["New Chat"].waitForExistence(timeout: 10))
         app.buttons["New Chat"].tap()
         Thread.sleep(forTimeInterval: 1.0)
