@@ -13,6 +13,7 @@
 **Fixed**
 
 - **Pairing again to a saved URL keeps the new token.** Adding a connection whose URL was already saved silently kept the old entry, so after a relaunch the app reconnected with a stale token and every request returned 401. The saved entry is now updated. The connected screen also reloads models and conversations when the server URL changes.
+- **The chat list no longer goes blank after a send.** The scroll-to-bottom anchor sat inside the lazy list, so scrolling to it right after a send could target a row that did not exist yet and leave the screen blank until a re-layout. The anchor is outside the lazy list now and scrolling waits for the layout pass.
 - **The model picker says why it is empty.** A failed model list (a 401, say) no longer reads "No backends configured. Add entries to mira.yaml"; it shows the actual error.
 - **A message sent to a sleeping engine is no longer cancelled mid-wake.** The 15 second stream-silence watchdog read the wake as a dropped connection, showed "Connection lost" and posted `/cancel` whenever a wake took longer than 15 seconds. The limit is now 300 seconds while the engine is not running, and chat requests allow 300 seconds instead of 60.
 
