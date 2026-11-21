@@ -2,7 +2,18 @@
 import Foundation
 import SwiftUI
 
-struct SavedConnection: Codable, Identifiable, Hashable {
+/// What goes into iCloud's key-value store. `token` is decoded so a legacy entry
+/// can be migrated, and is written only when the Keychain refused the token.
+private struct StoredConnection: Codable {
+    var id: UUID
+    var label: String
+    var urlString: String
+    var token: String?
+}
+
+/// A saved server. `token` lives in memory only: it is read from and written to
+/// the Keychain (see ConnectionTokenKeychain), never encoded with the rest.
+struct SavedConnection: Identifiable, Hashable {
     var id: UUID
     var label: String
     var urlString: String
@@ -70,6 +81,7 @@ final class SavedConnectionsStore {
         // reconnected with the stale one and every request came back 401.
         if let i = connections.firstIndex(where: { $0.urlString == connection.urlString }) {
             connections[i].token = connection.token
+            if (connection.token ?? "").isEmpty { ConnectionTokenKeychain.delete(connection.urlString) }
             if !connection.label.isEmpty { connections[i].label = connection.label }
         } else {
             connections.insert(connection, at: 0)
@@ -80,6 +92,10 @@ final class SavedConnectionsStore {
     func delete(at offsets: IndexSet) {
         let removed = offsets.map { connections[$0].urlString }
         connections.remove(atOffsets: offsets)
+        // The token goes with the connection, unless another entry still uses the URL.
+        for url in removed where !connections.contains(where: { $0.urlString == url }) {
+            ConnectionTokenKeychain.delete(url)
+        }
         if let active = activeURLString, removed.contains(active) {
             activeURLString = connections.first?.urlString
             if let v = activeURLString { kv.set(v, forKey: Self.activeKey) } else { kv.removeObject(forKey: Self.activeKey) }
@@ -95,7 +111,13 @@ final class SavedConnectionsStore {
 
     func update(_ connection: SavedConnection) {
         guard let idx = connections.firstIndex(where: { $0.id == connection.id }) else { return }
+        let old = connections[idx].urlString
         connections[idx] = connection
+        // An explicit edit may clear the token or move it to another URL.
+        if (connection.token ?? "").isEmpty { ConnectionTokenKeychain.delete(connection.urlString) }
+        if old != connection.urlString, !connections.contains(where: { $0.urlString == old }) {
+            ConnectionTokenKeychain.delete(old)
+        }
         persist()
     }
 
@@ -103,8 +125,22 @@ final class SavedConnectionsStore {
         connections.first { $0.urlString == urlString }?.token
     }
 
+    /// Tokens go to the Keychain; the key-value JSON carries none. If the Keychain
+    /// refuses a token it stays in the JSON for now rather than being lost.
     private func persist() {
-        guard let data = try? JSONEncoder().encode(connections) else { return }
+        var stored: [StoredConnection] = []
+        for c in connections {
+            var keep: String? = nil
+            if let t = c.token, !t.isEmpty {
+                let current = ConnectionTokenKeychain.read(c.urlString)
+                if current != t.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !ConnectionTokenKeychain.write(t, for: c.urlString) {
+                    keep = t
+                }
+            }
+            stored.append(StoredConnection(id: c.id, label: c.label, urlString: c.urlString, token: keep))
+        }
+        guard let data = try? JSONEncoder().encode(stored) else { return }
         kv.set(data, forKey: Self.connectionsKey)
         kv.synchronize()
     }
@@ -112,8 +148,31 @@ final class SavedConnectionsStore {
     private func load() {
         activeURLString = kv.string(forKey: Self.activeKey)
         guard let data = kv.data(forKey: Self.connectionsKey),
-              let decoded = try? JSONDecoder().decode([SavedConnection].self, from: data) else { return }
-        connections = decoded
+              let decoded = try? JSONDecoder().decode([StoredConnection].self, from: data) else { return }
+        var needsScrub = false
+        connections = decoded.map { d in
+            var c = SavedConnection(id: d.id, label: d.label, urlString: d.urlString)
+            let inKeychain = ConnectionTokenKeychain.read(d.urlString)
+            if let legacy = d.token, !legacy.isEmpty {
+                // A token still sitting in the key-value store: an entry from before
+                // this build, or one an older build on another device wrote back.
+                // A token already in the Keychain wins; otherwise move this one.
+                if let current = inKeychain {
+                    c.token = current
+                    needsScrub = true
+                } else if ConnectionTokenKeychain.write(legacy, for: d.urlString),
+                          ConnectionTokenKeychain.read(d.urlString) != nil {
+                    c.token = ConnectionTokenKeychain.read(d.urlString)
+                    needsScrub = true
+                } else {
+                    c.token = legacy   // Keychain refused it: keep it rather than lose it.
+                }
+            } else {
+                c.token = inKeychain
+            }
+            return c
+        }
+        if needsScrub { persist() }
     }
 
     // One-time migration from UserDefaults to NSUbiquitousKeyValueStore.
