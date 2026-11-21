@@ -15,6 +15,10 @@ final class EngineLifecycleUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        // Shrink the app's 15 s stream-silence watchdog to 3 s. Every wake takes
+        // 9 s or more, so without the wake grace period the first-message test
+        // would self-cancel every time instead of only on a slow wake.
+        app.launchArguments += ["-MiraStaleSeconds", "3"]
         app.launch()
     }
 
@@ -89,5 +93,7 @@ final class EngineLifecycleUITests: XCTestCase {
             XCTFail("An alert appeared: title='\(alert.label)' texts=[\(texts)]")
         }
         XCTAssertFalse(app.staticTexts["Request timed out. Check your connection and try again."].exists)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Connection lost'")).firstMatch.exists,
+                       "The stale-connection watchdog cancelled the turn during the wake")
     }
 }

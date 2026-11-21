@@ -151,6 +151,19 @@ final class ChatViewModel {
     // arrives for >15 s during active streaming.
     private var staleConnectionTask: Task<Void, Never>?
     private var lastEventDate = Date.distantPast
+    /// True while a turn is waiting on a sleeping or waking engine. The server
+    /// holds /chat until the engine is up (9-25 s typical, ~260 s worst case) and
+    /// sends nothing meanwhile, so the 15 s silence rule would cancel every slow
+    /// wake. Cleared by the first event of the turn.
+    private var wakeGrace = false
+    /// Silence limit in seconds. `-MiraStaleSeconds <n>` on the launch line
+    /// overrides the normal 15 so a UI test can force the watchdog to trip
+    /// during a wake without needing a slow one.
+    private static let staleLimit: TimeInterval = {
+        let override = UserDefaults.standard.integer(forKey: "MiraStaleSeconds")
+        return override > 0 ? TimeInterval(override) : 15
+    }()
+    private static let wakeGraceLimit: TimeInterval = 300
     private var streamEndedWithError = false
     // True once this conversation has at least one successfully saved exchange.
     // Used to decide whether to delete (never sent) or rename (failed send) on error.
@@ -269,12 +282,21 @@ final class ChatViewModel {
         // Reset heartbeat clock then start watchdog: if no event arrives for >15 s
         // (including heartbeats, which come every 5 s), treat as dropped connection.
         lastEventDate = Date()
+        // Lifecycle on (state non-nil) and the engine not running: the server will
+        // wake it while holding this request. The cached state can be up to 10 s
+        // stale (it may have unloaded since the last poll), so also re-check now.
+        wakeGrace = engineState != nil && engineState != "running"
+        if engineState != nil {
+            Task { await refreshBackendHealth() }
+        }
         staleConnectionTask?.cancel()
         staleConnectionTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
+                try? await Task.sleep(for: .seconds(Self.staleLimit < 5 ? Self.staleLimit : 5))
                 guard let self, !Task.isCancelled, self.isStreaming else { break }
-                if Date().timeIntervalSince(self.lastEventDate) > 15 {
+                if let state = self.engineState, state != "running" { self.wakeGrace = true }
+                let limit = self.wakeGrace ? Self.wakeGraceLimit : Self.staleLimit
+                if Date().timeIntervalSince(self.lastEventDate) > limit {
                     self.streamEndedWithError = true
                     self.errorMessage = "Connection lost — the server may be sleeping. Tap Resend when it's back."
                     self.stopStreaming()
@@ -365,6 +387,7 @@ final class ChatViewModel {
         flushTask = nil
         staleConnectionTask?.cancel()
         staleConnectionTask = nil
+        wakeGrace = false
         streamingWaitMessage = nil
         isThinkingActive = false
         isFetching = false
@@ -861,6 +884,7 @@ final class ChatViewModel {
 
     private func handle(event: ServerEvent, assistantMsgId: UUID) {
         lastEventDate = Date()  // any event (incl. heartbeat) resets the stale-connection clock
+        wakeGrace = false       // the engine is up: normal silence rules apply again
 
         switch event {
 
