@@ -9,7 +9,9 @@ import XCTest
 ///   SHOTS_DIR=/tmp/claude_shots xcodebuild test ... -only-testing:MiraUITests/StoreScreenshotsUITests
 ///
 /// On an iPad the PNGs are written in the screen's native portrait orientation, so a
-/// landscape shot comes out turned 90 degrees: fix with `sips -r 270 file.png`.
+/// landscape shot comes out turned 90 degrees: `sips -r 270 file.png` makes it upright for
+/// viewing. Upload the native portrait file to App Store Connect, not the rotated one: it
+/// turns landscape-shaped iPad files by 90 degrees and stores the native ones upright.
 ///
 /// The folder is `/tmp/mira-store-shots` unless `MIRA_SHOTS_DIR` is set in the
 /// test runner's environment (xcodebuild: `TEST_RUNNER_MIRA_SHOTS_DIR=...`).
